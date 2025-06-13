@@ -11,7 +11,7 @@ const queryClient = new QueryClient();
 
 const App = () => {
   // Handle GitHub Pages SPA routing
-  const basename = process.env.NODE_ENV === 'production' ? '/RootedAI' : '';
+  const basename = process.env.NODE_ENV === 'production' ? '/rooted-ai' : '';
   
   return (
     <QueryClientProvider client={queryClient}>

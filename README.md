@@ -13,7 +13,7 @@ RootedAI helps Kansas City small businesses implement AI solutions built on Micr
 
 This project is automatically deployed to GitHub Pages via GitHub Actions.
 
-**Live Site**: [https://hendoctor.github.io/RootedAI/](https://hendoctor.github.io/RootedAI/)
+**Live Site**: [https://hendoctor.github.io/rooted-ai/](https://hendoctor.github.io/rooted-ai/)
 
 ### Deployment Process
 
