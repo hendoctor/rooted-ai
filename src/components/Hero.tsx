@@ -45,7 +45,7 @@ const Hero = () => {
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-4 h-4 bg-earth-brown rounded-full"></div>
-              <span>Microsoft Certified Partners</span>
+              <span>Experience Microsoft Developers</span>
             </div>
             <div className="flex items-center space-x-2">
               <div className="w-4 h-4 bg-sage rounded-full"></div>

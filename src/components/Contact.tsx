@@ -144,7 +144,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <p className="font-medium text-slate-gray">Location</p>
-                      <p className="text-earth-brown">Kansas City Metro Area</p>
+                      <p className="text-earth-brown">Overland Park, Kansas</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">

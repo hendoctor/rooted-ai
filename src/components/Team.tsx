@@ -28,14 +28,15 @@ const Team = () => {
       bio: "James brings deep expertise in AI architecture, security, and DevOps to ensure your AI solutions are robust, secure, and scalable. He leads our technical implementation and integration efforts.",
       expertise: [
         "AI Solution Architecture",
+        "Cloud Infrastructure",
         "Security & Compliance",
         "System Integrations",
         "DevOps & Automation",
         "Microsoft Azure & M365"
       ],
       contact: {
-        linkedin: "#",
-        email: "james@rootedai.com"
+        linkedin: "https://www.linkedin.com/in/jameshennahane/",
+        email: "james@hennahane.com"
       }
     }
   ];
