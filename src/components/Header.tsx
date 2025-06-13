@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Sprout } from 'lucide-react';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -32,9 +34,7 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-forest-green rounded-full flex items-center justify-center">
-              <div className="w-4 h-4 bg-sage rounded-full relative">
-                <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-3 bg-sage rounded-t-full"></div>
-              </div>
+              <Sprout className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl lg:text-2xl font-bold text-forest-green">RootedAI</span>
           </div>
