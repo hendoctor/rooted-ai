@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -19,6 +18,7 @@ const Header = () => {
     { name: 'Home', href: '#home' },
     { name: 'About', href: '#about' },
     { name: 'Services', href: '#services' },
+    { name: 'Reviews', href: '#reviews' },
     { name: 'Team', href: '#team' },
     { name: 'Contact', href: '#contact' }
   ];
