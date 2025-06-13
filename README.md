@@ -1,73 +1,69 @@
-# Welcome to your Lovable project
 
-## Project info
+# RootedAI
 
-**URL**: https://lovable.dev/projects/bbaf7409-e7f1-4120-abe0-347e169ca45c
+**Grow Smarter. Stay Rooted.**
 
-## How can I edit this code?
+A modern web application for RootedAI - Kansas City's trusted AI consultancy helping small businesses grow with Microsoft AI solutions.
 
-There are several ways of editing your application.
+## 🌱 About
 
-**Use Lovable**
+RootedAI helps Kansas City small businesses implement AI solutions built on Microsoft tools. From awareness to adoption, we're your local growth partners.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/bbaf7409-e7f1-4120-abe0-347e169ca45c) and start prompting.
+## 🚀 Deployment
 
-Changes made via Lovable will be committed automatically to this repo.
+This project is automatically deployed to GitHub Pages via GitHub Actions.
 
-**Use your preferred IDE**
+**Live Site**: [https://yourusername.github.io/RootedAI/](https://yourusername.github.io/RootedAI/)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Deployment Process
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. Push changes to the `main` branch
+2. GitHub Actions automatically builds and deploys the site
+3. Site updates are live within minutes
 
-Follow these steps:
+## 🛠️ Tech Stack
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Frontend**: React 18 with TypeScript
+- **Styling**: Tailwind CSS with custom RootedAI brand colors
+- **UI Components**: shadcn/ui
+- **Backend**: Supabase (connected)
+- **Deployment**: GitHub Pages with GitHub Actions
+- **Build Tool**: Vite
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🎨 Brand Colors
 
-# Step 3: Install the necessary dependencies.
-npm i
+- **Forest Green** `#2E4F3E` - Trust, growth
+- **Earth Brown** `#7C5B45` - Groundedness  
+- **Sage** `#A8BCA1` - Calming accents
+- **Cream** `#F5F3EA` - Clean background
+- **Slate Gray** `#5C5C5C` - Text and contrast
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## 📱 Features
+
+- ✅ Responsive design optimized for mobile
+- ✅ Smooth animations and transitions
+- ✅ SEO optimized with meta tags
+- ✅ Contact form with service type selection
+- ✅ Team member profiles
+- ✅ Service packages with pricing
+- ✅ Professional branding throughout
+
+## 🔧 Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-**Edit a file directly in GitHub**
+## 📄 License
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/bbaf7409-e7f1-4120-abe0-347e169ca45c) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+© 2024 RootedAI. All rights reserved.
