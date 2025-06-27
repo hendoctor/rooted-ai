@@ -7,8 +7,8 @@ const Team = () => {
     {
       name: "Philip",
       role: "Client Success & Training Lead",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
-      bio: "Philip specializes in front-end development and client training, helping businesses navigate change with confidence. His background in user experience design ensures that AI implementations are intuitive and adoption-friendly.",
+      image: "Assets/Headshot 2.jpg",
+      bio: "With over a decade of experience leading digital transformation and AI initiatives at global organizations, Philip brings enterprise-level innovation to small businesses in Kansas City and beyond. His background spans engineering, change management, and AI enablement, with a focus on making technology approachable and impactful. ",
       expertise: [
         "Front-end Development",
         "Client Training & Support",
@@ -17,15 +17,15 @@ const Team = () => {
         "Workshop Facilitation"
       ],
       contact: {
-        linkedin: "#",
-        email: "philip@rootedai.com"
+        linkedin: "https://www.linkedin.com/in/philip-niemerg-9924337b",
+        email: "Niemergengineering@gmail.com"
       }
     },
     {
       name: "James",
       role: "AI Architecture & Security Lead",
       image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-      bio: "James brings deep expertise in AI architecture, security, and DevOps to ensure your AI solutions are robust, secure, and scalable. He leads our technical implementation and integration efforts.",
+      bio: "With years of experience leading IT departments for global organizations, James brings deep expertise in enterprise systems, infrastructure, and digital operations. His work focuses on building secure, scalable solutions that align technology with real business needs.",
       expertise: [
         "AI Solution Architecture",
         "Cloud Infrastructure",
