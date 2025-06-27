@@ -5,43 +5,29 @@ import { Card, CardContent } from '@/components/ui/card';
 const Reviews = () => {
   const testimonials = [
     {
-      quote: "RootedAI transformed how we approach client work. Their Microsoft Copilot training helped us automate proposal creation and client reporting. We're saving 10 hours a week!",
-      name: "Sarah Johnson",
-      title: "CEO, Local Marketing Agency",
-      company: "Johnson Marketing Solutions",
-      rating: 5
-    },
-    {
-      quote: "The team at RootedAI made AI feel approachable, not intimidating. They set up our entire Microsoft 365 environment and trained our staff. Our productivity has increased by 40%.",
-      name: "Mike Rodriguez",
-      title: "Operations Manager",
-      company: "KC Construction Co.",
-      rating: 5
-    },
-    {
-      quote: "I was skeptical about AI until I worked with RootedAI. Their custom chatbot now handles 80% of our customer inquiries, freeing up my team for high-value work.",
-      name: "Lisa Chen",
-      title: "Small Business Owner",
-      company: "Midwest Consulting",
+      quote: "Philip made AI easy to understand and implement. Their expertise helped us automate processes, saving time and boosting efficiency. I highly recommend Philip for any business looking to leverage AI!",
+      name: "Don Bruns",
+      title: "Founder and CEO",
+      company: "The Survey Institute",
       rating: 5
     }
   ];
-
+/*
   const stats = [
     {
-      number: "20+",
-      label: "Businesses Transformed"
+      number: "100%",
+      label: "Ready to Deliver"
     },
     {
       number: "200+",
       label: "Hours Saved Weekly"
     },
     {
-      number: "40%",
+      number: "",
       label: "Average Productivity Increase"
     }
   ];
-
+*/
   const renderStars = (rating) => {
     return [...Array(5)].map((_, i) => (
       <svg

@@ -51,16 +51,16 @@ const About = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
               <div>
-                <div className="text-3xl font-bold text-earth-brown mb-2">20+</div>
-                <div className="text-slate-gray">Businesses Helped</div>
+                <div className="text-3xl font-bold text-earth-brown mb-2">5+</div>
+                <div className="text-slate-gray">Plug-&-Play AI Solutions</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-earth-brown mb-2">10+</div>
+                <div className="text-3xl font-bold text-earth-brown mb-2">25+</div>
                 <div className="text-slate-gray">Years Experience</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-earth-brown mb-2">99%</div>
-                <div className="text-slate-gray">Client Satisfaction</div>
+                <div className="text-3xl font-bold text-earth-brown mb-2">1 hr</div>
+                <div className="text-slate-gray">Average Response Time</div>
               </div>
             </div>
           </div>
@@ -125,7 +125,7 @@ const About = () => {
                 <ul className="space-y-3 text-slate-gray">
                   <li className="flex items-start space-x-2">
                     <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>5-50 employees</span>
+                    <span>10-250 employees</span>
                   </li>
                   <li className="flex items-start space-x-2">
                     <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>

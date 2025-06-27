@@ -87,8 +87,8 @@ const Contact = () => {
                       <SelectValue placeholder="Select a service" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="awareness">Awareness & Training</SelectItem>
-                      <SelectItem value="ability">Ability Building</SelectItem>
+                      <SelectItem value="awareness">Training & Awareness</SelectItem>
+                      <SelectItem value="ability">AI Environment Setup </SelectItem>
                       <SelectItem value="agent">Agent Development</SelectItem>
                       <SelectItem value="adoption">Adoption Strategy</SelectItem>
                       <SelectItem value="consultation">General Consultation</SelectItem>
@@ -153,7 +153,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <p className="font-medium text-slate-gray">Response Time</p>
-                      <p className="text-earth-brown">Within 24 hours</p>
+                      <p className="text-earth-brown">Within 2 hours</p>
                     </div>
                   </div>
                 </div>

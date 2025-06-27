@@ -15,7 +15,7 @@ const Services = () => {
         "Team Training Sessions",
         "Industry Use Case Analysis"
       ],
-      pricing: "$500 - $2,000"
+      pricing: "$750+"
     },
     {
       title: "Ability Building",
@@ -27,7 +27,7 @@ const Services = () => {
         "Security & Compliance",
         "User Adoption Strategy"
       ],
-      pricing: "$2,500 - $5,000"
+      pricing: "$3,500+"
     },
     {
       title: "Agent Development",
@@ -39,7 +39,7 @@ const Services = () => {
         "Testing & Optimization",
         "Deployment & Support"
       ],
-      pricing: "$3,000 - $10,000"
+      pricing: "$1000+"
     },
     {
       title: "Adoption Strategy",
