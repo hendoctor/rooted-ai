@@ -24,7 +24,7 @@ const Team = () => {
     {
       name: "James",
       role: "AI Architecture & Security Lead",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
+      image: "public/Assets/JamesHennahaneProfilePic.png",
       bio: "With years of experience leading IT departments for global organizations, James brings deep expertise in enterprise systems, infrastructure, and digital operations. His work focuses on building secure, scalable solutions that align technology with real business needs.",
       expertise: [
         "AI Solution Architecture",
