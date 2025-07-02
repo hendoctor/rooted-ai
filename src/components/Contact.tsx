@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -13,11 +15,80 @@ const Contact = () => {
     message: '',
     serviceType: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    // Handle form submission here
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('contact-form', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+          serviceType: formData.serviceType
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Message sent successfully!",
+        description: "We'll get back to you within 2 hours.",
+      });
+
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        message: '',
+        serviceType: ''
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to send message",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewsletterLoading(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('newsletter-signup', {
+        body: { email: newsletterEmail }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Successfully subscribed!",
+        description: "Thank you for subscribing to our newsletter.",
+      });
+
+      setNewsletterEmail('');
+    } catch (error: any) {
+      toast({
+        title: "Subscription failed",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setNewsletterLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -114,9 +185,10 @@ const Contact = () => {
 
                 <Button
                   type="submit"
-                  className="w-full bg-forest-green hover:bg-forest-green/90 text-white py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg"
+                  disabled={loading}
+                  className="w-full bg-forest-green hover:bg-forest-green/90 text-white py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg disabled:opacity-50"
                 >
-                  Send Message
+                  {loading ? 'Sending...' : 'Send Message'}
                 </Button>
               </form>
             </CardContent>
@@ -184,16 +256,23 @@ const Contact = () => {
                 <p className="text-slate-gray mb-4">
                   Get AI tips, local business insights, and workshop announcements.
                 </p>
-                <div className="flex space-x-2">
+                <form onSubmit={handleNewsletterSubmit} className="flex space-x-2">
                   <Input
                     type="email"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
                     placeholder="Your email"
+                    required
                     className="border-sage/50 focus:border-forest-green"
                   />
-                  <Button className="bg-sage hover:bg-sage/80 text-slate-gray">
-                    Subscribe
+                  <Button 
+                    type="submit"
+                    disabled={newsletterLoading}
+                    className="bg-sage hover:bg-sage/80 text-slate-gray disabled:opacity-50"
+                  >
+                    {newsletterLoading ? 'Subscribing...' : 'Subscribe'}
                   </Button>
-                </div>
+                </form>
               </CardContent>
             </Card>
           </div>

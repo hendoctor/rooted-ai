@@ -1,1 +1,98 @@
-project_id = "ylewpehqfgltbhpkaout"
+project_id = "bbaf7409-e7f1-4120-abe0-347e169ca45c"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+ip_version = "IPv6"
+port = 54323
+max_header_length = 4096
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1:54321"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+[inbucket]
+enabled = true
+port = 54324
+mp_id = ""
+smtp_port = 54325
+
+[storage]
+enabled = true
+port = 54326
+file_size_limit = "50MiB"
+image_transformation = true
+
+[auth]
+enabled = true
+port = 54327
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["https://ylewpehqfgltbhpkaout.supabase.co"]
+jwt_expiry = 3600
+refresh_token_rotation_enabled = true
+anonymous_users_enabled = false
+enable_signup = true
+enable_email_confirmations = false
+email_double_confirm_changes_enabled = true
+enable_manual_linking = false
+
+[auth.email]
+enable_signup = true
+double_confirm_changes_enabled = true
+enable_confirmations = false
+template_path = "./supabase/templates"
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+template_path = "./supabase/templates"
+
+[edge_functions]
+enabled = true
+port = 54328
+inspector_port = 54329
+
+[functions.contact-form]
+verify_jwt = false
+
+[functions.newsletter-signup]
+verify_jwt = false
+
+[analytics]
+enabled = true
+port = 54330
+vector_port = 54331
+# Setup BigQuery project to enable log viewer on local development stack.
+# See: https://supabase.com/docs/guides/getting-started/local-development#enabling-local-logging
+gcp_project_id = ""
+gcp_project_number = ""
+gcp_jwt_path = "supabase/gcloud.json"
+
+[experimental]
+s3_enabled = false
+s3_protocol = "http"
+s3_host = "127.0.0.1"
+s3_port = 54335
+s3_access_key_id = ""
+s3_secret_access_key = ""
+s3_region = "local"
