@@ -12,7 +12,6 @@ const Reviews = () => {
       rating: 5
     }
   ];
-/*
   const stats = [
     {
       number: "100%",
@@ -23,11 +22,10 @@ const Reviews = () => {
       label: "Hours Saved Weekly"
     },
     {
-      number: "",
+      number: "40%",
       label: "Average Productivity Increase"
     }
   ];
-*/
   const renderStars = (rating) => {
     return [...Array(5)].map((_, i) => (
       <svg
