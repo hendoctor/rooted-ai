@@ -7,7 +7,7 @@ const Team = () => {
     {
       name: "Philip",
       role: "Client Success & Training Lead",
-      image: "public/Assets/Philip 2.jpg",
+      image: "/Assets/Philip 2.jpg",
       bio: "With over a decade of experience leading digital transformation and AI initiatives at global organizations, Philip brings enterprise-level innovation to small businesses in Kansas City and beyond. His background spans engineering, change management, and AI enablement, with a focus on making technology approachable and impactful. ",
       expertise: [
         "Front-end Development",
@@ -24,7 +24,7 @@ const Team = () => {
     {
       name: "James",
       role: "AI Architecture & Security Lead",
-      image: "public/Assets/JamesHennahaneProfilePic.png",
+      image: "/Assets/JamesHennahaneProfilePic.png",
       bio: "With years of experience leading IT departments for global organizations, James brings deep expertise in enterprise systems, infrastructure, and digital operations. His work focuses on building secure, scalable solutions that align technology with real business needs.",
       expertise: [
         "AI Solution Architecture",
