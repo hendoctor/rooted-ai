@@ -7,7 +7,7 @@ const Team = () => {
     {
       name: "Philip",
       role: "Client Success & Training Lead",
-      image: "/Assets/Phillips-2.png",
+      image: "/Assets/Philip 2.jpg",
       bio: "With over a decade of experience leading digital transformation and AI initiatives at global organizations, Philip brings enterprise-level innovation to small businesses in Kansas City and beyond. His background spans engineering, change management, and AI enablement, with a focus on making technology approachable and impactful. ",
       expertise: [
         "Front-end Development",
