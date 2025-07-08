@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Globe } from 'lucide-react';
 
 const Team = () => {
   const teamMembers = [
@@ -36,7 +37,8 @@ const Team = () => {
       ],
       contact: {
         linkedin: "https://www.linkedin.com/in/jameshennahane/",
-        email: "james@hennahane.com"
+        email: "james@hennahane.com",
+        website: "https://jmh-iii.lovable.app/"
       }
     }
   ];
@@ -85,6 +87,16 @@ const Team = () => {
                       >
                         <span className="text-sm">@</span>
                       </a>
+                      {member.contact.website && (
+                        <a
+                          href={member.contact.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-8 h-8 bg-sage/20 rounded-full flex items-center justify-center hover:bg-forest-green hover:text-white transition-all duration-200"
+                        >
+                          <Globe className="w-4 h-4" />
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
