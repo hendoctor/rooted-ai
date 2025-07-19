@@ -11,11 +11,11 @@ const Footer = () => {
           {/* Brand Section */}
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-sage rounded-full flex items-center justify-center">
-                <div className="w-4 h-4 bg-cream rounded-full relative">
-                  <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-3 bg-cream rounded-t-full"></div>
-                </div>
-              </div>
+              <img 
+                src="/lovable-uploads/991a2d22-e953-4815-b08c-7b6470c8ce23.png" 
+                alt="RootedAI Logo" 
+                className="w-8 h-8" 
+              />
               <span className="text-2xl font-bold text-cream">RootedAI</span>
             </div>
             <p className="text-sage mb-4 max-w-md">
