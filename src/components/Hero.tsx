@@ -58,14 +58,14 @@ const Hero = () => {
 
       {/* Scroll Indicator */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-        <div className="flex flex-col items-center space-y-0.5">
+        <div className="flex flex-col items-center -space-y-2">
           <ChevronDown 
-            size={28} 
+            size={42} 
             style={{ color: '#2d5239' }}
             className="animate-bounce"
           />
           <ChevronDown 
-            size={28} 
+            size={42} 
             className="animate-bounce"
             style={{ color: '#2d5239' }}
           />
