@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { ChevronDown } from 'lucide-react';
 
 const Hero = () => {
   return (
@@ -56,9 +57,18 @@ const Hero = () => {
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-forest-green rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-forest-green rounded-full mt-2"></div>
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+        <div className="flex flex-col items-center space-y-1">
+          <ChevronDown 
+            size={24} 
+            style={{ color: '#2d5239' }}
+            className="animate-bounce"
+          />
+          <ChevronDown 
+            size={24} 
+            className="animate-bounce"
+            style={{ color: '#2d5239', animationDelay: '0.2s' }}
+          />
         </div>
       </div>
     </section>
