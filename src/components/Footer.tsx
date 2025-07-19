@@ -12,7 +12,7 @@ const Footer = () => {
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <img 
-                src="/lovable-uploads/991a2d22-e953-4815-b08c-7b6470c8ce23.png" 
+                src="/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png"
                 alt="RootedAI Logo" 
                 className="w-8 h-8" 
               />
