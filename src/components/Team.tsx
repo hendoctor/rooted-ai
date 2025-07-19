@@ -38,7 +38,7 @@ const Team = () => {
       contact: {
         linkedin: "https://www.linkedin.com/in/jameshennahane/",
         email: "james@hennahane.com",
-        website: "https://jmh-iii.lovable.app/"
+        website: "https://james.hennahane.com"
       }
     }
   ];
