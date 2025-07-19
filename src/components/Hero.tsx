@@ -67,7 +67,7 @@ const Hero = () => {
           <ChevronDown 
             size={24} 
             className="animate-bounce"
-            style={{ color: '#2d5239', animationDelay: '0.2s' }}
+            style={{ color: '#2d5239' }}
           />
         </div>
       </div>
