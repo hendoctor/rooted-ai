@@ -54,9 +54,11 @@ const Header = () => {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-forest-green rounded-full flex items-center justify-center">
-              <Sprout className="w-5 h-5 text-white" />
-            </div>
+            <img 
+              src="/lovable-uploads/991a2d22-e953-4815-b08c-7b6470c8ce23.png" 
+              alt="RootedAI Logo" 
+              className="w-8 h-8" 
+            />
             <span className="text-xl lg:text-2xl font-bold text-forest-green">RootedAI</span>
           </div>
 

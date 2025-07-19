@@ -1,0 +1,26 @@
+{
+  "name": "RootedAI",
+  "short_name": "RootedAI",
+  "description": "Kansas City's trusted AI consultancy for small businesses. Expert guidance on Microsoft AI tools, custom solutions, and sustainable growth strategies.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#065f46",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/lovable-uploads/991a2d22-e953-4815-b08c-7b6470c8ce23.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/lovable-uploads/991a2d22-e953-4815-b08c-7b6470c8ce23.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["business", "productivity", "education"],
+  "lang": "en-US"
+}
