@@ -7,7 +7,7 @@ const Team = () => {
   const teamMembers = [
     {
       name: "Philip",
-      role: "Co-Founder & CEO",
+      role: "Co-Founder & Chief Executive Officer",
       image: "/Assets/Philip-2.jpg",
       bio: "With over a decade of experience leading digital transformation and AI initiatives at global organizations, Philip brings enterprise-level innovation to small businesses in Kansas City and beyond. His background spans engineering, change management, and AI enablement, with a focus on making technology approachable and impactful. ",
       expertise: [
@@ -24,7 +24,7 @@ const Team = () => {
     },
     {
       name: "James Hennahane",
-      role: "Founder & Chief Technology Officer",
+      role: "Co-Founder & Chief Technology Officer",
       image: "/Assets/JamesHennahaneProfilePic.png",
       bio: "With a strong foundation in enterprise IT leadership and a deep commitment to making AI accessible to all, James leads RootedAI’s mission to empower businesses through secure, scalable, and actionable AI solutions. Drawing on over a decade of experience in digital operations, cloud infrastructure, architecture, and automation, he designs AI-powered systems that align seamlessly with real-world business needs—especially for underserved and local communities.",
       expertise: [
