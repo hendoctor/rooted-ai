@@ -23,17 +23,17 @@ const Team = () => {
       }
     },
     {
-      name: "James",
-      role: "AI Architecture & Security Lead",
+      name: "James Hennahane",
+      role: "Founder & Chief Technology Officer",
       image: "/Assets/JamesHennahaneProfilePic.png",
-      bio: "With years of experience leading IT departments for global organizations, James brings deep expertise in enterprise systems, infrastructure, and digital operations. His work focuses on building secure, scalable solutions that align technology with real business needs.",
+      bio: "With a strong foundation in enterprise IT leadership and a deep commitment to making AI accessible to all, James leads RootedAI’s mission to empower businesses through secure, scalable, and actionable AI solutions. Drawing on over a decade of experience in digital operations, cloud infrastructure, architecture, and automation, he designs AI-powered systems that align seamlessly with real-world business needs—especially for underserved and local communities.",
       expertise: [
         "AI Solution Architecture",
-        "Cloud Infrastructure",
-        "Security & Compliance",
-        "System Integrations",
-        "DevOps & Automation",
-        "Microsoft Azure & M365"
+        "Microsoft Azure & Microsoft 365",
+        "Secure Cloud Infrastructure",
+        "Compliance-Ready System Design",
+        "DevOps & Intelligent Automation",
+        "Business-Aligned Integrations"
       ],
       contact: {
         linkedin: "https://www.linkedin.com/in/jameshennahane/",
