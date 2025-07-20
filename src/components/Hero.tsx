@@ -57,7 +57,7 @@ const Hero = () => {
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-4 sm:bottom-4 left-1/2 transform -translate-x-1/2">
+      <div className="absolute bottom-[-40px] sm:bottom-[-50px] left-1/2 transform -translate-x-1/2">
         <div className="flex flex-col items-center -space-y-6">
           <ChevronDown 
             size={42} 
