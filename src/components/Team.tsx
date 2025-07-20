@@ -4,7 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Globe } from 'lucide-react';
 
 const ProfileImage = ({ member, index }: { member: any, index: number }) => {
-  const [isFlipped, setIsFlipped] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const velocityRef = useRef(0);
@@ -23,13 +22,11 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
       // Snap to nearest 180 degree increment
       const nearestFlip = Math.round(rotation / 180) * 180;
       setRotation(nearestFlip);
-      setIsFlipped(Math.abs(nearestFlip % 360) >= 90 && Math.abs(nearestFlip % 360) < 270);
       return;
     }
 
     velocityRef.current *= 0.95; // Friction
     setRotation(prev => prev + velocityRef.current);
-    setIsFlipped(Math.abs((rotation + velocityRef.current) % 360) >= 90 && Math.abs((rotation + velocityRef.current) % 360) < 270);
     
     animationRef.current = requestAnimationFrame(animate);
   };
@@ -68,7 +65,6 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
     }
     
     setRotation(newRotation);
-    setIsFlipped(Math.abs(newRotation % 360) >= 90 && Math.abs(newRotation % 360) < 270);
     lastTimeRef.current = currentTime;
   };
 
@@ -86,29 +82,25 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
   }, []);
 
   return (
-    <div 
-      ref={containerRef}
-      className="relative perspective-1000"
-      onMouseEnter={handleMouseEnter}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      style={{ 
-        perspective: '1000px',
-        touchAction: 'none',
-        userSelect: 'none'
-      }}
-    >
+    <div className="relative w-24 h-24">
       <div
-        className="relative transition-transform duration-200 preserve-3d cursor-pointer"
-        style={{
+        ref={containerRef}
+        className="w-24 h-24 preserve-3d cursor-pointer"
+        onMouseEnter={handleMouseEnter}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ 
+          perspective: '1000px',
+          touchAction: 'none',
+          userSelect: 'none',
           transform: `rotateY(${rotation}deg)`,
           transformStyle: 'preserve-3d'
         }}
       >
         {/* Profile Image */}
         <div
-          className="absolute w-24 h-24 backface-hidden"
+          className="absolute inset-0 w-24 h-24 backface-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
           <img
@@ -116,12 +108,11 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
             alt={member.name}
             className="w-24 h-24 rounded-full object-cover border-4 border-sage/30"
           />
-          <div className="absolute inset-0 w-24 h-24 rounded-full bg-forest-green/10"></div>
         </div>
         
         {/* Logo Back */}
         <div
-          className="absolute w-24 h-24 backface-hidden"
+          className="absolute inset-0 w-24 h-24 backface-hidden"
           style={{ 
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)'
@@ -136,6 +127,9 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
           </div>
         </div>
       </div>
+      
+      {/* Background overlay to maintain original styling */}
+      <div className="absolute inset-0 w-24 h-24 rounded-full bg-forest-green/10 pointer-events-none"></div>
     </div>
   );
 };
