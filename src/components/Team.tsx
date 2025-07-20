@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Globe } from 'lucide-react';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const ProfileImage = ({ member, index }: { member: any, index: number }) => {
   const [rotation, setRotation] = useState(0);
@@ -149,6 +150,10 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
 };
 
 const Team = () => {
+  const { elementRef, isVisible } = useScrollAnimation({
+    hapticPattern: [45, 25, 35, 15]
+  });
+
   const teamMembers = [
     {
       name: "Philip",
@@ -189,7 +194,13 @@ const Team = () => {
   ];
 
   return (
-    <section id="team" className="py-20 bg-white dark:bg-slate-800">
+    <section 
+      ref={elementRef}
+      id="team" 
+      className={`py-20 bg-white dark:bg-slate-800 transition-all duration-1000 ${
+        isVisible ? 'animate-slide-in-right' : 'opacity-0 translate-x-8'
+      }`}
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">

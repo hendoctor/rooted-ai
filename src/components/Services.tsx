@@ -2,8 +2,13 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const Services = () => {
+  const { elementRef, isVisible } = useScrollAnimation({
+    hapticPattern: [30, 50, 30]
+  });
+
   const services = [
     {
       title: "Awareness & Training",
@@ -56,7 +61,13 @@ const Services = () => {
   ];
 
   return (
-    <section id="services" className="py-20 bg-white dark:bg-slate-800">
+    <section 
+      ref={elementRef}
+      id="services" 
+      className={`py-20 bg-white dark:bg-slate-800 transition-all duration-1000 ${
+        isVisible ? 'animate-slide-in-left' : 'opacity-0 -translate-x-8'
+      }`}
+    >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
