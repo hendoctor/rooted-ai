@@ -44,7 +44,7 @@ const Team = () => {
   ];
 
   return (
-    <section id="team" className="py-20 bg-white">
+    <section id="team" className="py-20 bg-white dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -126,7 +126,7 @@ const Team = () => {
         </div>
 
         {/* Team Philosophy */}
-        <div className="mt-16 bg-sage/5 rounded-2xl p-8 sm:p-12 text-center">
+        <div className="mt-16 bg-sage/5 dark:bg-slate-900 rounded-2xl p-8 sm:p-12 text-center">
           <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-6">
             Our Approach
           </h3>

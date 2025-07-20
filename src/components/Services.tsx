@@ -56,7 +56,7 @@ const Services = () => {
   ];
 
   return (
-    <section id="services" className="py-20 bg-white">
+    <section id="services" className="py-20 bg-white dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -106,7 +106,7 @@ const Services = () => {
         </div>
 
         {/* CTA Section */}
-        <div className="text-center bg-sage/10 rounded-2xl p-8 sm:p-12">
+        <div className="text-center bg-sage/10 dark:bg-slate-900 rounded-2xl p-8 sm:p-12">
           <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-4">
             Ready to Transform Your Business?
           </h3>
