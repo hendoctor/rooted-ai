@@ -21,7 +21,7 @@ interface PushNotificationsHook {
   checkSubscriptionStatus: () => Promise<void>;
 }
 
-const VAPID_PUBLIC_KEY = "BJ8VdLF5YpH8S-PQ5J8rCrXDWOQHkF7Z3GpE_8DsHlY1P-xN7M6LgR9W2KfYn3ZwEqH4T5U6V7W8X9Y0"; // Replace this with your generated public key
+const VAPID_PUBLIC_KEY = "BBJeaLq3cweiE_oIJB4EuAIv5Ivua5xmh8IZI68nfmohnsbqtQq6l9_ARSQmDHDNrxUiZRK5UiXW74QuGhSpcKqY";
 
 export function usePushNotifications(): PushNotificationsHook {
   const [isEnabled, setIsEnabled] = useState(false);
