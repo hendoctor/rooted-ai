@@ -83,7 +83,7 @@ const FrequencySelector: React.FC<FrequencySelectorProps> = ({
                 value={frequency.value || 1}
                 onChange={(e) => handleValueChange(e.target.value)}
                 disabled={disabled}
-                className="bg-slate-700/50 border-sage/30 text-cream w-20"
+                className="bg-slate-700/50 border-sage/30 text-cream w-20 placeholder:text-white dark:placeholder:text-white"
               />
             </div>
           )}
