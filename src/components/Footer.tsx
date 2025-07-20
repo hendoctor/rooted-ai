@@ -1,11 +1,8 @@
 
 import React from 'react';
-import { Download, Smartphone } from 'lucide-react';
-import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  const { isInstallable, isInstalled, installApp } = usePWAInstall();
 
   return (
     <footer className="bg-slate-gray dark:bg-slate-900 text-cream py-12">
@@ -35,23 +32,6 @@ const Footer = () => {
         <div className="border-t border-sage/20 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <div className="text-sage text-sm mb-4 md:mb-0">
             © {currentYear} RootedAI. All rights reserved. | Overland Park, KS
-          </div>
-          <div className="flex items-center space-x-6">
-            {/* PWA Install Button */}
-            {(isInstallable || !isInstalled) && (
-              <button
-                onClick={installApp}
-                className="flex items-center space-x-2 text-sage hover:text-cream transition-colors group"
-                title={isInstallable ? "Install App" : "Add to Home Screen"}
-              >
-                {isInstallable ? (
-                  <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                ) : (
-                  <Smartphone className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                )}
-                <span className="text-sm">Install App</span>
-              </button>
-            )}
           </div>
         </div>
       </div>
