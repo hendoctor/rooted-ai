@@ -4,10 +4,20 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAIJokes } from '@/hooks/useAIJokes';
+import FrequencySelector from '@/components/FrequencySelector';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  const { isEnabled, hasPermission, isLoading, toggleJokes, sendTestJoke } = useAIJokes();
+  const { 
+    isEnabled, 
+    hasPermission, 
+    isLoading, 
+    frequency, 
+    toggleJokes, 
+    sendTestJoke, 
+    updateFrequency, 
+    getFrequencyDescription 
+  } = useAIJokes();
 
   return (
     <footer className="bg-slate-gray dark:bg-slate-900 text-cream py-12">
@@ -67,9 +77,16 @@ const Footer = () => {
                     </Button>
                   )}
                 </div>
+
+                <FrequencySelector
+                  frequency={frequency}
+                  onFrequencyChange={updateFrequency}
+                  disabled={isLoading || !isEnabled}
+                />
+
                 {isEnabled && (
                   <p className="text-sm text-sage bg-emerald-900/20 p-2 rounded border border-emerald-500/20">
-                    ✅ AI Joke notifications are active! You'll receive a new joke every 5 minutes.
+                    ✅ AI Joke notifications are active! {getFrequencyDescription(frequency)}
                   </p>
                 )}
               </CardContent>

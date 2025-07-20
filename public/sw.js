@@ -15,6 +15,7 @@ const AI_JOKES = [
 
 let jokeInterval = null;
 let jokeIndex = 0;
+let currentFrequency = null;
 
 // Install event
 self.addEventListener('install', (event) => {
@@ -30,16 +31,26 @@ self.addEventListener('activate', (event) => {
 
 // Listen for messages from main thread
 self.addEventListener('message', (event) => {
-  const { type, enabled } = event.data;
+  const { type, enabled, frequency } = event.data;
   
   if (type === 'AI_JOKE_TOGGLE') {
-    if (enabled) {
-      startJokeNotifications();
+    if (enabled && frequency) {
+      currentFrequency = frequency;
+      startJokeNotifications(frequency);
     } else {
       stopJokeNotifications();
     }
   } else if (type === 'SEND_JOKE_NOW') {
     sendJokeNotification();
+  } else if (type === 'UPDATE_FREQUENCY') {
+    if (frequency) {
+      currentFrequency = frequency;
+      // Restart with new frequency if currently running
+      if (jokeInterval) {
+        stopJokeNotifications();
+        startJokeNotifications(frequency);
+      }
+    }
   }
 });
 
@@ -62,13 +73,53 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-function startJokeNotifications() {
-  console.log('Starting AI joke notifications...');
+function startJokeNotifications(frequency) {
+  console.log('Starting AI joke notifications with frequency:', frequency);
   stopJokeNotifications(); // Clear any existing interval
   
-  jokeInterval = setInterval(() => {
-    sendJokeNotification();
-  }, 5 * 60 * 1000); // 5 minutes
+  const intervalMs = calculateIntervalMs(frequency);
+  
+  if (frequency.type === 'specific_days') {
+    // Use a shorter interval and check if today is a selected day
+    jokeInterval = setInterval(() => {
+      if (shouldSendJokeToday(frequency.days)) {
+        sendJokeNotification();
+      }
+    }, intervalMs);
+  } else {
+    jokeInterval = setInterval(() => {
+      sendJokeNotification();
+    }, intervalMs);
+  }
+}
+
+function calculateIntervalMs(frequency) {
+  const { type, value, days } = frequency;
+  
+  switch (type) {
+    case 'minutes':
+      return value * 60 * 1000;
+    case 'hours':
+      return value * 60 * 60 * 1000;
+    case 'days':
+      return value * 24 * 60 * 60 * 1000;
+    case 'weeks':
+      return value * 7 * 24 * 60 * 60 * 1000;
+    case 'months':
+      return value * 30 * 24 * 60 * 60 * 1000; // Approximate
+    case 'years':
+      return value * 365 * 24 * 60 * 60 * 1000; // Approximate
+    case 'specific_days':
+      // Check every hour if it's time to send
+      return 60 * 60 * 1000;
+    default:
+      return 5 * 60 * 1000; // Default 5 minutes
+  }
+}
+
+function shouldSendJokeToday(selectedDays) {
+  const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
+  return selectedDays.includes(today);
 }
 
 function stopJokeNotifications() {
