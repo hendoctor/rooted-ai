@@ -52,13 +52,28 @@ jwt_expiry = 3600
 refresh_token_rotation_enabled = true
 anonymous_users_enabled = false
 enable_signup = true
-enable_email_confirmations = false
+enable_email_confirmations = true
 email_double_confirm_changes_enabled = true
 enable_manual_linking = false
 
 [auth.email]
 enable_signup = true
 double_confirm_changes_enabled = true
+
+[auth.email.template.confirmation]
+subject = "Welcome to RootedAI - Verify Your Email"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery] 
+subject = "Reset Your RootedAI Password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm Your Email Change - RootedAI"
+content_path = "./supabase/templates/email_change.html"
+
+[functions.auth-email]
+verify_jwt = false
 enable_confirmations = false
 template_path = "./supabase/templates"
 

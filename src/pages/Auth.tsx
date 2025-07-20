@@ -9,6 +9,7 @@ import type { User, Session } from '@supabase/supabase-js';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -106,6 +107,109 @@ const Auth = () => {
     }
   };
 
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address to reset your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/auth?type=recovery`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) {
+        toast({
+          title: "Reset Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Reset Email Sent",
+          description: "Please check your email for password reset instructions.",
+        });
+        setShowResetPassword(false);
+      }
+    } catch (error: unknown) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (showResetPassword) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-forest-green">Reset Your Password</h2>
+            <p className="mt-2 text-slate-gray">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
+          </div>
+
+          <Card className="border-sage/30 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-xl text-forest-green text-center">
+                Password Reset
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordReset} className="space-y-6">
+                <div>
+                  <label htmlFor="reset-email" className="block text-sm font-medium text-slate-gray mb-2">
+                    Email Address *
+                  </label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="border-sage/50 focus:border-forest-green"
+                    placeholder="your.email@company.com"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg"
+                >
+                  {loading ? 'Sending...' : 'Send Reset Email'}
+                </Button>
+              </form>
+
+              <div className="mt-6 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowResetPassword(false)}
+                  className="text-forest-green hover:text-forest-green/80 font-medium"
+                >
+                  Back to login
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -159,9 +263,20 @@ const Auth = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-gray mb-2">
-                  Password *
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                  <label htmlFor="password" className="block text-sm font-medium text-slate-gray">
+                    Password *
+                  </label>
+                  {isLogin && (
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPassword(true)}
+                      className="text-sm text-forest-green hover:text-forest-green/80 font-medium"
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
                 <Input
                   id="password"
                   type="password"
