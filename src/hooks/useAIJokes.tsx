@@ -30,7 +30,7 @@ export const useAIJokes = () => {
     if ('serviceWorker' in navigator) {
       try {
         const registration = await navigator.serviceWorker.register(
-          new URL('sw.js', import.meta.env.BASE_URL)
+          `${import.meta.env.BASE_URL}sw.js`
         );
         setServiceWorkerRegistration(registration);
         console.log('Service Worker registered successfully');

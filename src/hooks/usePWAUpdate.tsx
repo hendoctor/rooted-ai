@@ -22,9 +22,9 @@ export const usePWAUpdate = (): PWAUpdateHook => {
 
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistration(
-        new URL('sw.js', import.meta.env.BASE_URL)
-      ).then((reg) => {
+      navigator.serviceWorker
+        .getRegistration(`${import.meta.env.BASE_URL}sw.js`)
+        .then((reg) => {
         if (reg) {
           setRegistration(reg);
           
