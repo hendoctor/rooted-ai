@@ -1,3 +1,4 @@
+
 {
   "name": "RootedAI",
   "short_name": "RootedAI",
@@ -7,6 +8,7 @@
   "background_color": "#ffffff",
   "theme_color": "#065f46",
   "orientation": "portrait-primary",
+  "scope": "/",
   "icons": [
     {
       "src": "/lovable-uploads/ce6a66fb-80e8-4092-84eb-db436fcb1cad.png",
@@ -22,5 +24,26 @@
     }
   ],
   "categories": ["business", "productivity", "education"],
-  "lang": "en-US"
+  "lang": "en-US",
+  "shortcuts": [
+    {
+      "name": "Test AI Joke",
+      "short_name": "Test Joke",
+      "description": "Send a test AI joke notification",
+      "url": "/?action=test-joke",
+      "icons": [
+        {
+          "src": "/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 }

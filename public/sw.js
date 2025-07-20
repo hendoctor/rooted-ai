@@ -1,8 +1,12 @@
-// Service Worker for AI Joke Notifications - Background Operation Enhanced
-const CACHE_VERSION = '1.2.0';
+// Import storage utility
+importScripts('/sw-storage.js');
+
+// Service Worker for AI Joke Notifications - Enhanced with Persistence
+const CACHE_VERSION = '1.3.0';
 const CACHE_NAME = `rooted-ai-v${CACHE_VERSION}`;
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const API_CACHE = `${CACHE_NAME}-api`;
+
 const AI_JOKES = [
   "Why did the AI get fired? It thought outside the search parameters.",
   "My robot vacuum just got a philosophy degree. It's deep cleaning now.",
@@ -16,17 +20,226 @@ const AI_JOKES = [
   "The AI tried stand-up comedy but kept overfitting to the audience."
 ];
 
-let jokeInterval = null;
-let jokeIndex = 0;
-let currentFrequency = null;
+// Persistent state management
+let storage = null;
+let notificationState = {
+  enabled: false,
+  frequency: null,
+  nextNotificationTime: null,
+  jokeIndex: 0
+};
+
+let checkInterval = null;
 let keepAliveInterval = null;
-let lastJokeTime = null;
+
+// Initialize storage and restore state
+async function initializeServiceWorker() {
+  try {
+    storage = new SWStorage();
+    await storage.init();
+    await restoreNotificationState();
+    startPeriodicCheck();
+    console.log(`Service Worker v${CACHE_VERSION} initialized with persistent state`);
+  } catch (error) {
+    console.error('Failed to initialize service worker storage:', error);
+  }
+}
+
+// Restore notification state from persistent storage
+async function restoreNotificationState() {
+  try {
+    const savedState = await storage.get('notificationState');
+    if (savedState) {
+      notificationState = { ...notificationState, ...savedState };
+      console.log('Restored notification state:', notificationState);
+      
+      // If notifications were enabled, resume checking
+      if (notificationState.enabled && notificationState.frequency) {
+        console.log('Resuming notification schedule after service worker restart');
+        scheduleNextNotification();
+      }
+    }
+  } catch (error) {
+    console.error('Failed to restore notification state:', error);
+  }
+}
+
+// Save notification state to persistent storage
+async function saveNotificationState() {
+  try {
+    await storage.set('notificationState', notificationState);
+  } catch (error) {
+    console.error('Failed to save notification state:', error);
+  }
+}
+
+// Calculate next notification time based on frequency
+function calculateNextNotificationTime(frequency) {
+  const now = Date.now();
+  const { type, value, days } = frequency;
+  
+  let intervalMs;
+  
+  switch (type) {
+    case 'minutes':
+      intervalMs = value * 60 * 1000;
+      break;
+    case 'hours':
+      intervalMs = value * 60 * 60 * 1000;
+      break;
+    case 'days':
+      intervalMs = value * 24 * 60 * 60 * 1000;
+      break;
+    case 'weeks':
+      intervalMs = value * 7 * 24 * 60 * 60 * 1000;
+      break;
+    case 'months':
+      intervalMs = value * 30 * 24 * 60 * 60 * 1000;
+      break;
+    case 'years':
+      intervalMs = value * 365 * 24 * 60 * 60 * 1000;
+      break;
+    case 'specific_days':
+      // For specific days, find the next occurrence
+      return calculateNextSpecificDayTime(days);
+    default:
+      intervalMs = 5 * 60 * 1000; // Default 5 minutes
+  }
+  
+  return now + intervalMs;
+}
+
+// Calculate next notification time for specific days
+function calculateNextSpecificDayTime(selectedDays) {
+  const now = new Date();
+  const currentDay = now.getDay();
+  const currentHour = now.getHours();
+  
+  // Find next selected day
+  let daysUntilNext = null;
+  
+  for (let i = 0; i < 7; i++) {
+    const checkDay = (currentDay + i) % 7;
+    if (selectedDays.includes(checkDay)) {
+      if (i === 0 && currentHour < 9) {
+        // Today at 9 AM if it's before 9 AM
+        daysUntilNext = 0;
+        break;
+      } else if (i > 0) {
+        // Next selected day at 9 AM
+        daysUntilNext = i;
+        break;
+      }
+    }
+  }
+  
+  if (daysUntilNext === null) {
+    daysUntilNext = 7; // Default to next week
+  }
+  
+  const nextTime = new Date();
+  nextTime.setDate(nextTime.getDate() + daysUntilNext);
+  nextTime.setHours(9, 0, 0, 0); // 9 AM
+  
+  return nextTime.getTime();
+}
+
+// Schedule next notification
+async function scheduleNextNotification() {
+  if (!notificationState.enabled || !notificationState.frequency) {
+    return;
+  }
+  
+  notificationState.nextNotificationTime = calculateNextNotificationTime(notificationState.frequency);
+  await saveNotificationState();
+  
+  console.log('Next notification scheduled for:', new Date(notificationState.nextNotificationTime).toISOString());
+}
+
+// Start periodic check for notifications (every 30 seconds)
+function startPeriodicCheck() {
+  if (checkInterval) clearInterval(checkInterval);
+  
+  checkInterval = setInterval(async () => {
+    try {
+      await checkForPendingNotifications();
+      
+      // Keep alive heartbeat
+      console.log('SW heartbeat:', new Date().toISOString());
+    } catch (error) {
+      console.error('Error in periodic check:', error);
+    }
+  }, 30000);
+  
+  // Start keep-alive mechanism
+  startKeepAlive();
+}
+
+// Check for pending notifications
+async function checkForPendingNotifications() {
+  if (!notificationState.enabled || !notificationState.nextNotificationTime) {
+    return;
+  }
+  
+  const now = Date.now();
+  
+  if (now >= notificationState.nextNotificationTime) {
+    console.log('Time to send notification!');
+    await sendJokeNotification();
+    await scheduleNextNotification();
+  }
+}
+
+// Send joke notification
+async function sendJokeNotification() {
+  const joke = AI_JOKES[notificationState.jokeIndex];
+  notificationState.jokeIndex = (notificationState.jokeIndex + 1) % AI_JOKES.length;
+  
+  const notificationOptions = {
+    body: joke,
+    icon: '/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png',
+    badge: '/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png',
+    tag: 'ai-joke',
+    requireInteraction: false,
+    silent: false,
+    renotify: true,
+    data: {
+      timestamp: Date.now(),
+      joke: joke
+    }
+  };
+  
+  try {
+    await self.registration.showNotification('🤖 AI Joke Time!', notificationOptions);
+    console.log('Sent joke notification:', joke);
+    
+    // Save updated state
+    await saveNotificationState();
+    
+    // Trigger background sync
+    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+      await self.registration.sync.register('ai-joke-sync').catch(console.error);
+    }
+  } catch (error) {
+    console.error('Failed to send notification:', error);
+  }
+}
+
+// Keep alive mechanism
+function startKeepAlive() {
+  if (keepAliveInterval) clearInterval(keepAliveInterval);
+  
+  // More frequent keep-alive for better reliability
+  keepAliveInterval = setInterval(() => {
+    // Perform minimal operations to keep SW active
+    console.log('Keep-alive tick');
+  }, 25000);
+}
 
 // Install event
 self.addEventListener('install', (event) => {
   console.log(`Service Worker v${CACHE_VERSION} installing...`);
   
-  // Pre-cache essential assets
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
       return cache.addAll([
@@ -35,7 +248,6 @@ self.addEventListener('install', (event) => {
         '/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png'
       ]);
     }).then(() => {
-      // Force immediate activation for updates
       return self.skipWaiting();
     })
   );
@@ -46,26 +258,27 @@ self.addEventListener('activate', (event) => {
   console.log(`Service Worker v${CACHE_VERSION} activated`);
   
   event.waitUntil(
-    // Clean up old caches
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName.startsWith('rooted-ai-v') && cacheName !== CACHE_NAME && 
-              cacheName !== STATIC_CACHE && cacheName !== API_CACHE) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
-      // Take control of all clients immediately
-      return self.clients.claim();
-    }).then(() => {
-      // Start background persistence and restore previous state
-      startBackgroundPersistence();
-      restoreJokeState();
-      
-      // Notify all clients about the update
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName.startsWith('rooted-ai-v') && 
+                cacheName !== CACHE_NAME && 
+                cacheName !== STATIC_CACHE && 
+                cacheName !== API_CACHE) {
+              console.log('Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Take control of clients
+      self.clients.claim(),
+      // Initialize persistent storage and state
+      initializeServiceWorker()
+    ]).then(() => {
+      // Notify clients about update
       return self.clients.matchAll().then((clients) => {
         clients.forEach((client) => {
           client.postMessage({
@@ -74,151 +287,96 @@ self.addEventListener('activate', (event) => {
           });
         });
       });
+    }).then(() => {
+      // Register background sync
+      try {
+        return self.registration.sync.register('ai-joke-sync');
+      } catch (error) {
+        console.log('Background sync not available:', error);
+      }
+    }).then(() => {
+      // Register periodic background sync
+      try {
+        if ('periodicSync' in self.registration) {
+          return self.registration.periodicSync.register('ai-joke-periodic', {
+            minInterval: 60 * 60 * 1000 // 1 hour
+          });
+        }
+      } catch (error) {
+        console.log('Periodic background sync not available:', error);
+      }
     })
   );
 });
 
-// Background sync for reliable operation
+// Background sync event
 self.addEventListener('sync', (event) => {
   console.log('Background sync triggered:', event.tag);
   
   if (event.tag === 'ai-joke-sync') {
-    event.waitUntil(
-      checkAndSendScheduledJokes()
-    );
-  } else if (event.tag === 'app-refresh-sync') {
-    event.waitUntil(
-      performBackgroundAppRefresh()
-    );
+    event.waitUntil(checkForPendingNotifications());
   }
 });
 
-// Periodic background sync (where supported)
+// Periodic background sync
 self.addEventListener('periodicsync', (event) => {
   console.log('Periodic sync triggered:', event.tag);
   
   if (event.tag === 'ai-joke-periodic') {
-    event.waitUntil(
-      checkAndSendScheduledJokes()
-    );
-  } else if (event.tag === 'app-refresh-periodic') {
-    event.waitUntil(
-      performBackgroundAppRefresh()
-    );
+    event.waitUntil(checkForPendingNotifications());
   }
 });
 
-// Keep service worker alive and handle background operations
-function startBackgroundPersistence() {
-  console.log('Starting background persistence and app refresh mechanisms');
-  
-  // Keep alive with periodic tasks
-  if (keepAliveInterval) {
-    clearInterval(keepAliveInterval);
-  }
-  
-  // Heartbeat every 30 seconds to keep SW active
-  keepAliveInterval = setInterval(() => {
-    console.log('SW heartbeat:', new Date().toISOString());
-    
-    // Check if we need to send any missed jokes
-    if (currentFrequency && jokeInterval) {
-      checkAndSendScheduledJokes();
-    }
-    
-    // Background app refresh - check for updates
-    checkForAppUpdates();
-  }, 30000);
-  
-  // Register background sync if available (enabled by default)
-  if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-    self.registration.sync.register('ai-joke-sync').catch(err => {
-      console.log('Background sync registration failed:', err);
-    });
-    
-    // Register background app refresh sync
-    self.registration.sync.register('app-refresh-sync').catch(err => {
-      console.log('App refresh sync registration failed:', err);
-    });
-  }
-  
-  // Register periodic background sync if available (enabled by default where supported)
-  if ('serviceWorker' in navigator && 'periodicSync' in window.ServiceWorkerRegistration.prototype) {
-    // AI jokes periodic sync
-    self.registration.periodicSync.register('ai-joke-periodic', {
-      minInterval: 60 * 60 * 1000 // 1 hour
-    }).catch(err => {
-      console.log('Periodic background sync registration failed:', err);
-    });
-    
-    // App refresh periodic sync - more frequent for better UX
-    self.registration.periodicSync.register('app-refresh-periodic', {
-      minInterval: 15 * 60 * 1000 // 15 minutes (minimum allowed by most browsers)
-    }).catch(err => {
-      console.log('App refresh periodic sync registration failed:', err);
-    });
-  }
-}
-
-// Restore joke state from previous session
-async function restoreJokeState() {
-  try {
-    // Check if jokes were enabled in a previous session
-    const clients = await self.clients.matchAll();
-    if (clients.length === 0) {
-      // No active clients, check if we should restore from stored state
-      console.log('No active clients, service worker running in background');
-    }
-  } catch (error) {
-    console.log('Error restoring joke state:', error);
-  }
-}
-
-// Check for missed jokes and send if necessary
-async function checkAndSendScheduledJokes() {
-  if (!currentFrequency || !lastJokeTime) {
-    return;
-  }
-  
-  const now = Date.now();
-  const intervalMs = calculateIntervalMs(currentFrequency);
-  const timeSinceLastJoke = now - lastJokeTime;
-  
-  // If enough time has passed, send a joke
-  if (timeSinceLastJoke >= intervalMs) {
-    console.log('Sending scheduled joke from background sync');
-    sendJokeNotification();
-  }
-}
-
-// Listen for messages from main thread
-self.addEventListener('message', (event) => {
+// Message handling from main thread
+self.addEventListener('message', async (event) => {
   const { type, enabled, frequency } = event.data;
   
-  if (type === 'AI_JOKE_TOGGLE') {
-    if (enabled && frequency) {
-      currentFrequency = frequency;
-      startJokeNotifications(frequency);
-    } else {
-      stopJokeNotifications();
+  try {
+    switch (type) {
+      case 'AI_JOKE_TOGGLE':
+        notificationState.enabled = enabled;
+        if (enabled && frequency) {
+          notificationState.frequency = frequency;
+          await scheduleNextNotification();
+          console.log('AI jokes enabled with frequency:', frequency);
+        } else {
+          notificationState.nextNotificationTime = null;
+          console.log('AI jokes disabled');
+        }
+        await saveNotificationState();
+        break;
+        
+      case 'SEND_JOKE_NOW':
+        await sendJokeNotification();
+        break;
+        
+      case 'UPDATE_FREQUENCY':
+        if (frequency) {
+          notificationState.frequency = frequency;
+          if (notificationState.enabled) {
+            await scheduleNextNotification();
+          }
+          await saveNotificationState();
+          console.log('Frequency updated:', frequency);
+        }
+        break;
+        
+      case 'CHECK_FOR_UPDATES':
+        event.ports[0].postMessage({
+          type: 'VERSION_INFO',
+          version: CACHE_VERSION
+        });
+        break;
+        
+      case 'GET_NOTIFICATION_STATUS':
+        event.ports[0].postMessage({
+          type: 'NOTIFICATION_STATUS',
+          state: notificationState
+        });
+        break;
     }
-  } else if (type === 'SEND_JOKE_NOW') {
-    sendJokeNotification();
-  } else if (type === 'CHECK_FOR_UPDATES') {
-    // Force update check by sending version info back
-    event.ports[0].postMessage({
-      type: 'VERSION_INFO',
-      version: CACHE_VERSION
-    });
-  } else if (type === 'UPDATE_FREQUENCY') {
-    if (frequency) {
-      currentFrequency = frequency;
-      // Restart with new frequency if currently running
-      if (jokeInterval) {
-        stopJokeNotifications();
-        startJokeNotifications(frequency);
-      }
-    }
+  } catch (error) {
+    console.error('Error handling message:', error);
   }
 });
 
@@ -226,174 +384,33 @@ self.addEventListener('message', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   
-  // Focus or open the app window
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then((clients) => {
-      // If a window is already open, focus it
       for (const client of clients) {
         if (client.url.includes(self.location.origin)) {
           return client.focus();
         }
       }
-      // Otherwise, open a new window
       return self.clients.openWindow('/');
     })
   );
 });
 
-function startJokeNotifications(frequency) {
-  console.log('Starting AI joke notifications with frequency:', frequency);
-  stopJokeNotifications(); // Clear any existing interval
-  
-  const intervalMs = calculateIntervalMs(frequency);
-  
-  if (frequency.type === 'specific_days') {
-    // Use a shorter interval and check if today is a selected day
-    jokeInterval = setInterval(() => {
-      if (shouldSendJokeToday(frequency.days)) {
-        sendJokeNotification();
-      }
-    }, intervalMs);
-  } else {
-    jokeInterval = setInterval(() => {
-      sendJokeNotification();
-    }, intervalMs);
-  }
-}
-
-function calculateIntervalMs(frequency) {
-  const { type, value, days } = frequency;
-  
-  switch (type) {
-    case 'minutes':
-      return value * 60 * 1000;
-    case 'hours':
-      return value * 60 * 60 * 1000;
-    case 'days':
-      return value * 24 * 60 * 60 * 1000;
-    case 'weeks':
-      return value * 7 * 24 * 60 * 60 * 1000;
-    case 'months':
-      return value * 30 * 24 * 60 * 60 * 1000; // Approximate
-    case 'years':
-      return value * 365 * 24 * 60 * 60 * 1000; // Approximate
-    case 'specific_days':
-      // Check every hour if it's time to send
-      return 60 * 60 * 1000;
-    default:
-      return 5 * 60 * 1000; // Default 5 minutes
-  }
-}
-
-function shouldSendJokeToday(selectedDays) {
-  const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, etc.
-  return selectedDays.includes(today);
-}
-
-function stopJokeNotifications() {
-  if (jokeInterval) {
-    clearInterval(jokeInterval);
-    jokeInterval = null;
-    console.log('Stopped AI joke notifications');
-  }
-}
-
-function sendJokeNotification() {
-  const joke = AI_JOKES[jokeIndex];
-  jokeIndex = (jokeIndex + 1) % AI_JOKES.length;
-  lastJokeTime = Date.now(); // Track when joke was sent
-  
-  const notificationOptions = {
-    body: joke,
-    icon: '/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png',
-    badge: '/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png',
-    tag: 'ai-joke',
-    requireInteraction: false,
-    silent: false,
-    renotify: true, // Allow multiple notifications with same tag
-    data: {
-      timestamp: lastJokeTime,
-      joke: joke
-    }
-  };
-  
-  self.registration.showNotification('🤖 AI Joke Time!', notificationOptions);
-  console.log('Sent joke notification:', joke, 'at', new Date(lastJokeTime).toISOString());
-  
-  // Trigger background sync to ensure reliability
-  if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
-    self.registration.sync.register('ai-joke-sync').catch(err => {
-      console.log('Background sync registration failed after joke:', err);
-    });
-  }
-}
-
-// Background app refresh functionality
-async function checkForAppUpdates() {
-  try {
-    // Check for new service worker version
-    const registration = await self.registration.update();
-    if (registration && registration.waiting) {
-      console.log('New service worker version detected during background check');
-      
-      // Notify clients about available update
-      const clients = await self.clients.matchAll();
-      clients.forEach(client => {
-        client.postMessage({
-          type: 'UPDATE_AVAILABLE',
-          version: CACHE_VERSION
-        });
-      });
-    }
-  } catch (error) {
-    console.log('Background app update check failed:', error);
-  }
-}
-
-async function performBackgroundAppRefresh() {
-  console.log('Performing background app refresh');
-  
-  try {
-    // Check for updates
-    await checkForAppUpdates();
-    
-    // Refresh critical cache entries
-    const cache = await caches.open(STATIC_CACHE);
-    const criticalResources = [
-      '/',
-      '/manifest.json'
-    ];
-    
-    // Update cache for critical resources
-    await Promise.all(
-      criticalResources.map(async (resource) => {
-        try {
-          const response = await fetch(resource, { 
-            cache: 'no-cache',
-            headers: {
-              'Cache-Control': 'no-cache'
-            }
+// Fetch event for caching
+self.addEventListener('fetch', (event) => {
+  // Basic caching strategy for static assets
+  if (event.request.destination === 'image' || 
+      event.request.url.includes('/lovable-uploads/')) {
+    event.respondWith(
+      caches.match(event.request).then((response) => {
+        return response || fetch(event.request).then((fetchResponse) => {
+          const responseClone = fetchResponse.clone();
+          caches.open(STATIC_CACHE).then((cache) => {
+            cache.put(event.request, responseClone);
           });
-          if (response.ok) {
-            await cache.put(resource, response.clone());
-            console.log('Background refresh updated:', resource);
-          }
-        } catch (err) {
-          console.log('Failed to refresh resource in background:', resource, err);
-        }
+          return fetchResponse;
+        });
       })
     );
-    
-    // Notify clients about successful background refresh
-    const clients = await self.clients.matchAll();
-    clients.forEach(client => {
-      client.postMessage({
-        type: 'BACKGROUND_REFRESH_COMPLETE',
-        timestamp: Date.now()
-      });
-    });
-    
-  } catch (error) {
-    console.log('Background app refresh failed:', error);
   }
-}
+});

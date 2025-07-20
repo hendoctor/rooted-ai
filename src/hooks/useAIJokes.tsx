@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 export interface JokeFrequency {
@@ -13,14 +14,19 @@ export const useAIJokes = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [frequency, setFrequency] = useState<JokeFrequency>({ type: 'minutes', value: 5 });
+  const [notificationStatus, setNotificationStatus] = useState<any>(null);
 
   // Check initial state on mount
   useEffect(() => {
+    initializeNotifications();
+  }, []);
+
+  const initializeNotifications = async () => {
+    // Load saved preferences
     const savedPreference = localStorage.getItem('ai-jokes-enabled');
     const enabled = savedPreference === 'true';
     setIsEnabled(enabled);
 
-    // Load saved frequency
     const savedFrequency = localStorage.getItem('ai-jokes-frequency');
     if (savedFrequency) {
       try {
@@ -37,8 +43,8 @@ export const useAIJokes = () => {
     }
 
     // Register service worker
-    registerServiceWorker();
-  }, []);
+    await registerServiceWorker();
+  };
 
   const registerServiceWorker = async () => {
     if ('serviceWorker' in navigator) {
@@ -47,7 +53,16 @@ export const useAIJokes = () => {
         setServiceWorkerRegistration(registration);
         console.log('Service Worker registered successfully');
         
-        // If jokes were enabled, restart them
+        // Listen for service worker messages
+        navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+        
+        // Wait for service worker to be ready
+        await navigator.serviceWorker.ready;
+        
+        // Get current notification status from service worker
+        await getNotificationStatus();
+        
+        // If jokes were enabled, sync with service worker
         const savedPreference = localStorage.getItem('ai-jokes-enabled');
         if (savedPreference === 'true' && Notification.permission === 'granted') {
           const savedFrequency = localStorage.getItem('ai-jokes-frequency');
@@ -55,10 +70,13 @@ export const useAIJokes = () => {
           if (savedFrequency) {
             try {
               freq = JSON.parse(savedFrequency);
+              setFrequency(freq);
             } catch (error) {
               console.error('Error parsing saved frequency:', error);
             }
           }
+          
+          // Sync with service worker
           registration.active?.postMessage({ 
             type: 'AI_JOKE_TOGGLE', 
             enabled: true, 
@@ -67,9 +85,53 @@ export const useAIJokes = () => {
         }
       } catch (error) {
         console.error('Service Worker registration failed:', error);
+        toast({
+          title: "Service Worker Error",
+          description: "Failed to register service worker for notifications.",
+          variant: "destructive"
+        });
       }
     }
   };
+
+  const handleServiceWorkerMessage = (event: MessageEvent) => {
+    const { type, version, state } = event.data;
+    
+    switch (type) {
+      case 'SW_UPDATED':
+        console.log(`Service Worker updated to version ${version}`);
+        break;
+      case 'NOTIFICATION_STATUS':
+        setNotificationStatus(state);
+        break;
+    }
+  };
+
+  const getNotificationStatus = useCallback(async () => {
+    if (!serviceWorkerRegistration?.active) return;
+    
+    const messageChannel = new MessageChannel();
+    
+    messageChannel.port1.onmessage = (event) => {
+      const { type, state } = event.data;
+      if (type === 'NOTIFICATION_STATUS') {
+        setNotificationStatus(state);
+        
+        // Sync local state with service worker state
+        if (state.enabled !== isEnabled) {
+          setIsEnabled(state.enabled);
+        }
+        if (state.frequency && JSON.stringify(state.frequency) !== JSON.stringify(frequency)) {
+          setFrequency(state.frequency);
+        }
+      }
+    };
+    
+    serviceWorkerRegistration.active.postMessage(
+      { type: 'GET_NOTIFICATION_STATUS' },
+      [messageChannel.port2]
+    );
+  }, [serviceWorkerRegistration, isEnabled, frequency]);
 
   const requestNotificationPermission = async (): Promise<boolean> => {
     if (!('Notification' in window)) {
@@ -91,6 +153,11 @@ export const useAIJokes = () => {
           title: "Permission Denied",
           description: "Please enable notifications in your browser settings to receive AI jokes.",
           variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Notifications Enabled",
+          description: "You can now receive AI joke notifications even when the app is closed!",
         });
       }
       
@@ -122,7 +189,7 @@ export const useAIJokes = () => {
           
           toast({
             title: "🤖 AI Jokes Activated!",
-            description: "You'll receive a funny AI joke every 5 minutes!",
+            description: `You'll receive jokes ${getFrequencyDescription(frequency).toLowerCase()}. They'll work even when the app is closed!`,
           });
         }
       } else {
@@ -205,14 +272,24 @@ export const useAIJokes = () => {
     }
   };
 
+  // Periodic status check
+  useEffect(() => {
+    if (serviceWorkerRegistration) {
+      const interval = setInterval(getNotificationStatus, 60000); // Check every minute
+      return () => clearInterval(interval);
+    }
+  }, [serviceWorkerRegistration, getNotificationStatus]);
+
   return {
     isEnabled,
     hasPermission,
     isLoading,
     frequency,
+    notificationStatus,
     toggleJokes,
     sendTestJoke,
     updateFrequency,
-    getFrequencyDescription
+    getFrequencyDescription,
+    getNotificationStatus
   };
 };
