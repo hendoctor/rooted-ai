@@ -48,7 +48,7 @@ export function usePushNotifications(): PushNotificationsHook {
   useEffect(() => {
     checkNotificationPermission();
     loadUserSettings();
-  }, []);
+  }, [checkNotificationPermission, loadUserSettings]);
 
   const checkNotificationPermission = useCallback(() => {
     if ('Notification' in window) {
@@ -86,7 +86,7 @@ export function usePushNotifications(): PushNotificationsHook {
     } catch (error) {
       console.error('Error loading user settings:', error);
     }
-  }, []);
+  }, [checkSubscriptionStatus]);
 
   const checkSubscriptionStatus = useCallback(async () => {
     try {
@@ -229,16 +229,17 @@ export function usePushNotifications(): PushNotificationsHook {
         return new Date(now.getTime() + freq.value * 60 * 60 * 1000);
       case 'days':
         return new Date(now.getTime() + freq.value * 24 * 60 * 60 * 1000);
-      case 'specific_days':
+      case 'specific_days': {
         if (!freq.days || freq.days.length === 0) {
           return new Date(now.getTime() + 24 * 60 * 60 * 1000);
         }
-        
+
         const currentDay = now.getDay();
         const nextDay = freq.days.find(day => day > currentDay) ?? freq.days[0];
         const daysUntilNext = nextDay > currentDay ? nextDay - currentDay : 7 - currentDay + nextDay;
-        
+
         return new Date(now.getTime() + daysUntilNext * 24 * 60 * 60 * 1000);
+      }
       default:
         return new Date(now.getTime() + 5 * 60 * 1000);
     }

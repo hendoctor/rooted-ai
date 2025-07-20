@@ -5,12 +5,31 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 
+interface DebugInfo {
+  timestamp: string;
+  browser: string;
+  notifications: Record<string, unknown>;
+  serviceWorker: Record<string, unknown>;
+  permissions: Record<string, unknown>;
+  user: Record<string, unknown>;
+  database: Record<string, unknown>;
+  error?: string;
+}
+
 export const NotificationDebugger: React.FC = () => {
-  const [debugInfo, setDebugInfo] = useState<any>({});
+  const [debugInfo, setDebugInfo] = useState<DebugInfo>({
+    timestamp: '',
+    browser: '',
+    notifications: {},
+    serviceWorker: {},
+    permissions: {},
+    user: {},
+    database: {}
+  });
   const { toast } = useToast();
 
   const runDebugCheck = async () => {
-    const info: any = {
+    const info: DebugInfo = {
       timestamp: new Date().toISOString(),
       browser: navigator.userAgent,
       notifications: {},
