@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface JokeFrequency {
   type: 'minutes' | 'hours' | 'days' | 'specific_days';
-  value: number;
+  value?: number;
   days?: number[];
 }
 
