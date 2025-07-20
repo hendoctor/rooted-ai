@@ -19,9 +19,23 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
   const animate = () => {
     if (Math.abs(velocityRef.current) < 0.1) {
       setIsAnimating(false);
-      // Snap to nearest 180 degree increment
-      const nearestFlip = Math.round(rotation / 180) * 180;
-      setRotation(nearestFlip);
+      // Snap to nearest 180 degree increment (closest side)
+      const normalizedRotation = rotation % 360;
+      const adjustedRotation = normalizedRotation < 0 ? normalizedRotation + 360 : normalizedRotation;
+      
+      // Find closest snap point (0 or 180 degrees within current 360 cycle)
+      const snapPoints = [0, 180];
+      const closestSnap = snapPoints.reduce((prev, curr) => {
+        const prevDiff = Math.min(Math.abs(adjustedRotation - prev), Math.abs(adjustedRotation - (prev + 360)));
+        const currDiff = Math.min(Math.abs(adjustedRotation - curr), Math.abs(adjustedRotation - (curr + 360)));
+        return currDiff < prevDiff ? curr : prev;
+      });
+      
+      // Calculate final rotation maintaining the current cycle
+      const currentCycle = Math.floor(rotation / 360);
+      const finalRotation = currentCycle * 360 + closestSnap;
+      
+      setRotation(finalRotation);
       return;
     }
 
