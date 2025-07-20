@@ -35,7 +35,7 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
   const handleMouseEnter = () => {
     if (!isAnimating) {
       setIsAnimating(true);
-      velocityRef.current = 20;
+      velocityRef.current = 12; // Reduced from 20 to slow down spinning
       animationRef.current = requestAnimationFrame(animate);
     }
   };
@@ -118,11 +118,11 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
             transform: 'rotateY(180deg)'
           }}
         >
-          <div className="w-24 h-24 rounded-full bg-white border-4 border-sage/30 flex items-center justify-center p-3">
+          <div className="w-24 h-24 rounded-full bg-white border-4 border-sage/30 flex items-center justify-center p-1">
             <img
               src={logoUrl}
               alt="RootedAI Logo"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover rounded-full"
             />
           </div>
         </div>
