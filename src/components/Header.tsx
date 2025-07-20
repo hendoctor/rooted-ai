@@ -120,7 +120,7 @@ const Header = () => {
                 size="icon"
                 aria-label="Install app"
                 onClick={() => setShowInstallDialog(true)}
-                className="text-slate-gray dark:text-cream hover:text-forest-green"
+                className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80"
               >
                 <Download className="w-5 h-5" />
               </Button>
@@ -136,14 +136,14 @@ const Header = () => {
                 size="icon"
                 aria-label="Install app"
                 onClick={() => setShowInstallDialog(true)}
-                className="text-slate-gray dark:text-cream hover:text-forest-green"
+                className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80"
               >
                 <Download className="w-5 h-5" />
               </Button>
             )}
             <ThemeToggle />
             <button
-              className="p-2 text-slate-gray dark:text-cream hover:text-forest-green transition-colors"
+              className="p-2 text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
