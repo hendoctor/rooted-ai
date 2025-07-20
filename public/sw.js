@@ -1,5 +1,5 @@
-// Service Worker for AI Joke Notifications - Version Management
-const CACHE_VERSION = '1.1.0';
+// Service Worker for AI Joke Notifications - Background Operation Enhanced
+const CACHE_VERSION = '1.2.0';
 const CACHE_NAME = `rooted-ai-v${CACHE_VERSION}`;
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const API_CACHE = `${CACHE_NAME}-api`;
@@ -19,6 +19,8 @@ const AI_JOKES = [
 let jokeInterval = null;
 let jokeIndex = 0;
 let currentFrequency = null;
+let keepAliveInterval = null;
+let lastJokeTime = null;
 
 // Install event
 self.addEventListener('install', (event) => {
@@ -59,6 +61,10 @@ self.addEventListener('activate', (event) => {
       // Take control of all clients immediately
       return self.clients.claim();
     }).then(() => {
+      // Start background persistence and restore previous state
+      startBackgroundPersistence();
+      restoreJokeState();
+      
       // Notify all clients about the update
       return self.clients.matchAll().then((clients) => {
         clients.forEach((client) => {
@@ -71,6 +77,95 @@ self.addEventListener('activate', (event) => {
     })
   );
 });
+
+// Background sync for reliable operation
+self.addEventListener('sync', (event) => {
+  console.log('Background sync triggered:', event.tag);
+  
+  if (event.tag === 'ai-joke-sync') {
+    event.waitUntil(
+      checkAndSendScheduledJokes()
+    );
+  }
+});
+
+// Periodic background sync (where supported)
+self.addEventListener('periodicsync', (event) => {
+  console.log('Periodic sync triggered:', event.tag);
+  
+  if (event.tag === 'ai-joke-periodic') {
+    event.waitUntil(
+      checkAndSendScheduledJokes()
+    );
+  }
+});
+
+// Keep service worker alive and handle background operations
+function startBackgroundPersistence() {
+  console.log('Starting background persistence mechanisms');
+  
+  // Keep alive with periodic tasks
+  if (keepAliveInterval) {
+    clearInterval(keepAliveInterval);
+  }
+  
+  // Heartbeat every 30 seconds to keep SW active
+  keepAliveInterval = setInterval(() => {
+    console.log('SW heartbeat:', new Date().toISOString());
+    
+    // Check if we need to send any missed jokes
+    if (currentFrequency && jokeInterval) {
+      checkAndSendScheduledJokes();
+    }
+  }, 30000);
+  
+  // Register background sync if available
+  if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+    self.registration.sync.register('ai-joke-sync').catch(err => {
+      console.log('Background sync registration failed:', err);
+    });
+  }
+  
+  // Register periodic background sync if available
+  if ('serviceWorker' in navigator && 'periodicSync' in window.ServiceWorkerRegistration.prototype) {
+    self.registration.periodicSync.register('ai-joke-periodic', {
+      minInterval: 60 * 60 * 1000 // 1 hour
+    }).catch(err => {
+      console.log('Periodic background sync registration failed:', err);
+    });
+  }
+}
+
+// Restore joke state from previous session
+async function restoreJokeState() {
+  try {
+    // Check if jokes were enabled in a previous session
+    const clients = await self.clients.matchAll();
+    if (clients.length === 0) {
+      // No active clients, check if we should restore from stored state
+      console.log('No active clients, service worker running in background');
+    }
+  } catch (error) {
+    console.log('Error restoring joke state:', error);
+  }
+}
+
+// Check for missed jokes and send if necessary
+async function checkAndSendScheduledJokes() {
+  if (!currentFrequency || !lastJokeTime) {
+    return;
+  }
+  
+  const now = Date.now();
+  const intervalMs = calculateIntervalMs(currentFrequency);
+  const timeSinceLastJoke = now - lastJokeTime;
+  
+  // If enough time has passed, send a joke
+  if (timeSinceLastJoke >= intervalMs) {
+    console.log('Sending scheduled joke from background sync');
+    sendJokeNotification();
+  }
+}
 
 // Listen for messages from main thread
 self.addEventListener('message', (event) => {
@@ -182,6 +277,7 @@ function stopJokeNotifications() {
 function sendJokeNotification() {
   const joke = AI_JOKES[jokeIndex];
   jokeIndex = (jokeIndex + 1) % AI_JOKES.length;
+  lastJokeTime = Date.now(); // Track when joke was sent
   
   const notificationOptions = {
     body: joke,
@@ -190,12 +286,20 @@ function sendJokeNotification() {
     tag: 'ai-joke',
     requireInteraction: false,
     silent: false,
+    renotify: true, // Allow multiple notifications with same tag
     data: {
-      timestamp: Date.now(),
+      timestamp: lastJokeTime,
       joke: joke
     }
   };
   
   self.registration.showNotification('🤖 AI Joke Time!', notificationOptions);
-  console.log('Sent joke notification:', joke);
+  console.log('Sent joke notification:', joke, 'at', new Date(lastJokeTime).toISOString());
+  
+  // Trigger background sync to ensure reliability
+  if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+    self.registration.sync.register('ai-joke-sync').catch(err => {
+      console.log('Background sync registration failed after joke:', err);
+    });
+  }
 }
