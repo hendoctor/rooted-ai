@@ -1,8 +1,13 @@
 
 import React from 'react';
+import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAIJokes } from '@/hooks/useAIJokes';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { isEnabled, hasPermission, isLoading, toggleJokes, sendTestJoke } = useAIJokes();
 
   return (
     <footer className="bg-slate-gray dark:bg-slate-900 text-cream py-12">
@@ -25,6 +30,50 @@ const Footer = () => {
             <p className="text-lg font-semibold text-sage">
               Grow Smarter. Stay Rooted.
             </p>
+          </div>
+
+          {/* AI Joke Notifications Section */}
+          <div>
+            <Card className="bg-slate-800/50 border-sage/20">
+              <CardHeader>
+                <CardTitle className="text-cream flex items-center gap-2">
+                  🤖 AI Joke Machine
+                </CardTitle>
+                <CardDescription className="text-sage">
+                  Enable this to get a funny AI joke every 5 minutes!
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Switch
+                      checked={isEnabled}
+                      onCheckedChange={toggleJokes}
+                      disabled={isLoading}
+                      className="data-[state=checked]:bg-primary"
+                    />
+                    <span className="text-cream font-medium">
+                      {isEnabled ? "AI Jokes Enabled" : "Enable AI Jokes"}
+                    </span>
+                  </div>
+                  {hasPermission && (
+                    <Button
+                      onClick={sendTestJoke}
+                      variant="outline"
+                      size="sm"
+                      className="text-sage border-sage/30 hover:bg-sage/10"
+                    >
+                      Send Joke Now
+                    </Button>
+                  )}
+                </div>
+                {isEnabled && (
+                  <p className="text-sm text-sage bg-emerald-900/20 p-2 rounded border border-emerald-500/20">
+                    ✅ AI Joke notifications are active! You'll receive a new joke every 5 minutes.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
 
