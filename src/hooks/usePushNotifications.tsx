@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
+import { useAuthFix } from './useAuthFix';
 
 export interface JokeFrequency {
   type: 'minutes' | 'hours' | 'days' | 'specific_days';
@@ -33,6 +34,9 @@ export function usePushNotifications(): PushNotificationsHook {
     value: 5,
   });
   const { toast } = useToast();
+  
+  // Ensure user profile exists
+  useAuthFix();
 
   // Check notification permission on mount
   useEffect(() => {

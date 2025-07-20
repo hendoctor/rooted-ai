@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { JokeFrequency } from '@/hooks/useAIJokes';
+import { JokeFrequency } from '@/hooks/usePushNotifications';
 
 interface FrequencySelectorProps {
   frequency: JokeFrequency;
@@ -66,9 +66,6 @@ const FrequencySelector: React.FC<FrequencySelectorProps> = ({
               <SelectItem value="minutes">Minutes</SelectItem>
               <SelectItem value="hours">Hours</SelectItem>
               <SelectItem value="days">Days</SelectItem>
-              <SelectItem value="weeks">Weeks</SelectItem>
-              <SelectItem value="months">Months</SelectItem>
-              <SelectItem value="years">Years</SelectItem>
               <SelectItem value="specific_days">Specific Days</SelectItem>
             </SelectContent>
           </Select>

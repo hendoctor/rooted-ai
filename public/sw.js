@@ -461,7 +461,7 @@ self.addEventListener('pushsubscriptionchange', function(event) {
     // Re-subscribe and update the server
     self.registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: 'BJ8VdLF5YpH8S-PQ5J8rCrXDWOQHkF7Z3GpE_8DsHlY1P-xN7M6LgR9W2KfYn3ZwEqH4T5U6V7W8X9Y0'
+      applicationServerKey: 'BBJeaLq3cweiE_oIJB4EuAIv5Ivua5xmh8IZI68nfmohnsbqtQq6l9_ARSQmDHDNrxUiZRK5UiXW74QuGhSpcKqY'
     }).then(function(subscription) {
       // Send updated subscription to server
       return fetch('/api/update-subscription', {
