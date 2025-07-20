@@ -86,6 +86,10 @@ self.addEventListener('sync', (event) => {
     event.waitUntil(
       checkAndSendScheduledJokes()
     );
+  } else if (event.tag === 'app-refresh-sync') {
+    event.waitUntil(
+      performBackgroundAppRefresh()
+    );
   }
 });
 
@@ -97,12 +101,16 @@ self.addEventListener('periodicsync', (event) => {
     event.waitUntil(
       checkAndSendScheduledJokes()
     );
+  } else if (event.tag === 'app-refresh-periodic') {
+    event.waitUntil(
+      performBackgroundAppRefresh()
+    );
   }
 });
 
 // Keep service worker alive and handle background operations
 function startBackgroundPersistence() {
-  console.log('Starting background persistence mechanisms');
+  console.log('Starting background persistence and app refresh mechanisms');
   
   // Keep alive with periodic tasks
   if (keepAliveInterval) {
@@ -117,21 +125,37 @@ function startBackgroundPersistence() {
     if (currentFrequency && jokeInterval) {
       checkAndSendScheduledJokes();
     }
+    
+    // Background app refresh - check for updates
+    checkForAppUpdates();
   }, 30000);
   
-  // Register background sync if available
+  // Register background sync if available (enabled by default)
   if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
     self.registration.sync.register('ai-joke-sync').catch(err => {
       console.log('Background sync registration failed:', err);
     });
+    
+    // Register background app refresh sync
+    self.registration.sync.register('app-refresh-sync').catch(err => {
+      console.log('App refresh sync registration failed:', err);
+    });
   }
   
-  // Register periodic background sync if available
+  // Register periodic background sync if available (enabled by default where supported)
   if ('serviceWorker' in navigator && 'periodicSync' in window.ServiceWorkerRegistration.prototype) {
+    // AI jokes periodic sync
     self.registration.periodicSync.register('ai-joke-periodic', {
       minInterval: 60 * 60 * 1000 // 1 hour
     }).catch(err => {
       console.log('Periodic background sync registration failed:', err);
+    });
+    
+    // App refresh periodic sync - more frequent for better UX
+    self.registration.periodicSync.register('app-refresh-periodic', {
+      minInterval: 15 * 60 * 1000 // 15 minutes (minimum allowed by most browsers)
+    }).catch(err => {
+      console.log('App refresh periodic sync registration failed:', err);
     });
   }
 }
@@ -301,5 +325,75 @@ function sendJokeNotification() {
     self.registration.sync.register('ai-joke-sync').catch(err => {
       console.log('Background sync registration failed after joke:', err);
     });
+  }
+}
+
+// Background app refresh functionality
+async function checkForAppUpdates() {
+  try {
+    // Check for new service worker version
+    const registration = await self.registration.update();
+    if (registration && registration.waiting) {
+      console.log('New service worker version detected during background check');
+      
+      // Notify clients about available update
+      const clients = await self.clients.matchAll();
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'UPDATE_AVAILABLE',
+          version: CACHE_VERSION
+        });
+      });
+    }
+  } catch (error) {
+    console.log('Background app update check failed:', error);
+  }
+}
+
+async function performBackgroundAppRefresh() {
+  console.log('Performing background app refresh');
+  
+  try {
+    // Check for updates
+    await checkForAppUpdates();
+    
+    // Refresh critical cache entries
+    const cache = await caches.open(STATIC_CACHE);
+    const criticalResources = [
+      '/',
+      '/manifest.json'
+    ];
+    
+    // Update cache for critical resources
+    await Promise.all(
+      criticalResources.map(async (resource) => {
+        try {
+          const response = await fetch(resource, { 
+            cache: 'no-cache',
+            headers: {
+              'Cache-Control': 'no-cache'
+            }
+          });
+          if (response.ok) {
+            await cache.put(resource, response.clone());
+            console.log('Background refresh updated:', resource);
+          }
+        } catch (err) {
+          console.log('Failed to refresh resource in background:', resource, err);
+        }
+      })
+    );
+    
+    // Notify clients about successful background refresh
+    const clients = await self.clients.matchAll();
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'BACKGROUND_REFRESH_COMPLETE',
+        timestamp: Date.now()
+      });
+    });
+    
+  } catch (error) {
+    console.log('Background app refresh failed:', error);
   }
 }
