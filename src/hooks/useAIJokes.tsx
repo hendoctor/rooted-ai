@@ -29,7 +29,9 @@ export const useAIJokes = () => {
   const registerServiceWorker = async () => {
     if ('serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js');
+        const registration = await navigator.serviceWorker.register(
+          new URL('sw.js', import.meta.env.BASE_URL)
+        );
         setServiceWorkerRegistration(registration);
         console.log('Service Worker registered successfully');
         

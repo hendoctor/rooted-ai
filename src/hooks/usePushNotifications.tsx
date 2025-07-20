@@ -246,6 +246,7 @@ export function usePushNotifications(): PushNotificationsHook {
 
   const enableNotifications = useCallback(async () => {
     setIsLoading(true);
+    let step = 'permission';
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -258,16 +259,23 @@ export function usePushNotifications(): PushNotificationsHook {
       }
 
       const hasPermission = await requestNotificationPermission();
-      if (!hasPermission) return;
+      if (!hasPermission) {
+        throw new Error('Notification permission denied');
+      }
 
+      step = 'subscribe';
       const subscription = await subscribeToPush();
-      if (!subscription) return;
+      if (!subscription) {
+        throw new Error('Push subscription failed');
+      }
 
+      step = 'saveSubscription';
       await saveSubscription(subscription);
 
+      step = 'database';
       // Save user settings
       const nextNotification = calculateNextNotification(frequency);
-      
+
       const { error: settingsError } = await supabase
         .from('user_notification_settings')
         .upsert({
@@ -278,7 +286,7 @@ export function usePushNotifications(): PushNotificationsHook {
           frequency_days: frequency.days || null,
         });
 
-      if (settingsError) throw settingsError;
+      if (settingsError) throw new Error(settingsError.message);
 
       // Create or update notification schedule
       const { error: scheduleError } = await supabase
@@ -288,7 +296,7 @@ export function usePushNotifications(): PushNotificationsHook {
           next_notification_at: nextNotification.toISOString(),
         });
 
-      if (scheduleError) throw scheduleError;
+      if (scheduleError) throw new Error(scheduleError.message);
 
       setIsEnabled(true);
       setIsSubscribed(true);
@@ -299,10 +307,10 @@ export function usePushNotifications(): PushNotificationsHook {
       });
 
     } catch (error) {
-      console.error('Error enabling notifications:', error);
+      console.error(`Error enabling notifications during ${step}:`, error);
       toast({
         title: "Setup Failed",
-        description: "Failed to set up notifications. Please try again.",
+        description: `Failed during ${step}: ${error instanceof Error ? error.message : ''}`,
         variant: "destructive",
       });
     } finally {
