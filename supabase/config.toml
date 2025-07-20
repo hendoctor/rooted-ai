@@ -46,8 +46,8 @@ image_transformation = true
 [auth]
 enabled = true
 port = 54327
-site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["https://ylewpehqfgltbhpkaout.supabase.co"]
+site_url = "https://rootedai.tech"
+additional_redirect_urls = ["https://ylewpehqfgltbhpkaout.supabase.co", "https://rooted-ai.lovable.app", "http://127.0.0.1:3000"]
 jwt_expiry = 3600
 refresh_token_rotation_enabled = true
 anonymous_users_enabled = false
