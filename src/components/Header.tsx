@@ -1,16 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sprout, LogOut, User } from 'lucide-react';
+import { Sprout, LogOut, User, Download } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import PWAInstallDialog from './PWAInstallDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showInstallDialog, setShowInstallDialog] = useState(false);
   const { user, signOut } = useAuth();
+  const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -110,11 +114,33 @@ const Header = () => {
                 </Button>
               </div>
             )}
+            {(isInstallable || !isInstalled) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Install app"
+                onClick={() => setShowInstallDialog(true)}
+                className="text-slate-gray dark:text-cream hover:text-forest-green"
+              >
+                <Download className="w-5 h-5" />
+              </Button>
+            )}
             <ThemeToggle />
           </div>
 
           {/* Mobile actions */}
           <div className="md:hidden flex items-center space-x-2">
+            {(isInstallable || !isInstalled) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Install app"
+                onClick={() => setShowInstallDialog(true)}
+                className="text-slate-gray dark:text-cream hover:text-forest-green"
+              >
+                <Download className="w-5 h-5" />
+              </Button>
+            )}
             <ThemeToggle />
             <button
               className="p-2 text-slate-gray dark:text-cream hover:text-forest-green transition-colors"
@@ -178,6 +204,14 @@ const Header = () => {
           </div>
         )}
       </div>
+
+      {/* PWA Install Dialog */}
+      <PWAInstallDialog
+        open={showInstallDialog}
+        onOpenChange={setShowInstallDialog}
+        onInstall={installApp}
+        isInstallable={isInstallable}
+      />
     </header>
   );
 };
