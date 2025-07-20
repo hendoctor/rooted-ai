@@ -77,7 +77,7 @@ const Header = () => {
               <a
                 key={item.name}
                 href={item.href}
-                className="text-slate-gray dark:text-cream hover:text-forest-green transition-colors duration-200 font-medium"
+                className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
               >
                 {item.name}
               </a>
@@ -122,7 +122,7 @@ const Header = () => {
             ) : (
               <div className="flex items-center space-x-3">
                 <Link to="/auth">
-                  <Button variant="outline" className="border-sage hover:bg-sage/20 dark:text-cream">
+                  <Button variant="outline" className="border-sage hover:bg-sage/20 dark:text-white">
                     Sign In
                   </Button>
                 </Link>
