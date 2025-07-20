@@ -105,7 +105,7 @@ const Header = () => {
                     Sign In
                   </Button>
                 </Link>
-                <Button className="bg-forest-green hover:bg-forest-green/90 text-white px-6 py-2 rounded-lg transition-all duration-200 hover:shadow-lg">
+                <Button className="bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-6 py-2 rounded-lg transition-all duration-200 hover:shadow-lg">
                   Book a Workshop
                 </Button>
               </div>
@@ -168,7 +168,7 @@ const Header = () => {
                         Sign In
                       </Button>
                     </Link>
-                    <Button className="w-full bg-forest-green hover:bg-forest-green/90 text-white py-2 rounded-lg">
+                    <Button className="w-full bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white py-2 rounded-lg">
                       Book a Workshop
                     </Button>
                   </div>

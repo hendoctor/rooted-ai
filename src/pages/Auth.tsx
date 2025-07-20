@@ -177,7 +177,7 @@ const Auth = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-forest-green hover:bg-forest-green/90 text-white py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg"
+                className="w-full bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg"
               >
                 {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
               </Button>

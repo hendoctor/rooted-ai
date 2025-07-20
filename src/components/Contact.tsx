@@ -188,7 +188,7 @@ const Contact = () => {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-forest-green hover:bg-forest-green/90 text-white py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg disabled:opacity-50"
+                  className="w-full bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg disabled:opacity-50"
                 >
                   {loading ? 'Sending...' : 'Send Message'}
                 </Button>
@@ -243,7 +243,7 @@ const Contact = () => {
                 <p className="text-slate-gray mb-6">
                   Skip the form and schedule a free 30-minute discovery call to discuss your AI readiness.
                 </p>
-                <Button className="bg-earth-brown hover:bg-earth-brown/90 text-white px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg">
+                <Button className="bg-earth-brown dark:bg-[hsl(24_25%_38%)] hover:bg-earth-brown/90 dark:hover:bg-[hsl(24_25%_33%)] text-white px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg">
                   Schedule Discovery Call
                 </Button>
               </CardContent>

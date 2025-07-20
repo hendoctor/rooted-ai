@@ -30,10 +30,10 @@ const Hero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in-up" style={{animationDelay: '0.4s'}}>
-            <Button className="bg-forest-green hover:bg-forest-green/90 text-white px-8 py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">
+            <Button className="bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-8 py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg hover:scale-105">
               Get Started
             </Button>
-            <Button variant="outline" className="border-earth-brown text-earth-brown hover:bg-earth-brown hover:text-white px-8 py-3 text-lg rounded-lg transition-all duration-200">
+            <Button variant="outline" className="border-earth-brown text-earth-brown hover:bg-earth-brown dark:hover:bg-[hsl(24_25%_38%)] hover:text-white px-8 py-3 text-lg rounded-lg transition-all duration-200">
               Request Consultation
             </Button>
           </div>

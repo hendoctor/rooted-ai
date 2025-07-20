@@ -96,7 +96,7 @@ const Services = () => {
                 </ul>
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-semibold text-earth-brown">{service.pricing}</span>
-                  <Button variant="outline" className="border-forest-green text-forest-green hover:bg-forest-green hover:text-white transition-all duration-200">
+                  <Button variant="outline" className="border-forest-green text-forest-green hover:bg-forest-green dark:hover:bg-[hsl(139_28%_25%)] hover:text-white transition-all duration-200">
                     Learn More
                   </Button>
                 </div>
@@ -113,7 +113,7 @@ const Services = () => {
           <p className="text-lg text-slate-gray mb-6 max-w-2xl mx-auto">
             Let's discuss how AI can help your business grow smarter while staying rooted in your values.
           </p>
-          <Button className="bg-forest-green hover:bg-forest-green/90 text-white px-8 py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg">
+          <Button className="bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-8 py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg">
             Book a Workshop
           </Button>
         </div>
