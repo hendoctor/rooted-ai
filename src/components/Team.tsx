@@ -1,7 +1,144 @@
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Globe } from 'lucide-react';
+
+const ProfileImage = ({ member, index }: { member: any, index: number }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const velocityRef = useRef(0);
+  const lastTimeRef = useRef(0);
+  const animationRef = useRef<number>();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const startXRef = useRef(0);
+  const startRotationRef = useRef(0);
+
+  const logoUrl = "/lovable-uploads/ce6a66fb-80e8-4092-84eb-db436fcb1cad.png";
+
+  // Physics animation for momentum
+  const animate = () => {
+    if (Math.abs(velocityRef.current) < 0.1) {
+      setIsAnimating(false);
+      // Snap to nearest 180 degree increment
+      const nearestFlip = Math.round(rotation / 180) * 180;
+      setRotation(nearestFlip);
+      setIsFlipped(Math.abs(nearestFlip % 360) >= 90 && Math.abs(nearestFlip % 360) < 270);
+      return;
+    }
+
+    velocityRef.current *= 0.95; // Friction
+    setRotation(prev => prev + velocityRef.current);
+    setIsFlipped(Math.abs((rotation + velocityRef.current) % 360) >= 90 && Math.abs((rotation + velocityRef.current) % 360) < 270);
+    
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
+  // Mouse handlers
+  const handleMouseEnter = () => {
+    if (!isAnimating) {
+      setIsAnimating(true);
+      velocityRef.current = 20;
+      animationRef.current = requestAnimationFrame(animate);
+    }
+  };
+
+  // Touch handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startXRef.current = e.touches[0].clientX;
+    startRotationRef.current = rotation;
+    lastTimeRef.current = Date.now();
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    setIsAnimating(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const currentX = e.touches[0].clientX;
+    const deltaX = currentX - startXRef.current;
+    const newRotation = startRotationRef.current + deltaX * 2;
+    
+    const currentTime = Date.now();
+    const deltaTime = currentTime - lastTimeRef.current;
+    
+    if (deltaTime > 0) {
+      velocityRef.current = (deltaX * 2) / deltaTime * 10;
+    }
+    
+    setRotation(newRotation);
+    setIsFlipped(Math.abs(newRotation % 360) >= 90 && Math.abs(newRotation % 360) < 270);
+    lastTimeRef.current = currentTime;
+  };
+
+  const handleTouchEnd = () => {
+    setIsAnimating(true);
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div 
+      ref={containerRef}
+      className="relative perspective-1000"
+      onMouseEnter={handleMouseEnter}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{ 
+        perspective: '1000px',
+        touchAction: 'none',
+        userSelect: 'none'
+      }}
+    >
+      <div
+        className="relative transition-transform duration-200 preserve-3d cursor-pointer"
+        style={{
+          transform: `rotateY(${rotation}deg)`,
+          transformStyle: 'preserve-3d'
+        }}
+      >
+        {/* Profile Image */}
+        <div
+          className="absolute w-24 h-24 backface-hidden"
+          style={{ backfaceVisibility: 'hidden' }}
+        >
+          <img
+            src={member.image}
+            alt={member.name}
+            className="w-24 h-24 rounded-full object-cover border-4 border-sage/30"
+          />
+          <div className="absolute inset-0 w-24 h-24 rounded-full bg-forest-green/10"></div>
+        </div>
+        
+        {/* Logo Back */}
+        <div
+          className="absolute w-24 h-24 backface-hidden"
+          style={{ 
+            backfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)'
+          }}
+        >
+          <div className="w-24 h-24 rounded-full bg-white border-4 border-sage/30 flex items-center justify-center p-3">
+            <img
+              src={logoUrl}
+              alt="RootedAI Logo"
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Team = () => {
   const teamMembers = [
@@ -63,14 +200,7 @@ const Team = () => {
               <div className="p-8">
                 {/* Profile Section */}
                 <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 mb-6">
-                  <div className="relative">
-                    <img
-                      src={member.image}
-                      alt={member.name}
-                      className="w-24 h-24 rounded-full object-cover border-4 border-sage/30"
-                    />
-                    <div className="absolute inset-0 w-24 h-24 rounded-full bg-forest-green/10"></div>
-                  </div>
+                  <ProfileImage member={member} index={index} />
                   <div className="text-center sm:text-left">
                     <h3 className="text-2xl font-bold text-forest-green mb-1">{member.name}</h3>
                     <p className="text-earth-brown font-semibold mb-3">{member.role}</p>
@@ -142,3 +272,18 @@ const Team = () => {
 };
 
 export default Team;
+
+// Add CSS classes to global styles
+const styles = `
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+`;
