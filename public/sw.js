@@ -380,18 +380,97 @@ self.addEventListener('message', async (event) => {
   }
 });
 
-// Notification click event
+// Handle push events for background notifications
+self.addEventListener('push', function(event) {
+  console.log('Push event received:', event);
+  
+  let notificationData = {
+    title: '🎭 Daily Dose of Humor',
+    body: 'Your joke is ready!',
+    icon: '/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png',
+    badge: '/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png',
+    tag: 'joke-notification',
+    data: {
+      timestamp: Date.now(),
+      type: 'joke'
+    }
+  };
+
+  if (event.data) {
+    try {
+      const pushData = event.data.json();
+      notificationData = { ...notificationData, ...pushData };
+      console.log('Push notification data:', pushData);
+    } catch (e) {
+      console.error('Error parsing push data:', e);
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      tag: notificationData.tag,
+      data: notificationData.data,
+      requireInteraction: false,
+      silent: false,
+      vibrate: [200, 100, 200],
+      actions: [
+        {
+          action: 'view',
+          title: 'View App',
+          icon: '/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png'
+        }
+      ]
+    })
+  );
+});
+
+// Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
+  console.log('Notification clicked:', event.notification);
+  
   event.notification.close();
   
-  event.waitUntil(
-    self.clients.matchAll({ type: 'window' }).then((clients) => {
-      for (const client of clients) {
-        if (client.url.includes(self.location.origin)) {
-          return client.focus();
+  // Handle action buttons
+  if (event.action === 'view' || !event.action) {
+    event.waitUntil(
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+        // If the app is already open, focus it
+        for (const client of clients) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            return client.focus();
+          }
         }
-      }
-      return self.clients.openWindow('/');
+        
+        // Otherwise, open a new window
+        if (clients.openWindow) {
+          return clients.openWindow('/');
+        }
+      })
+    );
+  }
+});
+
+// Handle push subscription changes
+self.addEventListener('pushsubscriptionchange', function(event) {
+  console.log('Push subscription changed:', event);
+  
+  event.waitUntil(
+    // Re-subscribe and update the server
+    self.registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: 'BJ8VdLF5YpH8S-PQ5J8rCrXDWOQHkF7Z3GpE_8DsHlY1P-xN7M6LgR9W2KfYn3ZwEqH4T5U6V7W8X9Y0'
+    }).then(function(subscription) {
+      // Send updated subscription to server
+      return fetch('/api/update-subscription', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(subscription.toJSON())
+      });
     })
   );
 });
