@@ -190,7 +190,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_vapid_keys: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          public_key: string
+          private_key: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
