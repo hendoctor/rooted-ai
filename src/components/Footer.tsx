@@ -44,13 +44,13 @@ const Footer = () => {
                 alt="RootedAI Logo" 
                 className="w-8 h-8" 
               />
-              <span className="text-2xl font-bold text-cream">RootedAI</span>
+              <span className="text-2xl font-bold text-cream dark:text-white">RootedAI</span>
             </div>
-            <p className="text-sage mb-4 max-w-md">
+            <p className="text-sage dark:text-white mb-4 max-w-md">
               Helping Kansas City small businesses grow smarter with AI solutions built on Microsoft tools. 
               Local expertise, trusted partnerships, sustainable growth.
             </p>
-            <p className="text-lg font-semibold text-sage">
+            <p className="text-lg font-semibold text-sage dark:text-white">
               Grow Smarter. Stay Rooted.
             </p>
           </div>
@@ -60,10 +60,10 @@ const Footer = () => {
             <div>
               <Card className="bg-slate-800/50 border-sage/20">
                 <CardHeader>
-                  <CardTitle className="text-cream flex items-center gap-2">
+                  <CardTitle className="text-cream dark:text-white flex items-center gap-2">
                     🤖 <span className="text-forest-green">AI Joke Machine for RootedAI</span>
                   </CardTitle>
-                  <CardDescription className="text-sage">
+                  <CardDescription className="text-sage dark:text-white">
                     Enable this to get a funny AI joke every 5 minutes!
                   </CardDescription>
                 </CardHeader>
@@ -85,7 +85,7 @@ const Footer = () => {
                         onClick={sendTestJoke}
                         variant="outline"
                         size="sm"
-                        className="text-sage border-sage/30 hover:bg-sage/10"
+                        className="text-sage dark:text-white border-sage/30 hover:bg-sage/10"
                       >
                         Send Joke Now
                       </Button>
@@ -111,14 +111,14 @@ const Footer = () => {
 
         {/* Bottom Section */}
         <div className="border-t border-sage/20 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <div className="text-sage text-sm mb-4 md:mb-0">
+          <div className="text-sage dark:text-white text-sm mb-4 md:mb-0">
             © {currentYear} RootedAI. All rights reserved. | Overland Park, KS
           </div>
           <Button
             onClick={handleCheckUpdates}
             variant="ghost"
             size="sm"
-            className="text-sage/70 hover:text-sage hover:bg-sage/10"
+            className="text-sage/70 hover:text-sage dark:text-white/70 dark:hover:text-white hover:bg-sage/10"
           >
             <RefreshCw className="h-3 w-3 mr-2" />
             Check for Updates
