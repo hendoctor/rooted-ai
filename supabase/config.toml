@@ -55,6 +55,8 @@ enable_signup = true
 enable_email_confirmations = true
 email_double_confirm_changes_enabled = true
 enable_manual_linking = false
+hook_send_email_enabled = true
+hook_send_email_uri = "https://ylewpehqfgltbhpkaout.supabase.co/functions/v1/auth-email"
 
 [auth.email]
 enable_signup = true
