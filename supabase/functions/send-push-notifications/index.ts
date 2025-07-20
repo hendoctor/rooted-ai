@@ -20,24 +20,34 @@ interface NotificationPayload {
   data?: any
 }
 
-// VAPID keys - these should be stored as secrets in production
+// VAPID public key - this can be public
 const VAPID_PUBLIC_KEY = "BJ8VdLF5YpH8S-PQ5J8rCrXDWOQHkF7Z3GpE_8DsHlY1P-xN7M6LgR9W2KfYn3ZwEqH4T5U6V7W8X9Y0"
-const VAPID_PRIVATE_KEY = "your-vapid-private-key-here"
 
-async function sendWebPush(subscription: PushSubscription, payload: NotificationPayload) {
-  const vapidHeaders = {
-    'Authorization': `vapid t=${generateJWT()}, k=${VAPID_PUBLIC_KEY}`,
-    'TTL': '86400',
-    'Content-Type': 'application/json',
-    'Content-Encoding': 'aes128gcm'
-  }
-
+async function sendWebPush(subscription: PushSubscription, payload: NotificationPayload): Promise<boolean> {
   try {
+    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+    if (!vapidPrivateKey) {
+      console.error('VAPID_PRIVATE_KEY not configured');
+      return false;
+    }
+
+    const vapidHeaders = {
+      'Authorization': `vapid t=${generateJWT()}, k=${VAPID_PUBLIC_KEY}`,
+      'TTL': '86400',
+      'Content-Type': 'application/json',
+      'Content-Encoding': 'aes128gcm'
+    }
+
     const response = await fetch(subscription.endpoint, {
       method: 'POST',
       headers: vapidHeaders,
       body: JSON.stringify(payload)
     })
+    
+    if (!response.ok) {
+      console.error('Push notification failed:', response.status, await response.text());
+      return false;
+    }
     
     return response.ok
   } catch (error) {
