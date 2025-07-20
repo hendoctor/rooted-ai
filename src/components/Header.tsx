@@ -165,7 +165,7 @@ const Header = () => {
                 <a
                   key={item.name}
                   href={item.href}
-                  className="text-slate-gray dark:text-cream hover:text-forest-green transition-colors duration-200 font-medium px-4 py-2"
+                  className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {item.name}
@@ -174,7 +174,7 @@ const Header = () => {
               <div className="px-4 pt-2 space-y-2">
                 {user ? (
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-slate-gray dark:text-cream text-sm">
+                    <div className="flex items-center space-x-2 text-slate-gray dark:text-white text-sm">
                       <User className="w-4 h-4" />
                       <span>{user.email}</span>
                     </div>
@@ -190,7 +190,7 @@ const Header = () => {
                 ) : (
                   <div className="space-y-2">
                     <Link to="/auth">
-                      <Button variant="outline" className="w-full border-sage hover:bg-sage/20 dark:text-cream">
+                      <Button variant="outline" className="w-full border-sage hover:bg-sage/20 dark:text-white">
                         Sign In
                       </Button>
                     </Link>
