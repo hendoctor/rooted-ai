@@ -8,6 +8,7 @@ import Reviews from '@/components/Reviews';
 import Team from '@/components/Team';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
+import PWAUpdateNotification from '@/components/PWAUpdateNotification';
 
 const Index = () => {
   return (
@@ -22,6 +23,7 @@ const Index = () => {
         <Contact />
       </main>
       <Footer />
+      <PWAUpdateNotification />
     </div>
   );
 };

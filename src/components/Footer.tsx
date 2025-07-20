@@ -4,7 +4,9 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAIJokes } from '@/hooks/useAIJokes';
+import { usePWAUpdate } from '@/hooks/usePWAUpdate';
 import FrequencySelector from '@/components/FrequencySelector';
+import { RefreshCw } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -18,6 +20,8 @@ const Footer = () => {
     updateFrequency, 
     getFrequencyDescription 
   } = useAIJokes();
+  
+  const { checkForUpdates } = usePWAUpdate();
 
   return (
     <footer className="bg-slate-gray dark:bg-slate-900 text-cream py-12">
@@ -99,6 +103,15 @@ const Footer = () => {
           <div className="text-sage text-sm mb-4 md:mb-0">
             © {currentYear} RootedAI. All rights reserved. | Overland Park, KS
           </div>
+          <Button
+            onClick={checkForUpdates}
+            variant="ghost"
+            size="sm"
+            className="text-sage/70 hover:text-sage hover:bg-sage/10"
+          >
+            <RefreshCw className="h-3 w-3 mr-2" />
+            Check for Updates
+          </Button>
         </div>
       </div>
     </footer>

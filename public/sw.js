@@ -1,5 +1,8 @@
-// Service Worker for AI Joke Notifications
-const CACHE_NAME = 'rooted-ai-v1';
+// Service Worker for AI Joke Notifications - Version Management
+const CACHE_VERSION = '1.1.0';
+const CACHE_NAME = `rooted-ai-v${CACHE_VERSION}`;
+const STATIC_CACHE = `${CACHE_NAME}-static`;
+const API_CACHE = `${CACHE_NAME}-api`;
 const AI_JOKES = [
   "Why did the AI get fired? It thought outside the search parameters.",
   "My robot vacuum just got a philosophy degree. It's deep cleaning now.",
@@ -19,14 +22,54 @@ let currentFrequency = null;
 
 // Install event
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing...');
-  self.skipWaiting();
+  console.log(`Service Worker v${CACHE_VERSION} installing...`);
+  
+  // Pre-cache essential assets
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) => {
+      return cache.addAll([
+        '/',
+        '/manifest.json',
+        '/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png'
+      ]);
+    }).then(() => {
+      // Force immediate activation for updates
+      return self.skipWaiting();
+    })
+  );
 });
 
 // Activate event
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activated');
-  event.waitUntil(self.clients.claim());
+  console.log(`Service Worker v${CACHE_VERSION} activated`);
+  
+  event.waitUntil(
+    // Clean up old caches
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName.startsWith('rooted-ai-v') && cacheName !== CACHE_NAME && 
+              cacheName !== STATIC_CACHE && cacheName !== API_CACHE) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      // Take control of all clients immediately
+      return self.clients.claim();
+    }).then(() => {
+      // Notify all clients about the update
+      return self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'SW_UPDATED',
+            version: CACHE_VERSION
+          });
+        });
+      });
+    })
+  );
 });
 
 // Listen for messages from main thread
@@ -42,6 +85,12 @@ self.addEventListener('message', (event) => {
     }
   } else if (type === 'SEND_JOKE_NOW') {
     sendJokeNotification();
+  } else if (type === 'CHECK_FOR_UPDATES') {
+    // Force update check by sending version info back
+    event.ports[0].postMessage({
+      type: 'VERSION_INFO',
+      version: CACHE_VERSION
+    });
   } else if (type === 'UPDATE_FREQUENCY') {
     if (frequency) {
       currentFrequency = frequency;
