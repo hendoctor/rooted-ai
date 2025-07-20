@@ -68,8 +68,8 @@
     --ring: 212.7 26.8% 83.9%;
     --cream: 222.2 84% 4.9%;
     --slate-gray: 210 40% 98%;
-    --forest-green: 139 35% 50%; /* Brighter green for dark mode */
-    --earth-brown: 24 35% 58%; /* Brighter brown for dark mode */
+    --forest-green: 139 35% 60%; /* Brighter green for dark mode */
+    --earth-brown: 24 35% 68%; /* Brighter brown for dark mode */
   }
 }
 

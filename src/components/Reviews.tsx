@@ -88,7 +88,7 @@ const Reviews = () => {
         </div>
 
         {/* Stats Section */}
-        <div className="bg-forest-green rounded-2xl p-8 lg:p-12 animate-fade-in-up">
+        <div className="bg-forest-green dark:bg-[hsl(139_28%_25%)] rounded-2xl p-8 lg:p-12 animate-fade-in-up">
           <div className="grid md:grid-cols-3 gap-8 text-center">
             {stats.map((stat, index) => (
               <div key={index} className="text-white">
