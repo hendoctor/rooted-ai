@@ -86,6 +86,23 @@ const Header = () => {
 
           {/* CTA Button / Auth */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Theme toggle and PWA install - moved to left of auth buttons */}
+            <div className="flex items-center space-x-2">
+              <ThemeToggle />
+              {(isInstallable || !isInstalled) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Install app"
+                  onClick={() => setShowInstallDialog(true)}
+                  className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80"
+                >
+                  <Download className="w-5 h-5" />
+                </Button>
+              )}
+            </div>
+            
+            {/* Auth buttons */}
             {user ? (
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2 text-slate-gray dark:text-cream">
@@ -114,18 +131,6 @@ const Header = () => {
                 </Button>
               </div>
             )}
-            {(isInstallable || !isInstalled) && (
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Install app"
-                onClick={() => setShowInstallDialog(true)}
-                className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80"
-              >
-                <Download className="w-5 h-5" />
-              </Button>
-            )}
-            <ThemeToggle />
           </div>
 
           {/* Mobile actions */}

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAIJokes } from '@/hooks/useAIJokes';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import FrequencySelector from '@/components/FrequencySelector';
 import { RefreshCw } from 'lucide-react';
 
@@ -22,6 +23,7 @@ const Footer = () => {
   } = useAIJokes();
   
   const { checkForUpdates } = usePWAUpdate();
+  const { isInstalled } = usePWAInstall();
 
   return (
     <footer className="bg-slate-gray dark:bg-slate-900 text-cream py-12">
@@ -46,56 +48,58 @@ const Footer = () => {
             </p>
           </div>
 
-          {/* AI Joke Notifications Section */}
-          <div>
-            <Card className="bg-slate-800/50 border-sage/20">
-              <CardHeader>
-                <CardTitle className="text-cream flex items-center gap-2">
-                  🤖 AI Joke Machine
-                </CardTitle>
-                <CardDescription className="text-sage">
-                  Enable this to get a funny AI joke every 5 minutes!
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Switch
-                      checked={isEnabled}
-                      onCheckedChange={toggleJokes}
-                      disabled={isLoading}
-                      className="data-[state=checked]:bg-primary"
-                    />
-                    <span className="text-cream font-medium">
-                      {isEnabled ? "AI Jokes Enabled" : "Enable AI Jokes"}
-                    </span>
+          {/* AI Joke Notifications Section - Only show if PWA is installed */}
+          {isInstalled && (
+            <div>
+              <Card className="bg-slate-800/50 border-sage/20">
+                <CardHeader>
+                  <CardTitle className="text-cream flex items-center gap-2">
+                    🤖 <span className="text-forest-green">AI Joke Machine for RootedAI</span>
+                  </CardTitle>
+                  <CardDescription className="text-sage">
+                    Enable this to get a funny AI joke every 5 minutes!
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Switch
+                        checked={isEnabled}
+                        onCheckedChange={toggleJokes}
+                        disabled={isLoading}
+                        className="data-[state=checked]:bg-primary"
+                      />
+                      <span className="text-forest-green font-medium">
+                        {isEnabled ? "AI Jokes Enabled" : "Enable AI Jokes"}
+                      </span>
+                    </div>
+                    {hasPermission && (
+                      <Button
+                        onClick={sendTestJoke}
+                        variant="outline"
+                        size="sm"
+                        className="text-sage border-sage/30 hover:bg-sage/10"
+                      >
+                        Send Joke Now
+                      </Button>
+                    )}
                   </div>
-                  {hasPermission && (
-                    <Button
-                      onClick={sendTestJoke}
-                      variant="outline"
-                      size="sm"
-                      className="text-sage border-sage/30 hover:bg-sage/10"
-                    >
-                      Send Joke Now
-                    </Button>
+
+                  <FrequencySelector
+                    frequency={frequency}
+                    onFrequencyChange={updateFrequency}
+                    disabled={isLoading || !isEnabled}
+                  />
+
+                  {isEnabled && (
+                    <p className="text-sm text-forest-green bg-emerald-900/20 p-2 rounded border border-emerald-500/20">
+                      ✅ AI Joke notifications are active! {getFrequencyDescription(frequency)}
+                    </p>
                   )}
-                </div>
-
-                <FrequencySelector
-                  frequency={frequency}
-                  onFrequencyChange={updateFrequency}
-                  disabled={isLoading || !isEnabled}
-                />
-
-                {isEnabled && (
-                  <p className="text-sm text-sage bg-emerald-900/20 p-2 rounded border border-emerald-500/20">
-                    ✅ AI Joke notifications are active! {getFrequencyDescription(frequency)}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
 
         {/* Bottom Section */}
