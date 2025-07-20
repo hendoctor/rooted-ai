@@ -5,6 +5,7 @@ interface PWAUpdateHook {
   hasUpdate: boolean;
   isUpdating: boolean;
   updateAvailable: boolean;
+  currentVersion: string;
   checkForUpdates: () => Promise<void>;
   applyUpdate: () => Promise<void>;
   dismissUpdate: () => void;
@@ -14,6 +15,7 @@ export const usePWAUpdate = (): PWAUpdateHook => {
   const [hasUpdate, setHasUpdate] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [currentVersion, setCurrentVersion] = useState('1.2.0'); // Default from service worker
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [newWorker, setNewWorker] = useState<ServiceWorker | null>(null);
   const { toast } = useToast();
@@ -86,6 +88,7 @@ export const usePWAUpdate = (): PWAUpdateHook => {
           const { type, version } = event.data;
           if (type === 'VERSION_INFO') {
             console.log(`Current version: ${version}`);
+            setCurrentVersion(version);
           }
         };
         
@@ -164,6 +167,7 @@ export const usePWAUpdate = (): PWAUpdateHook => {
     hasUpdate,
     isUpdating,
     updateAvailable,
+    currentVersion,
     checkForUpdates,
     applyUpdate,
     dismissUpdate

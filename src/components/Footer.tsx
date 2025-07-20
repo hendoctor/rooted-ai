@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,10 +7,12 @@ import { useAIJokes } from '@/hooks/useAIJokes';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import FrequencySelector from '@/components/FrequencySelector';
+import UpdateStatusDialog from '@/components/UpdateStatusDialog';
 import { RefreshCw } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const { 
     isEnabled, 
     hasPermission, 
@@ -22,8 +24,13 @@ const Footer = () => {
     getFrequencyDescription 
   } = useAIJokes();
   
-  const { checkForUpdates } = usePWAUpdate();
+  const { hasUpdate, isUpdating, currentVersion, checkForUpdates, applyUpdate } = usePWAUpdate();
   const { isInstalled } = usePWAInstall();
+
+  const handleCheckUpdates = async () => {
+    await checkForUpdates();
+    setShowUpdateDialog(true);
+  };
 
   return (
     <footer className="bg-slate-gray dark:bg-slate-900 text-cream py-12">
@@ -108,7 +115,7 @@ const Footer = () => {
             © {currentYear} RootedAI. All rights reserved. | Overland Park, KS
           </div>
           <Button
-            onClick={checkForUpdates}
+            onClick={handleCheckUpdates}
             variant="ghost"
             size="sm"
             className="text-sage/70 hover:text-sage hover:bg-sage/10"
@@ -118,6 +125,16 @@ const Footer = () => {
           </Button>
         </div>
       </div>
+
+      {/* Update Status Dialog */}
+      <UpdateStatusDialog
+        open={showUpdateDialog}
+        onOpenChange={setShowUpdateDialog}
+        hasUpdate={hasUpdate}
+        currentVersion={currentVersion}
+        isUpdating={isUpdating}
+        onApplyUpdate={applyUpdate}
+      />
     </footer>
   );
 };
