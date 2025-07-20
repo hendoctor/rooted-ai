@@ -134,19 +134,55 @@ export function usePushNotifications(): PushNotificationsHook {
 
   const subscribeToPush = useCallback(async (): Promise<PushSubscription | null> => {
     try {
-      const registration = await navigator.serviceWorker.ready;
+      console.log('🔔 Starting push subscription process...');
       
+      // Check if service worker is available
+      if (!('serviceWorker' in navigator)) {
+        throw new Error('Service Worker not supported');
+      }
+      
+      console.log('🔔 Waiting for service worker to be ready...');
+      const registration = await navigator.serviceWorker.ready;
+      console.log('🔔 Service worker ready:', registration);
+      
+      // Check if push messaging is supported
+      if (!('PushManager' in window)) {
+        throw new Error('Push messaging not supported');
+      }
+      
+      console.log('🔔 Converting VAPID key...');
+      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      console.log('🔔 VAPID key converted, length:', applicationServerKey.length);
+      
+      console.log('🔔 Subscribing to push manager...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        applicationServerKey,
       });
-
+      
+      console.log('🔔 Push subscription successful:', subscription.endpoint);
       return subscription;
     } catch (error) {
-      console.error('Error subscribing to push:', error);
+      console.error('🚨 Error subscribing to push:', error);
+      console.error('🚨 Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      
+      let errorMessage = "Failed to set up push notifications. Please try again.";
+      
+      if (error.message.includes('not supported')) {
+        errorMessage = "Push notifications are not supported in this browser.";
+      } else if (error.name === 'NotAllowedError') {
+        errorMessage = "Push notifications were denied. Please check your browser settings.";
+      } else if (error.name === 'AbortError') {
+        errorMessage = "Push subscription was cancelled.";
+      }
+      
       toast({
         title: "Subscription Failed",
-        description: "Failed to set up push notifications. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       return null;
