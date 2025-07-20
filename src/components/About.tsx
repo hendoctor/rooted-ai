@@ -1,13 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const About = () => {
-  const { elementRef, isVisible } = useScrollAnimation({
-    hapticPattern: [40, 20, 30]
-  });
-
   const values = [
     {
       title: "Growth-Focused",
@@ -32,13 +27,7 @@ const About = () => {
   ];
 
   return (
-    <section 
-      ref={elementRef}
-      id="about" 
-      className={`py-20 bg-sage/5 dark:bg-slate-800 transition-all duration-1000 ${
-        isVisible ? 'animate-fade-in-up' : 'opacity-0 translate-y-8'
-      }`}
-    >
+    <section id="about" className="py-20 bg-sage/5 dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">

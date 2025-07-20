@@ -7,13 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const Contact = () => {
-  const { elementRef, isVisible } = useScrollAnimation({
-    hapticPattern: [50, 40, 30]
-  });
-  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -106,13 +101,7 @@ const Contact = () => {
   };
 
   return (
-    <section 
-      ref={elementRef}
-      id="contact" 
-      className={`py-20 bg-sage/5 dark:bg-slate-800 transition-all duration-1000 ${
-        isVisible ? 'animate-float-in' : 'opacity-0 translate-y-4 scale-95'
-      }`}
-    >
+    <section id="contact" className="py-20 bg-sage/5 dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">

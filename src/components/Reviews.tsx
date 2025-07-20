@@ -1,13 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const Reviews = () => {
-  const { elementRef, isVisible } = useScrollAnimation({
-    hapticPattern: [60, 30, 40, 20]
-  });
-
   const testimonials = [
     {
       quote: "Philip made AI easy to understand and implement. Their expertise helped us automate processes, saving time and boosting efficiency. I highly recommend Philip for any business looking to leverage AI!",
@@ -45,13 +40,7 @@ const Reviews = () => {
   };
 
   return (
-    <section 
-      ref={elementRef}
-      id="reviews" 
-      className={`py-20 bg-cream dark:bg-slate-800 transition-all duration-1000 ${
-        isVisible ? 'animate-scale-in' : 'opacity-0 scale-95'
-      }`}
-    >
+    <section id="reviews" className="py-20 bg-cream dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16 animate-fade-in-up">
