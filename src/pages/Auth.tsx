@@ -95,7 +95,7 @@ const Auth = () => {
           });
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",

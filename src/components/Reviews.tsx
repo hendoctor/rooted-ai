@@ -40,7 +40,7 @@ const Reviews = () => {
   };
 
   return (
-    <section id="reviews" className="py-20 bg-cream">
+    <section id="reviews" className="py-20 bg-cream dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16 animate-fade-in-up">
@@ -55,7 +55,7 @@ const Reviews = () => {
         {/* Testimonials Grid */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="bg-white shadow-lg hover:shadow-xl transition-all duration-300 border-0 animate-fade-in-up" style={{ animationDelay: `${index * 0.2}s` }}>
+            <Card key={index} className="bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 border-0 animate-fade-in-up" style={{ animationDelay: `${index * 0.2}s` }}>
               <CardContent className="p-8">
                 {/* Quote Icon */}
                 <div className="text-sage text-6xl font-serif mb-4 leading-none">"</div>

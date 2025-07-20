@@ -50,10 +50,11 @@ const Contact = () => {
         message: '',
         serviceType: ''
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Please try again later.";
       toast({
         title: "Failed to send message",
-        description: error.message || "Please try again later.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -80,10 +81,11 @@ const Contact = () => {
       });
 
       setNewsletterEmail('');
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Please try again later.";
       toast({
         title: "Subscription failed",
-        description: error.message || "Please try again later.",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -99,7 +101,7 @@ const Contact = () => {
   };
 
   return (
-    <section id="contact" className="py-20 bg-sage/5">
+    <section id="contact" className="py-20 bg-sage/5 dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -197,7 +199,7 @@ const Contact = () => {
           {/* Contact Information & CTA */}
           <div className="space-y-8">
             {/* Contact Details */}
-            <Card className="border-sage/30 shadow-lg">
+            <Card className="border-sage/30 dark:bg-slate-900 shadow-lg">
               <CardContent className="p-8">
                 <h3 className="text-xl font-semibold text-forest-green mb-6">Get in Touch</h3>
                 <div className="space-y-4">
@@ -233,7 +235,7 @@ const Contact = () => {
             </Card>
 
             {/* Schedule a Workshop */}
-            <Card className="border-forest-green/30 bg-forest-green/5 shadow-lg">
+            <Card className="border-forest-green/30 bg-forest-green/5 dark:bg-slate-900 shadow-lg">
               <CardContent className="p-8 text-center">
                 <h3 className="text-xl font-semibold text-forest-green mb-4">
                   Ready for a Workshop?
