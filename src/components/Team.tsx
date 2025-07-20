@@ -3,7 +3,20 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Globe } from 'lucide-react';
 
-const ProfileImage = ({ member, index }: { member: any, index: number }) => {
+interface TeamMember {
+  name: string;
+  role: string;
+  image: string;
+  bio: string;
+  expertise: string[];
+  contact: {
+    linkedin?: string;
+    email?: string;
+    website?: string;
+  };
+}
+
+const ProfileImage = ({ member, index }: { member: TeamMember; index: number }) => {
   const [rotation, setRotation] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const velocityRef = useRef(0);
@@ -149,7 +162,7 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
 };
 
 const Team = () => {
-  const teamMembers = [
+  const teamMembers: TeamMember[] = [
     {
       name: "Philip",
       role: "Co-Founder & Chief Executive Officer",

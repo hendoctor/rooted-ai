@@ -181,10 +181,11 @@ const handler = async (req: Request): Promise<Response> => {
         ...corsHeaders,
       },
     });
-  } catch (error: any) {
-    console.error("Error in auth-email function:", error);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Error in auth-email function:", message);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: message }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

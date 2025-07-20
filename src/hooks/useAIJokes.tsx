@@ -4,27 +4,34 @@ import { toast } from '@/hooks/use-toast';
 import { usePushNotifications, type JokeFrequency } from './usePushNotifications';
 import { useAuth } from './useAuth';
 
+interface NotificationState {
+  enabled: boolean;
+  frequency: JokeFrequency | null;
+  nextNotificationTime: number | null;
+  jokeIndex: number;
+}
+
 export { type JokeFrequency } from './usePushNotifications';
 
 export const useAIJokes = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration | null>(null);
-  const [notificationStatus, setNotificationStatus] = useState<any>(null);
+  const [notificationStatus, setNotificationStatus] = useState<NotificationState | null>(null);
   
   const { user, loading: authLoading } = useAuth();
   const pushNotifications = usePushNotifications();
 
   // Check initial state on mount
+  const initializeNotifications = useCallback(async () => {
+    // Only initialize service worker - authentication is handled by push notifications hook
+    await registerServiceWorker();
+  }, []);
+
   useEffect(() => {
     if (!authLoading) {
       initializeNotifications();
     }
-  }, [authLoading]);
-
-  const initializeNotifications = async () => {
-    // Only initialize service worker - authentication is handled by push notifications hook
-    await registerServiceWorker();
-  };
+  }, [authLoading, initializeNotifications]);
 
   const registerServiceWorker = async () => {
     if ('serviceWorker' in navigator) {
