@@ -30,7 +30,7 @@ const Footer = () => {
   } = useAIJokes();
   
   const { hasUpdate, isUpdating, currentVersion, checkForUpdates, applyUpdate } = usePWAUpdate();
-  const { isInstalled, canInstall, installPWA } = usePWAInstall();
+  const { isInstalled, isInstallable, installApp } = usePWAInstall();
 
   const handleCheckUpdates = async () => {
     await checkForUpdates();
@@ -61,16 +61,16 @@ const Footer = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {canInstall && (
+            {isInstallable && (
               <Button
-                onClick={installPWA}
+                onClick={installApp}
                 className="bg-forest-green hover:bg-forest-green/90 text-white"
               >
                 <Download className="h-4 w-4 mr-2" />
                 Install PWA
               </Button>
             )}
-            {!canInstall && (
+            {!isInstallable && (
               <p className="text-sm text-sage/70">
                 Visit this site on your mobile device or desktop to install as a PWA.
               </p>
