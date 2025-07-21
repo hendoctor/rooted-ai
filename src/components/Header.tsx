@@ -5,7 +5,7 @@ import { Sprout, LogOut, User, Download } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
 import { useAuth } from '@/hooks/useAuth';
-import { usePermissions } from '@/hooks/usePermissions';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +27,7 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const permissions = usePermissions();
+  const { menuPermissions } = useRolePermissions();
 
   const baseNavItems = [
     { name: 'Home', href: '#home' },
@@ -38,9 +38,9 @@ const Header = () => {
     { name: 'Contact', href: '#contact' }
   ];
 
-  const dynamicNav = permissions
+  const dynamicNav = menuPermissions
     .filter((p) => p.visible && p.menu_item)
-    .map((p) => ({ name: p.menu_item as string, href: p.page }));
+    .map((p) => ({ name: p.menu_item, href: p.page }));
 
   const navItems = [...baseNavItems, ...dynamicNav];
 

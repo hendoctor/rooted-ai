@@ -30,14 +30,14 @@ const AdminCenter = () => {
     field: 'access' | 'visible',
     value: boolean
   ) => {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('role_permissions')
       .update({ [field]: value })
-      .eq('id', id)
-      .single();
-    if (!error && data) {
-      setPerms((p) => p.map((perm) => (perm.id === id ? data : perm)));
-    } else if (error) {
+      .eq('id', id);
+    
+    if (!error) {
+      setPerms((p) => p.map((perm) => (perm.id === id ? { ...perm, [field]: value } : perm)));
+    } else {
       console.error('Failed to update permission', error);
     }
   };

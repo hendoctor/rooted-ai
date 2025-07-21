@@ -152,6 +152,33 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          access: boolean
+          id: string
+          menu_item: string | null
+          page: string
+          role: string
+          visible: boolean
+        }
+        Insert: {
+          access?: boolean
+          id?: string
+          menu_item?: string | null
+          page: string
+          role: string
+          visible?: boolean
+        }
+        Update: {
+          access?: boolean
+          id?: string
+          menu_item?: string | null
+          page?: string
+          role?: string
+          visible?: boolean
+        }
+        Relationships: []
+      }
       user_notification_settings: {
         Row: {
           created_at: string
@@ -182,6 +209,30 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          role?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          role?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
