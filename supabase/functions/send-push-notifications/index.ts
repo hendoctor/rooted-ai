@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import webPush from 'npm:web-push'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,7 +17,7 @@ interface NotificationPayload {
   body: string
   icon?: string
   badge?: string
-  data?: Record<string, unknown>
+  data?: any
 }
 
 // Public VAPID key corresponding to the private key stored as a Supabase secret.
@@ -27,33 +26,51 @@ interface NotificationPayload {
 const VAPID_PUBLIC_KEY =
   "BJeaLq3cweiE_oIJB4EuAIv5Ivua5xmh8IZI68nfmohnsbqtQq6l9_ARSQmDHDNrxUiZRK5UiXW74QuGhSpcKqY"
 
-// Configure web-push with VAPID details
-const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY') ?? ''
-webPush.setVapidDetails(
-  'mailto:your-email@example.com',
-  VAPID_PUBLIC_KEY,
-  vapidPrivateKey,
-)
-
 async function sendWebPush(subscription: PushSubscription, payload: NotificationPayload): Promise<boolean> {
   try {
-    await webPush.sendNotification(
-      {
-        endpoint: subscription.endpoint,
-        keys: {
-          p256dh: subscription.p256dh_key,
-          auth: subscription.auth_key,
-        },
-      },
-      JSON.stringify(payload),
-    )
-    return true
+    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+    if (!vapidPrivateKey) {
+      console.error('VAPID_PRIVATE_KEY not configured');
+      return false;
+    }
+
+    const vapidHeaders = {
+      'Authorization': `vapid t=${generateJWT()}, k=${VAPID_PUBLIC_KEY}`,
+      'TTL': '86400',
+      'Content-Type': 'application/json',
+      'Content-Encoding': 'aes128gcm'
+    }
+
+    const response = await fetch(subscription.endpoint, {
+      method: 'POST',
+      headers: vapidHeaders,
+      body: JSON.stringify(payload)
+    })
+    
+    if (!response.ok) {
+      console.error('Push notification failed:', response.status, await response.text());
+      return false;
+    }
+    
+    return response.ok
   } catch (error) {
     console.error('Push notification failed:', error)
     return false
   }
 }
 
+function generateJWT(): string {
+  // Simplified JWT generation - in production use a proper JWT library
+  const header = btoa(JSON.stringify({ typ: 'JWT', alg: 'ES256' }))
+  const payload = btoa(JSON.stringify({
+    aud: 'https://fcm.googleapis.com',
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    sub: 'mailto:your-email@example.com'
+  }))
+  
+  // This is a placeholder - implement proper ES256 signing in production
+  return `${header}.${payload}.signature`
+}
 
 async function generateJoke(): Promise<string> {
   const jokes = [
@@ -82,17 +99,14 @@ function calculateNextNotification(frequency_type: string, frequency_value: numb
       return new Date(now.getTime() + frequency_value * 60 * 60 * 1000)
     case 'days':
       return new Date(now.getTime() + frequency_value * 24 * 60 * 60 * 1000)
-    case 'specific_days': {
-      if (!frequency_days || frequency_days.length === 0) {
-        return new Date(now.getTime() + 24 * 60 * 60 * 1000)
-      }
-
+    case 'specific_days':
+      if (!frequency_days || frequency_days.length === 0) return new Date(now.getTime() + 24 * 60 * 60 * 1000)
+      
       const currentDay = now.getDay()
-      const nextDay = frequency_days.find((day) => day > currentDay) ?? frequency_days[0]
+      const nextDay = frequency_days.find(day => day > currentDay) ?? frequency_days[0]
       const daysUntilNext = nextDay > currentDay ? nextDay - currentDay : 7 - currentDay + nextDay
-
+      
       return new Date(now.getTime() + daysUntilNext * 24 * 60 * 60 * 1000)
-    }
     default:
       return new Date(now.getTime() + 5 * 60 * 1000) // Default to 5 minutes
   }
