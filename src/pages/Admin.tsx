@@ -2,15 +2,15 @@ import React from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/hooks/useAuth';
-import NotFound from './NotFound';
+import AccessDenied from './AccessDenied';
 
 const Admin = () => {
-  const { user, profile, loading } = useAuth();
+  const { user, userRole, profile, loading } = useAuth();
 
   if (loading) return null;
 
-  if (!user || profile?.role !== 'admin') {
-    return <NotFound />;
+  if (!user || userRole !== 'Admin') {
+    return <AccessDenied />;
   }
 
   return (
@@ -19,9 +19,13 @@ const Admin = () => {
       <main className="py-16">
         <div className="container mx-auto px-4">
           <h1 className="text-3xl font-bold text-forest-green mb-4">Admin Dashboard</h1>
-          <p className="text-slate-gray">
-            Welcome, {profile?.full_name || user.email}! This page is only visible to administrators.
+          <p className="text-slate-gray mb-6">
+            Welcome, {profile?.full_name || user.email}! You have <span className="font-semibold">{userRole}</span> access.
           </p>
+          <div className="border border-sage/50 p-6 rounded-lg text-slate-gray">
+            <p className="mb-2">Placeholder for admin tools.</p>
+            <p>Manage users or view reports here.</p>
+          </div>
         </div>
       </main>
       <Footer />

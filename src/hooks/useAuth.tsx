@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: Tables<'profiles'> | null;
+  userRole: string | null;
   loading: boolean;
   signOut: () => Promise<void>;
 }
@@ -17,6 +18,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Tables<'profiles'> | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -32,6 +34,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const fetchUserRole = async (email: string) => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('role')
+      .eq('email', email)
+      .maybeSingle();
+    if (!error) {
+      setUserRole(data?.role ?? null);
+    } else {
+      console.error('Error fetching user role:', error);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -40,8 +55,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           fetchProfile(session.user.id);
+          fetchUserRole(session.user.email);
         } else {
           setProfile(null);
+          setUserRole(null);
         }
         setLoading(false);
       }
@@ -53,6 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
+        fetchUserRole(session.user.email);
       }
       setLoading(false);
     });
@@ -71,6 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     session,
     profile,
+    userRole,
     loading,
     signOut,
   };
