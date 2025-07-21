@@ -5,6 +5,7 @@ import { Sprout, LogOut, User, Download } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +27,9 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = [
+  const permissions = usePermissions();
+
+  const baseNavItems = [
     { name: 'Home', href: '#home' },
     { name: 'About', href: '#about' },
     { name: 'Services', href: '#services' },
@@ -34,6 +37,12 @@ const Header = () => {
     { name: 'Team', href: '#team' },
     { name: 'Contact', href: '#contact' }
   ];
+
+  const dynamicNav = permissions
+    .filter((p) => p.visible && p.menu_item)
+    .map((p) => ({ name: p.menu_item as string, href: p.page }));
+
+  const navItems = [...baseNavItems, ...dynamicNav];
 
   const handleSignOut = async () => {
     try {
@@ -74,22 +83,24 @@ const Header = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
-              >
-                {item.name}
-              </a>
+              item.href.startsWith('/') ? (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
+                >
+                  {item.name}
+                </Link>
+              ) : (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
+                >
+                  {item.name}
+                </a>
+              )
             ))}
-            {userRole === 'Admin' && (
-              <Link
-                to="/admin"
-                className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
-              >
-                Admin
-              </Link>
-            )}
           </nav>
 
           {/* CTA Button / Auth */}
@@ -178,24 +189,26 @@ const Header = () => {
           <div className="md:hidden bg-white dark:bg-slate-900 border-t border-sage/20 dark:border-sage/50 py-4 animate-fade-in">
             <nav className="flex flex-col space-y-4">
             {navItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {item.name}
-              </a>
+              item.href.startsWith('/') ? (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ) : (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item.name}
+                </a>
+              )
             ))}
-            {userRole === 'Admin' && (
-              <Link
-                to="/admin"
-                className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Admin
-              </Link>
-            )}
               <div className="px-4 pt-2 space-y-2">
                 {user ? (
                   <div className="space-y-2">
