@@ -42,10 +42,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        // The exported public key already includes the uncompressed prefix (0x04)
-        // so we simply return the base64url string as-is. Adding extra characters
-        // will produce an invalid key for the Push API.
-        publicKey,
+        publicKey: `B${publicKey}`, // Add the B prefix for uncompressed point
         privateKey,
         message: "VAPID keys generated successfully. Store these securely!"
       }),
