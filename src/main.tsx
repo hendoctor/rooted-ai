@@ -11,4 +11,8 @@ root.render(
   </ThemeProvider>
 );
 
-document.getElementById('splash-screen')?.remove();
+const splash = document.getElementById('splash-screen');
+if (splash) {
+  // Allow the splash animation to play before removing
+  setTimeout(() => splash.remove(), 1500);
+}

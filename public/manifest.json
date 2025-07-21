@@ -5,8 +5,8 @@
   "description": "Kansas City's trusted AI consultancy for small businesses. Expert guidance on Microsoft AI tools, custom solutions, and sustainable growth strategies.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#065f46",
+  "background_color": "#F8E5C5",
+  "theme_color": "#44623B",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [
