@@ -48,7 +48,7 @@ export function usePushNotifications(): PushNotificationsHook {
   useEffect(() => {
     checkNotificationPermission();
     loadUserSettings();
-  }, [checkNotificationPermission, loadUserSettings]);
+  }, []);
 
   const checkNotificationPermission = useCallback(() => {
     if ('Notification' in window) {
@@ -86,7 +86,7 @@ export function usePushNotifications(): PushNotificationsHook {
     } catch (error) {
       console.error('Error loading user settings:', error);
     }
-  }, [checkSubscriptionStatus]);
+  }, []);
 
   const checkSubscriptionStatus = useCallback(async () => {
     try {
@@ -229,17 +229,16 @@ export function usePushNotifications(): PushNotificationsHook {
         return new Date(now.getTime() + freq.value * 60 * 60 * 1000);
       case 'days':
         return new Date(now.getTime() + freq.value * 24 * 60 * 60 * 1000);
-      case 'specific_days': {
+      case 'specific_days':
         if (!freq.days || freq.days.length === 0) {
           return new Date(now.getTime() + 24 * 60 * 60 * 1000);
         }
-
+        
         const currentDay = now.getDay();
         const nextDay = freq.days.find(day => day > currentDay) ?? freq.days[0];
         const daysUntilNext = nextDay > currentDay ? nextDay - currentDay : 7 - currentDay + nextDay;
-
+        
         return new Date(now.getTime() + daysUntilNext * 24 * 60 * 60 * 1000);
-      }
       default:
         return new Date(now.getTime() + 5 * 60 * 1000);
     }
@@ -247,7 +246,6 @@ export function usePushNotifications(): PushNotificationsHook {
 
   const enableNotifications = useCallback(async () => {
     setIsLoading(true);
-    let step = 'permission';
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -260,23 +258,16 @@ export function usePushNotifications(): PushNotificationsHook {
       }
 
       const hasPermission = await requestNotificationPermission();
-      if (!hasPermission) {
-        throw new Error('Notification permission denied');
-      }
+      if (!hasPermission) return;
 
-      step = 'subscribe';
       const subscription = await subscribeToPush();
-      if (!subscription) {
-        throw new Error('Push subscription failed');
-      }
+      if (!subscription) return;
 
-      step = 'saveSubscription';
       await saveSubscription(subscription);
 
-      step = 'database';
       // Save user settings
       const nextNotification = calculateNextNotification(frequency);
-
+      
       const { error: settingsError } = await supabase
         .from('user_notification_settings')
         .upsert({
@@ -287,7 +278,7 @@ export function usePushNotifications(): PushNotificationsHook {
           frequency_days: frequency.days || null,
         });
 
-      if (settingsError) throw new Error(settingsError.message);
+      if (settingsError) throw settingsError;
 
       // Create or update notification schedule
       const { error: scheduleError } = await supabase
@@ -297,7 +288,7 @@ export function usePushNotifications(): PushNotificationsHook {
           next_notification_at: nextNotification.toISOString(),
         });
 
-      if (scheduleError) throw new Error(scheduleError.message);
+      if (scheduleError) throw scheduleError;
 
       setIsEnabled(true);
       setIsSubscribed(true);
@@ -308,10 +299,10 @@ export function usePushNotifications(): PushNotificationsHook {
       });
 
     } catch (error) {
-      console.error(`Error enabling notifications during ${step}:`, error);
+      console.error('Error enabling notifications:', error);
       toast({
         title: "Setup Failed",
-        description: `Failed during ${step}: ${error instanceof Error ? error.message : ''}`,
+        description: "Failed to set up notifications. Please try again.",
         variant: "destructive",
       });
     } finally {

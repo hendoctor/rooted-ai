@@ -11,15 +11,15 @@ RootedAI helps Kansas City small businesses implement AI solutions built on Micr
 
 ## 🚀 Deployment
 
-This project is hosted on Loveable hosting.
+This project is automatically deployed to GitHub Pages via GitHub Actions.
 
-**Live Site**: [https://rooted-ai.lovable.app](https://rooted-ai.lovable.app)
+**Live Site**: [https://hendoctor.github.io/rooted-ai/](https://hendoctor.github.io/rooted-ai/)
 
 ### Deployment Process
 
 1. Push changes to the `main` branch
-2. Loveable automatically builds and deploys the site
-3. Updates go live shortly after
+2. GitHub Actions automatically builds and deploys the site
+3. Site updates are live within minutes
 
 ## 🛠️ Tech Stack
 
@@ -27,7 +27,7 @@ This project is hosted on Loveable hosting.
 - **Styling**: Tailwind CSS with custom RootedAI brand colors
 - **UI Components**: shadcn/ui
 - **Backend**: Supabase (connected)
-- **Deployment**: Loveable hosting
+- **Deployment**: GitHub Pages with GitHub Actions
 - **Build Tool**: Vite
 
 ## 🎨 Brand Colors
@@ -66,4 +66,4 @@ npm run preview
 
 ## 📄 License
 
-Licensed under the [MIT License](LICENSE).
+© 2024 RootedAI. All rights reserved.

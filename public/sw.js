@@ -1,5 +1,5 @@
 // Import storage utility
-importScripts('./sw-storage.js');
+importScripts('/sw-storage.js');
 
 // Service Worker for AI Joke Notifications - Enhanced with Persistence
 const CACHE_VERSION = '1.3.0';
@@ -216,8 +216,8 @@ async function sendJokeNotification() {
     // Save updated state
     await saveNotificationState();
     
-    // Trigger background sync if available
-    if ('sync' in self.registration) {
+    // Trigger background sync
+    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
       await self.registration.sync.register('ai-joke-sync').catch(console.error);
     }
   } catch (error) {

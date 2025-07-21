@@ -38,7 +38,7 @@ const PWAInstallDialog: React.FC<PWAInstallDialogProps> = ({
   const isFirefox = /Firefox|FxiOS/.test(userAgent);
   const isSamsung = /SamsungBrowser/.test(userAgent);
   const isOpera = /OPR|Opera/.test(userAgent);
-  const isBrave = (navigator as unknown as { brave?: unknown }).brave !== undefined;
+  const isBrave = (navigator as any).brave !== undefined;
   
   // iOS specific browser detection
   const isChromeIOS = /CriOS/.test(userAgent);
@@ -46,8 +46,8 @@ const PWAInstallDialog: React.FC<PWAInstallDialogProps> = ({
   const isFirefoxIOS = /FxiOS/.test(userAgent);
   
   // Check if running in standalone mode (already installed)
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                      (window.navigator as any).standalone === true;
 
   const getInstallInstructions = () => {
     // Check if already installed
