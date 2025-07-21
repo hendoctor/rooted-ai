@@ -13,7 +13,7 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
 
@@ -82,6 +82,14 @@ const Header = () => {
                 {item.name}
               </a>
             ))}
+            {profile?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
+              >
+                Admin
+              </Link>
+            )}
           </nav>
 
           {/* CTA Button / Auth */}
@@ -166,16 +174,25 @@ const Header = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-white dark:bg-slate-900 border-t border-sage/20 dark:border-sage/50 py-4 animate-fade-in">
             <nav className="flex flex-col space-y-4">
-              {navItems.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.name}
-                </a>
-              ))}
+            {navItems.map((item) => (
+              <a
+                key={item.name}
+                href={item.href}
+                className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                {item.name}
+              </a>
+            ))}
+            {profile?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Admin
+              </Link>
+            )}
               <div className="px-4 pt-2 space-y-2">
                 {user ? (
                   <div className="space-y-2">

@@ -6,11 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from '@/hooks/use-toast';
 
 export const NotificationDebugger: React.FC = () => {
-  const [debugInfo, setDebugInfo] = useState<any>({});
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown>>({});
   const { toast } = useToast();
 
   const runDebugCheck = async () => {
-    const info: any = {
+    const info: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
       browser: navigator.userAgent,
       notifications: {},

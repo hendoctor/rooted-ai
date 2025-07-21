@@ -9,7 +9,7 @@ export { type JokeFrequency } from './usePushNotifications';
 export const useAIJokes = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [serviceWorkerRegistration, setServiceWorkerRegistration] = useState<ServiceWorkerRegistration | null>(null);
-  const [notificationStatus, setNotificationStatus] = useState<any>(null);
+  const [notificationStatus, setNotificationStatus] = useState<NotificationPermission | null>(null);
   
   const { user, loading: authLoading } = useAuth();
   const pushNotifications = usePushNotifications();

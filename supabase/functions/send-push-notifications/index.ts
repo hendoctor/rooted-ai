@@ -17,7 +17,7 @@ interface NotificationPayload {
   body: string
   icon?: string
   badge?: string
-  data?: any
+  data?: Record<string, unknown>
 }
 
 const VAPID_PUBLIC_KEY = "BBJeaLq3cweiE_oIJB4EuAIv5Ivua5xmh8IZI68nfmohnsbqtQq6l9_ARSQmDHDNrxUiZRK5UiXW74QuGhSpcKqY"
@@ -95,14 +95,17 @@ function calculateNextNotification(frequency_type: string, frequency_value: numb
       return new Date(now.getTime() + frequency_value * 60 * 60 * 1000)
     case 'days':
       return new Date(now.getTime() + frequency_value * 24 * 60 * 60 * 1000)
-    case 'specific_days':
-      if (!frequency_days || frequency_days.length === 0) return new Date(now.getTime() + 24 * 60 * 60 * 1000)
-      
+    case 'specific_days': {
+      if (!frequency_days || frequency_days.length === 0)
+        return new Date(now.getTime() + 24 * 60 * 60 * 1000)
+
       const currentDay = now.getDay()
-      const nextDay = frequency_days.find(day => day > currentDay) ?? frequency_days[0]
-      const daysUntilNext = nextDay > currentDay ? nextDay - currentDay : 7 - currentDay + nextDay
-      
+      const nextDay = frequency_days.find((day) => day > currentDay) ?? frequency_days[0]
+      const daysUntilNext =
+        nextDay > currentDay ? nextDay - currentDay : 7 - currentDay + nextDay
+
       return new Date(now.getTime() + daysUntilNext * 24 * 60 * 60 * 1000)
+    }
     default:
       return new Date(now.getTime() + 5 * 60 * 1000) // Default to 5 minutes
   }
