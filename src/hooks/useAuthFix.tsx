@@ -30,7 +30,8 @@ export const useAuthFix = () => {
             .insert({
               user_id: user.id,
               full_name: user.email,
-              email: user.email
+              email: user.email,
+              role: 'client'
             });
 
           if (insertError) {
