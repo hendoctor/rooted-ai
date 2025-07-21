@@ -122,6 +122,24 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          id: string
+          email: string
+          role: string
+        }
+        Insert: {
+          id: string
+          email: string
+          role?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          role?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth_key: string

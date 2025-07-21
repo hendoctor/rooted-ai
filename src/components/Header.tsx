@@ -13,7 +13,7 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
-  const { user, profile, signOut } = useAuth();
+  const { user, userRole, profile, signOut } = useAuth();
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
 
@@ -82,7 +82,7 @@ const Header = () => {
                 {item.name}
               </a>
             ))}
-            {profile?.role === 'admin' && (
+            {userRole === 'Admin' && (
               <Link
                 to="/admin"
                 className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
@@ -115,7 +115,10 @@ const Header = () => {
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2 text-slate-gray dark:text-cream">
                   <User className="w-4 h-4" />
-                  <span className="text-sm">{user.email}</span>
+                  <span className="text-sm">
+                    {user.email}
+                    {userRole && ` (${userRole})`}
+                  </span>
                 </div>
                 <Button
                   onClick={handleSignOut}
@@ -184,7 +187,7 @@ const Header = () => {
                 {item.name}
               </a>
             ))}
-            {profile?.role === 'admin' && (
+            {userRole === 'Admin' && (
               <Link
                 to="/admin"
                 className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
@@ -198,7 +201,10 @@ const Header = () => {
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 text-slate-gray dark:text-white text-sm">
                       <User className="w-4 h-4" />
-                      <span>{user.email}</span>
+                      <span>
+                        {user.email}
+                        {userRole && ` (${userRole})`}
+                      </span>
                     </div>
                     <Button
                       onClick={handleSignOut}
