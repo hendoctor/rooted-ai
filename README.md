@@ -66,4 +66,4 @@ npm run preview
 
 ## 📄 License
 
-© 2024 RootedAI. All rights reserved.
+Licensed under the [MIT License](LICENSE).
