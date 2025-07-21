@@ -178,3 +178,12 @@
     opacity: 1;
   }
 }
+
+#splash-screen {
+  @apply fixed inset-0 flex items-center justify-center bg-cream;
+  z-index: 50;
+}
+
+#splash-screen img {
+  @apply w-32 h-32;
+}
