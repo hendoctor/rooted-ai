@@ -8,8 +8,11 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import AdminCenter from "./pages/AdminCenter";
+import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 import VapidSetup from "./pages/VapidSetup";
+import PrivateRoute from "./components/PrivateRoute";
 
 const queryClient = new QueryClient();
 
@@ -25,8 +28,31 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/vapid-setup" element={<VapidSetup />} />
+              <Route
+                path="/admin"
+                element={
+                  <PrivateRoute requiredRoles={["Admin"]}>
+                    <Admin />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin-center"
+                element={
+                  <PrivateRoute requiredRoles={["Admin"]}>
+                    <AdminCenter />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/vapid-setup"
+                element={
+                  <PrivateRoute requiredRoles={["Admin", "Client"]}>
+                    <VapidSetup />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="/access-denied" element={<AccessDenied />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

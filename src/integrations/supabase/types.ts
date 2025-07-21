@@ -206,6 +206,33 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          id: string
+          role: string
+          page: string
+          access: boolean
+          menu_item: string | null
+          visible: boolean
+        }
+        Insert: {
+          id?: string
+          role: string
+          page: string
+          access?: boolean
+          menu_item?: string | null
+          visible?: boolean
+        }
+        Update: {
+          id?: string
+          role?: string
+          page?: string
+          access?: boolean
+          menu_item?: string | null
+          visible?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
