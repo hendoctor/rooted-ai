@@ -20,11 +20,7 @@ interface NotificationPayload {
   data?: any
 }
 
-// Public VAPID key corresponding to the private key stored as a Supabase secret.
-// Make sure this value is the exact output of the `generate-vapid-keys` function
-// without the old extra "B" prefix which produced an invalid key.
-const VAPID_PUBLIC_KEY =
-  "BJeaLq3cweiE_oIJB4EuAIv5Ivua5xmh8IZI68nfmohnsbqtQq6l9_ARSQmDHDNrxUiZRK5UiXW74QuGhSpcKqY"
+const VAPID_PUBLIC_KEY = "BBJeaLq3cweiE_oIJB4EuAIv5Ivua5xmh8IZI68nfmohnsbqtQq6l9_ARSQmDHDNrxUiZRK5UiXW74QuGhSpcKqY"
 
 async function sendWebPush(subscription: PushSubscription, payload: NotificationPayload): Promise<boolean> {
   try {
