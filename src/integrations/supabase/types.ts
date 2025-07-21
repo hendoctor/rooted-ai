@@ -100,7 +100,6 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string
-          role: string
         }
         Insert: {
           created_at?: string
@@ -109,7 +108,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id: string
-          role?: string
         }
         Update: {
           created_at?: string
@@ -118,25 +116,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
-          role?: string
-        }
-        Relationships: []
-      }
-      users: {
-        Row: {
-          id: string
-          email: string
-          role: string
-        }
-        Insert: {
-          id: string
-          email: string
-          role?: string
-        }
-        Update: {
-          id?: string
-          email?: string
-          role?: string
         }
         Relationships: []
       }
@@ -203,33 +182,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      role_permissions: {
-        Row: {
-          id: string
-          role: string
-          page: string
-          access: boolean
-          menu_item: string | null
-          visible: boolean
-        }
-        Insert: {
-          id?: string
-          role: string
-          page: string
-          access?: boolean
-          menu_item?: string | null
-          visible?: boolean
-        }
-        Update: {
-          id?: string
-          role?: string
-          page?: string
-          access?: boolean
-          menu_item?: string | null
-          visible?: boolean
         }
         Relationships: []
       }
