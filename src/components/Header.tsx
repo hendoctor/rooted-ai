@@ -38,9 +38,9 @@ const Header = () => {
     { name: 'Contact', href: '#contact' }
   ];
 
-  const dynamicNav = menuPermissions
+  const dynamicNav = user ? menuPermissions
     .filter((p) => p.visible && p.menu_item)
-    .map((p) => ({ name: p.menu_item, href: p.page }));
+    .map((p) => ({ name: p.menu_item, href: p.page })) : [];
 
   const navItems = [...baseNavItems, ...dynamicNav];
 

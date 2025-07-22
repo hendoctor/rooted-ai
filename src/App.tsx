@@ -9,7 +9,6 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
-import AdminCenter from "./pages/AdminCenter";
 import UserManagement from "./pages/UserManagement";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
@@ -26,14 +25,6 @@ const AppContent = () => {
         element={
           <PrivateRoute requiredRoles={["Admin"]}>
             <Admin />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/admin-center"
-        element={
-          <PrivateRoute requiredRoles={["Admin"]}>
-            <AdminCenter />
           </PrivateRoute>
         }
       />
