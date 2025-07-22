@@ -42,7 +42,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        publicKey: `B${publicKey}`, // Add the B prefix for uncompressed point
+        publicKey,
         privateKey,
         message: "VAPID keys generated successfully. Store these securely!"
       }),

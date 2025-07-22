@@ -64,6 +64,26 @@ npm run build
 npm run preview
 ```
 
+## 🔔 Push Notifications Setup
+
+1. **Generate VAPID Keys**
+   - Run the `generate-vapid-keys` edge function:
+     ```bash
+     supabase functions invoke generate-vapid-keys
+     ```
+   - Copy the returned `publicKey` and `privateKey` values.
+
+2. **Store the Private Key**
+   - In the Supabase dashboard go to **Project Settings → Functions → Secrets**.
+   - Add a secret named `VAPID_PRIVATE_KEY` with the value of your generated private key.
+
+3. **Update the Public Key**
+   - Replace the `VAPID_PUBLIC_KEY` constant in `src/hooks/usePushNotifications.tsx`
+     and `supabase/functions/send-push-notifications/index.ts` with your new public key.
+
+4. **Deploy Functions**
+   - Redeploy your edge functions so they pick up the new secret and public key.
+
 ## 📄 License
 
 © 2024 RootedAI. All rights reserved.
