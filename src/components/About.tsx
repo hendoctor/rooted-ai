@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { NotificationDebugger } from './NotificationDebugger';
 import { Card, CardContent } from '@/components/ui/card';
 
 const About = () => {
@@ -150,11 +149,6 @@ const About = () => {
           </div>
         </div>
         
-        {/* Debug Section - Remove in production */}
-        <div className="mt-16">
-          <h3 className="text-2xl font-bold text-forest-green mb-6 text-center">Push Notification Debug</h3>
-          <NotificationDebugger />
-        </div>
       </div>
     </section>
   );
