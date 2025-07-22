@@ -1,6 +1,7 @@
 import React from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { NotificationDebugger } from '@/components/NotificationDebugger';
 import { useAuth } from '@/hooks/useAuth';
 import AccessDenied from './AccessDenied';
 
@@ -34,6 +35,11 @@ const Admin = () => {
           <div className="border border-sage/50 p-6 rounded-lg text-slate-gray">
             <p className="mb-2">Placeholder for admin tools.</p>
             <p>Manage users or view reports here.</p>
+          </div>
+
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-forest-green mb-6 text-center">Push Notification Debug</h2>
+            <NotificationDebugger />
           </div>
         </div>
       </main>
