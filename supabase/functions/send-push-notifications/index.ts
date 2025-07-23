@@ -31,11 +31,11 @@ async function sendWebPush(subscription: PushSubscription, payload: Notification
       return false;
     }
 
+    const jwt = await generateJWT();
     const vapidHeaders = {
-      'Authorization': `vapid t=${generateJWT()}, k=${VAPID_PUBLIC_KEY}`,
+      'Authorization': `vapid t=${jwt}, k=${VAPID_PUBLIC_KEY}`,
       'TTL': '86400',
-      'Content-Type': 'application/json',
-      'Content-Encoding': 'aes128gcm'
+      'Content-Type': 'application/json'
     }
 
     const response = await fetch(subscription.endpoint, {
@@ -56,17 +56,62 @@ async function sendWebPush(subscription: PushSubscription, payload: Notification
   }
 }
 
-function generateJWT(): string {
-  // Simplified JWT generation - in production use a proper JWT library
-  const header = btoa(JSON.stringify({ typ: 'JWT', alg: 'ES256' }))
-  const payload = btoa(JSON.stringify({
-    aud: 'https://fcm.googleapis.com',
-    exp: Math.floor(Date.now() / 1000) + 3600,
-    sub: 'mailto:your-email@example.com'
-  }))
-  
-  // This is a placeholder - implement proper ES256 signing in production
-  return `${header}.${payload}.signature`
+async function generateJWT(): Promise<string> {
+  try {
+    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+    if (!vapidPrivateKey) {
+      throw new Error('VAPID_PRIVATE_KEY not configured');
+    }
+
+    // Import the private key for signing
+    const privateKeyDER = Uint8Array.from(atob(vapidPrivateKey), c => c.charCodeAt(0));
+    const privateKey = await crypto.subtle.importKey(
+      'pkcs8',
+      privateKeyDER,
+      {
+        name: 'ECDSA',
+        namedCurve: 'P-256',
+      },
+      false,
+      ['sign']
+    );
+
+    // Create JWT header and payload
+    const header = {
+      typ: 'JWT',
+      alg: 'ES256'
+    };
+
+    const payload = {
+      aud: 'https://fcm.googleapis.com',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      sub: 'mailto:james@hennahane.com'
+    };
+
+    // Encode header and payload
+    const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const encodedPayload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    
+    // Create signature
+    const data = new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`);
+    const signature = await crypto.subtle.sign(
+      {
+        name: 'ECDSA',
+        hash: 'SHA-256',
+      },
+      privateKey,
+      data
+    );
+
+    // Encode signature
+    const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+      .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+
+    return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
+  } catch (error) {
+    console.error('JWT generation error:', error);
+    throw error;
+  }
 }
 
 async function generateJoke(): Promise<string> {

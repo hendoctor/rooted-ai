@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { NotificationDebugger } from '@/components/NotificationDebugger';
+import { VapidSetup } from '@/components/VapidSetup';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
@@ -113,10 +114,16 @@ const Admin = () => {
             </div>
           </div>
 
-          {/* Push Notification Debug */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-sage/20 p-6">
-            <h2 className="text-2xl font-bold text-forest-green mb-6">Push Notification Debug</h2>
-            <NotificationDebugger />
+          {/* VAPID Setup and Push Notification Debug */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-sage/20 p-6">
+              <h2 className="text-2xl font-bold text-forest-green mb-6">VAPID Keys Setup</h2>
+              <VapidSetup />
+            </div>
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-sage/20 p-6">
+              <h2 className="text-2xl font-bold text-forest-green mb-6">Push Notification Debug</h2>
+              <NotificationDebugger />
+            </div>
           </div>
         </div>
       </main>
