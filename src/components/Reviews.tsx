@@ -54,37 +54,52 @@ const Reviews = () => {
 
         {/* Testimonials Grid */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
-          {testimonials.map((testimonial, index) => (
-            <Card key={index} className="bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 border-0 animate-fade-in-up" style={{ animationDelay: `${index * 0.2}s` }}>
-              <CardContent className="p-8">
-                {/* Quote Icon */}
-                <div className="text-sage text-6xl font-serif mb-4 leading-none">"</div>
-                
-                {/* Rating */}
-                <div className="flex mb-6">
-                  {renderStars(testimonial.rating)}
-                </div>
+          {testimonials.map((testimonial, index) => {
+            const card = (
+              <Card
+                className="bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 border-0 animate-fade-in-up"
+                style={{ animationDelay: `${index * 0.2}s` }}
+              >
+                <CardContent className="p-8">
+                  {/* Quote Icon */}
+                  <div className="text-sage text-6xl font-serif mb-4 leading-none">"</div>
 
-                {/* Quote */}
-                <blockquote className="text-slate-gray leading-relaxed mb-6 italic">
-                  {testimonial.quote}
-                </blockquote>
+                  {/* Rating */}
+                  <div className="flex mb-6">{renderStars(testimonial.rating)}</div>
 
-                {/* Author Info */}
-                <div className="border-t border-sage/20 pt-6">
-                  <div className="font-semibold text-forest-green text-lg">
-                    {testimonial.name}
+                  {/* Quote */}
+                  <blockquote className="text-slate-gray leading-relaxed mb-6 italic">
+                    {testimonial.quote}
+                  </blockquote>
+
+                  {/* Author Info */}
+                  <div className="border-t border-sage/20 pt-6">
+                    <div className="font-semibold text-forest-green text-lg">
+                      {testimonial.name}
+                    </div>
+                    <div className="text-earth-brown font-medium">
+                      {testimonial.title}
+                    </div>
+                    <div className="text-slate-gray text-sm">{testimonial.company}</div>
                   </div>
-                  <div className="text-earth-brown font-medium">
-                    {testimonial.title}
-                  </div>
-                  <div className="text-slate-gray text-sm">
-                    {testimonial.company}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+
+            return testimonial.company === "The Survey Institute" ? (
+              <a
+                key={index}
+                href="https://surveyinstitute.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                {card}
+              </a>
+            ) : (
+              <React.Fragment key={index}>{card}</React.Fragment>
+            );
+          })}
         </div>
 
         {/* Stats Section */}
