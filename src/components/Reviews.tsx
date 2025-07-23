@@ -9,7 +9,8 @@ const Reviews = () => {
       name: "Don Bruns",
       title: "Founder and CEO",
       company: "The Survey Institute",
-      rating: 5
+      rating: 5,
+      url: "https://surveyinstitute.com/"
     }
   ];
   const stats = [
@@ -55,8 +56,15 @@ const Reviews = () => {
         {/* Testimonials Grid */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           {testimonials.map((testimonial, index) => (
-            <Card key={index} className="bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 border-0 animate-fade-in-up" style={{ animationDelay: `${index * 0.2}s` }}>
-              <CardContent className="p-8">
+            <a
+              key={index}
+              href={testimonial.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <Card className="bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 border-0 animate-fade-in-up" style={{ animationDelay: `${index * 0.2}s` }}>
+                <CardContent className="p-8">
                 {/* Quote Icon */}
                 <div className="text-sage text-6xl font-serif mb-4 leading-none">"</div>
                 
@@ -83,7 +91,8 @@ const Reviews = () => {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+              </Card>
+            </a>
           ))}
         </div>
 
