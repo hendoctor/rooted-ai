@@ -12,7 +12,6 @@ import Admin from "./pages/Admin";
 import UserManagement from "./pages/UserManagement";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
-import VapidSetup from "./pages/VapidSetup";
 import PrivateRoute from "./components/PrivateRoute";
 
 const AppContent = () => {
@@ -33,14 +32,6 @@ const AppContent = () => {
         element={
           <PrivateRoute requiredRoles={["Admin"]}>
             <UserManagement />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/vapid-setup"
-        element={
-          <PrivateRoute requiredRoles={["Admin", "Client"]}>
-            <VapidSetup />
           </PrivateRoute>
         }
       />

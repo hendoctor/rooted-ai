@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { NotificationDebugger } from '@/components/NotificationDebugger';
 import AccessDenied from './AccessDenied';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -286,15 +285,6 @@ const UserManagement = () => {
             </CardContent>
           </Card>
 
-          {/* PWA Debug Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-forest-green">PWA Debug & Notifications</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <NotificationDebugger />
-            </CardContent>
-          </Card>
         </div>
       </main>
       <Footer />

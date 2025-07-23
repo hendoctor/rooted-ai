@@ -25,20 +25,6 @@
   ],
   "categories": ["business", "productivity", "education"],
   "lang": "en-US",
-  "shortcuts": [
-    {
-      "name": "Test AI Joke",
-      "short_name": "Test Joke",
-      "description": "Send a test AI joke notification",
-      "url": "/?action=test-joke",
-      "icons": [
-        {
-          "src": "/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png",
-          "sizes": "192x192"
-        }
-      ]
-    }
-  ],
   "prefer_related_applications": false,
   "edge_side_panel": {
     "preferred_width": 400

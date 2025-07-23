@@ -95,8 +95,6 @@ verify_jwt = false
 [functions.newsletter-signup]
 verify_jwt = false
 
-[functions.generate-vapid-keys]
-verify_jwt = false
 
 [analytics]
 enabled = true
