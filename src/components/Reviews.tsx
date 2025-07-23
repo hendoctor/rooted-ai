@@ -89,7 +89,7 @@ const Reviews = () => {
             return testimonial.company === "The Survey Institute" ? (
               <a
                 key={index}
-                href="https://fast.com/"
+                href="https://surveyinstitute.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block"
