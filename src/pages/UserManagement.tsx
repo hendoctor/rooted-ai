@@ -5,19 +5,16 @@ import AccessDenied from './AccessDenied';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import UserRoleManager from '@/components/UserRoleManager';
 
 const UserManagement = () => {
   const { user, userRole, profile, loading } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<Tables<'users'>[]>([]);
   const [perms, setPerms] = useState<Tables<'role_permissions'>[]>([]);
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState('Public');
   const [loadingUsers, setLoadingUsers] = useState(true);
 
   useEffect(() => {
@@ -73,29 +70,6 @@ const UserManagement = () => {
     }
   };
 
-  const addUser = async () => {
-    if (!newUserEmail.trim()) return;
-    
-    const { error } = await supabase
-      .from('users')
-      .insert({ email: newUserEmail, role: newUserRole });
-    
-    if (!error) {
-      fetchUsers();
-      setNewUserEmail('');
-      setNewUserRole('Public');
-      toast({
-        title: "Success",
-        description: "User added successfully",
-      });
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to add user (user may already exist)",
-        variant: "destructive",
-      });
-    }
-  };
 
   const updatePermission = async (
     id: string,
@@ -150,45 +124,14 @@ const UserManagement = () => {
           </div>
 
           {/* User Management */}
+          <UserRoleManager onUserUpdated={fetchUsers} />
+
+          {/* Current Users Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-forest-green">User Management</CardTitle>
+              <CardTitle className="text-forest-green">Current Users</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Add New User */}
-              <div className="flex gap-4 items-end">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-gray mb-2">
-                    Email Address
-                  </label>
-                  <Input
-                    type="email"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    placeholder="user@example.com"
-                  />
-                </div>
-                <div className="w-32">
-                  <label className="block text-sm font-medium text-slate-gray mb-2">
-                    Role
-                  </label>
-                  <Select value={newUserRole} onValueChange={setNewUserRole}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Public">Public</SelectItem>
-                      <SelectItem value="Client">Client</SelectItem>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button onClick={addUser} className="bg-forest-green hover:bg-forest-green/90">
-                  Add User
-                </Button>
-              </div>
-
-              {/* Users Table */}
+            <CardContent>
               <div className="overflow-x-auto">
                 <table className="w-full border border-sage/50 divide-y divide-sage/50">
                   <thead className="bg-sage/20">
