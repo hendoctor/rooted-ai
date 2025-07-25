@@ -152,6 +152,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_log: {
+        Row: {
+          created_at: string
+          id: string
+          identifier_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identifier_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identifier_key?: string
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           access: boolean
@@ -176,6 +194,36 @@ export type Database = {
           page?: string
           role?: string
           visible?: boolean
+        }
+        Relationships: []
+      }
+      security_audit_log: {
+        Row: {
+          created_at: string
+          event_details: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_details?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_details?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -241,6 +289,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          identifier: string
+          max_requests?: number
+          window_seconds?: number
+        }
+        Returns: boolean
+      }
       generate_vapid_keys: {
         Args: Record<PropertyKey, never>
         Returns: {

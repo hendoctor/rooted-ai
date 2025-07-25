@@ -1,11 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { contactFormSchema, sanitizeHtml, rateLimitCheck } from '@/utils/inputValidation';
+import { 
+  contactFormSchema, 
+  sanitizeForHTML, 
+  rateLimitCheck, 
+  generateCSRFToken, 
+  storeCSRFToken, 
+  getCSRFToken 
+} from '@/utils/inputValidation';
 import { z } from 'zod';
 
 const ContactForm = () => {
@@ -18,10 +25,19 @@ const ContactForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
+  const [csrfToken, setCsrfToken] = useState<string>('');
+
+  useEffect(() => {
+    // Generate and store CSRF token on component mount
+    const token = generateCSRFToken();
+    storeCSRFToken(token);
+    setCsrfToken(token);
+  }, []);
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: sanitizeHtml(value)
+      [field]: sanitizeForHTML(value)
     }));
   };
 
@@ -44,9 +60,26 @@ const ContactForm = () => {
       // Validate form data
       const validatedData = contactFormSchema.parse(formData);
 
-      // Submit to Supabase edge function
+      // Get current CSRF token
+      const currentToken = getCSRFToken();
+      if (!currentToken) {
+        toast({
+          title: "Security Error",
+          description: "Security token missing. Please refresh the page.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Submit to Supabase edge function with CSRF protection
       const { data, error } = await supabase.functions.invoke('contact-form', {
-        body: validatedData
+        body: {
+          ...validatedData,
+          csrf_token: currentToken
+        },
+        headers: {
+          'X-CSRF-Token': currentToken
+        }
       });
 
       if (error) {
@@ -58,13 +91,17 @@ const ContactForm = () => {
         description: "Thank you for your inquiry. We'll get back to you soon.",
       });
 
-      // Reset form
+      // Reset form and generate new CSRF token
       setFormData({
         name: '',
         email: '',
         service_type: '',
         message: ''
       });
+      
+      const newToken = generateCSRFToken();
+      storeCSRFToken(newToken);
+      setCsrfToken(newToken);
 
     } catch (error) {
       console.error('Contact form error:', error);
