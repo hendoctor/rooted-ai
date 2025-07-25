@@ -1,10 +1,28 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// Generate CORS headers based on origin
+const generateCorsHeaders = (origin?: string) => {
+  const allowedOrigins = [
+    'https://lovable.dev',
+    'https://app.lovable.dev'
+  ];
+  
+  // Check if origin is allowed or if it's a Lovable subdomain
+  const isAllowed = origin && (
+    allowedOrigins.includes(origin) || 
+    origin.endsWith('.lovable.dev') ||
+    origin === 'http://localhost:3000' ||
+    origin === 'http://localhost:5173'
+  );
+  
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Credentials': isAllowed ? 'true' : 'false'
+  };
 };
 
 // Enhanced input sanitization
@@ -42,14 +60,12 @@ const getClientIP = (req: Request): string => {
 };
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const corsHeaders = generateCorsHeaders(origin);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Max-Age': '86400', // Cache preflight for 24 hours
-      }
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   // Only allow POST requests

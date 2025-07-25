@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import UserRoleManager from '@/components/UserRoleManager';
+import SecurityAuditDisplay from '@/components/SecurityAuditDisplay';
 
 const UserManagement = () => {
   const { user, userRole, profile, loading } = useAuth();
@@ -122,6 +123,9 @@ const UserManagement = () => {
               Welcome, {profile?.full_name || user.email}! You have <span className="font-semibold">{userRole}</span> access.
             </p>
           </div>
+
+          {/* Security Audit */}
+          <SecurityAuditDisplay />
 
           {/* User Management */}
           <UserRoleManager onUserUpdated={fetchUsers} />

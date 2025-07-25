@@ -80,7 +80,7 @@ const Auth = () => {
           });
         }
       } else {
-        const redirectUrl = `https://rootedai.tech/`;
+        const redirectUrl = `${window.location.origin}/`;
         
         const { error } = await supabase.auth.signUp({
           email,
@@ -131,7 +131,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const redirectUrl = `https://rootedai.tech/auth?type=recovery`;
+      const redirectUrl = `${window.location.origin}/auth?type=recovery`;
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
@@ -173,10 +173,25 @@ const Auth = () => {
       return;
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       toast({
         title: "Password Too Short",
-        description: "Password must be at least 6 characters long.",
+        description: "Password must be at least 8 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Enhanced password validation
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasLowerCase = /[a-z]/.test(newPassword);
+    const hasNumbers = /\d/.test(newPassword);
+    const hasSpecialChar = /[!@#$%^&*]/.test(newPassword);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+      toast({
+        title: "Password Too Weak",
+        description: "Password must contain uppercase, lowercase, numbers, and special characters.",
         variant: "destructive",
       });
       return;
@@ -242,7 +257,7 @@ const Auth = () => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={8}
                     className="border-sage/50 focus:border-forest-green"
                     placeholder="Enter new password"
                   />
@@ -258,7 +273,7 @@ const Auth = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    minLength={6}
+                    minLength={8}
                     className="border-sage/50 focus:border-forest-green"
                     placeholder="Confirm new password"
                   />
@@ -413,7 +428,7 @@ const Auth = () => {
                   required
                   className="border-sage/50 focus:border-forest-green"
                   placeholder="Your password"
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
 

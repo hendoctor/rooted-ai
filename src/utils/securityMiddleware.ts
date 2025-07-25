@@ -53,12 +53,12 @@ export class SecurityMiddleware {
         return false;
       }
 
-      // Check if session is expiring soon (within 5 minutes)
+      // Check if session is expiring soon (within 10 minutes)
       const expiresAt = new Date(session.expires_at! * 1000);
       const now = new Date();
       const timeUntilExpiry = expiresAt.getTime() - now.getTime();
       
-      if (timeUntilExpiry < 5 * 60 * 1000) { // 5 minutes
+      if (timeUntilExpiry < 10 * 60 * 1000) { // 10 minutes
         // Try to refresh the session
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
@@ -77,10 +77,20 @@ export class SecurityMiddleware {
   // Sanitize URLs to prevent open redirects
   static sanitizeRedirectUrl(url: string): string {
     try {
+      const allowedOrigins = [
+        window.location.origin,
+        'https://lovable.dev' // Allow Lovable preview URLs
+      ];
+      
       const urlObj = new URL(url, window.location.origin);
       
-      // Only allow same-origin redirects
-      if (urlObj.origin !== window.location.origin) {
+      // Only allow same-origin or allowed origins redirects
+      if (!allowedOrigins.includes(urlObj.origin)) {
+        return '/';
+      }
+      
+      // Block dangerous protocols
+      if (!['http:', 'https:'].includes(urlObj.protocol)) {
         return '/';
       }
       
