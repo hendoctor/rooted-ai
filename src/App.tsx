@@ -8,7 +8,6 @@ import { AuthProvider } from "@/hooks/useAuth";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Admin from "./pages/Admin";
 import UserManagement from "./pages/UserManagement";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
@@ -21,14 +20,6 @@ const AppContent = () => {
       <Route path="/auth" element={<Auth />} />
       <Route
         path="/admin"
-        element={
-          <PrivateRoute requiredRoles={["Admin"]}>
-            <Admin />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/user-management"
         element={
           <PrivateRoute requiredRoles={["Admin"]}>
             <UserManagement />
