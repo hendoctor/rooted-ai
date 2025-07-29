@@ -131,7 +131,7 @@ const InvitationsTable = () => {
           <p className="text-slate-gray text-center py-8">No invitations sent yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-[40rem] w-full border border-sage/50 divide-y divide-sage/50">
+            <table className="w-full border border-sage/50 divide-y divide-sage/50">
               <thead className="bg-sage/20">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium text-forest-green">Name</th>
