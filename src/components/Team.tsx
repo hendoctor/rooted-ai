@@ -6,14 +6,12 @@ import { Globe } from 'lucide-react';
 const ProfileImage = ({ member, index }: { member: any, index: number }) => {
   const [rotation, setRotation] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isZoomed, setIsZoomed] = useState(false);
   const velocityRef = useRef(0);
   const lastTimeRef = useRef(0);
   const animationRef = useRef<number>();
   const containerRef = useRef<HTMLDivElement>(null);
   const startXRef = useRef(0);
   const startRotationRef = useRef(0);
-  const startTouchRef = useRef({ x: 0, y: 0 });
 
   const logoUrl = "/lovable-uploads/ce6a66fb-80e8-4092-84eb-db436fcb1cad.png";
 
@@ -58,10 +56,8 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
 
   // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    startXRef.current = touch.clientX;
+    startXRef.current = e.touches[0].clientX;
     startRotationRef.current = rotation;
-    startTouchRef.current = { x: touch.clientX, y: touch.clientY };
     lastTimeRef.current = Date.now();
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
@@ -86,22 +82,7 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
     lastTimeRef.current = currentTime;
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    const touch = e.changedTouches[0];
-    const dx = touch.clientX - startTouchRef.current.x;
-    const dy = touch.clientY - startTouchRef.current.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (!isZoomed && distance < 10) {
-      setIsZoomed(true);
-      return;
-    }
-
-    if (isZoomed && distance > 50) {
-      setIsZoomed(false);
-      return;
-    }
-
+  const handleTouchEnd = () => {
     setIsAnimating(true);
     animationRef.current = requestAnimationFrame(animate);
   };
@@ -115,26 +96,15 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
   }, []);
 
   return (
-    <div
-      className={`${
-        isZoomed
-          ? 'fixed inset-0 z-50 flex items-center justify-center bg-black/80'
-          : 'relative w-24 h-24'
-      } transition-all duration-300`}
-    >
+    <div className="relative w-24 h-24">
       <div
         ref={containerRef}
-        className={`preserve-3d cursor-pointer transition-all duration-300 ${
-          isZoomed ? 'w-full h-full' : 'w-24 h-24'
-        }`}
+        className="w-24 h-24 preserve-3d cursor-pointer"
         onMouseEnter={handleMouseEnter}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={() => {
-          if (!isZoomed) setIsZoomed(true);
-        }}
-        style={{
+        style={{ 
           perspective: '1000px',
           touchAction: 'none',
           userSelect: 'none',
@@ -144,35 +114,25 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
       >
         {/* Profile Image */}
         <div
-          className={`absolute inset-0 backface-hidden ${
-            isZoomed ? 'w-full h-full' : 'w-24 h-24'
-          }`}
+          className="absolute inset-0 w-24 h-24 backface-hidden"
           style={{ backfaceVisibility: 'hidden' }}
         >
           <img
             src={member.image}
             alt={member.name}
-            className={`${
-              isZoomed ? 'w-full h-full' : 'w-24 h-24'
-            } rounded-full object-cover border-4 border-sage/30`}
+            className="w-24 h-24 rounded-full object-cover border-4 border-sage/30"
           />
         </div>
         
         {/* Logo Back */}
         <div
-          className={`absolute inset-0 backface-hidden ${
-            isZoomed ? 'w-full h-full' : 'w-24 h-24'
-          }`}
-          style={{
+          className="absolute inset-0 w-24 h-24 backface-hidden"
+          style={{ 
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)'
           }}
         >
-          <div
-            className={`${
-              isZoomed ? 'w-full h-full' : 'w-24 h-24'
-            } rounded-full bg-white border-4 border-sage/30 flex items-center justify-center p-1`}
-          >
+          <div className="w-24 h-24 rounded-full bg-white border-4 border-sage/30 flex items-center justify-center p-1">
             <img
               src={logoUrl}
               alt="RootedAI Logo"
@@ -181,11 +141,9 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
           </div>
         </div>
       </div>
-
+      
       {/* Background overlay to maintain original styling */}
-      {!isZoomed && (
-        <div className="absolute inset-0 w-24 h-24 rounded-full bg-forest-green/10 pointer-events-none"></div>
-      )}
+      <div className="absolute inset-0 w-24 h-24 rounded-full bg-forest-green/10 pointer-events-none"></div>
     </div>
   );
 };
