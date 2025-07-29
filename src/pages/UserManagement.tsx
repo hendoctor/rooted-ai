@@ -185,10 +185,13 @@ const UserManagement = () => {
             </CardContent>
           </Card>
 
-          {/* Role Permissions */}
+          {/* Role-Based Menu & Page Access Control */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-forest-green">Role Permissions</CardTitle>
+              <CardTitle className="text-forest-green">Role-Based Access Control</CardTitle>
+              <p className="text-slate-gray text-sm">
+                Configure what each role can access and see in the application menu. Only active pages with valid routes are shown.
+              </p>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -197,31 +200,46 @@ const UserManagement = () => {
                     <tr>
                       <th className="px-3 py-2 text-left text-sm font-medium text-forest-green">Role</th>
                       <th className="px-3 py-2 text-left text-sm font-medium text-forest-green">Page</th>
-                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Access</th>
+                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Can Access</th>
                       <th className="px-3 py-2 text-left text-sm font-medium text-forest-green">Menu Item</th>
-                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Visible</th>
+                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Show in Menu</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-sage/30">
-                    {perms.map((p) => (
+                    {perms
+                      .filter((p) => {
+                        // Only show active pages that exist in the application
+                        const activePages = ['/', '/admin', '/auth'];
+                        return activePages.includes(p.page);
+                      })
+                      .map((p) => (
                       <tr key={p.id} className="hover:bg-sage/10">
-                        <td className="px-3 py-2 text-slate-gray">{p.role}</td>
-                        <td className="px-3 py-2 text-slate-gray">{p.page}</td>
+                        <td className="px-3 py-2 text-slate-gray font-medium">{p.role}</td>
+                        <td className="px-3 py-2 text-slate-gray">
+                          <code className="bg-sage/20 px-2 py-1 rounded text-xs">{p.page}</code>
+                        </td>
                         <td className="px-3 py-2 text-center">
                           <input
                             type="checkbox"
                             checked={p.access}
                             onChange={(e) => updatePermission(p.id, 'access', e.target.checked)}
-                            className="w-4 h-4 text-forest-green"
+                            className="w-4 h-4 text-forest-green bg-white border-sage rounded focus:ring-forest-green"
                           />
                         </td>
-                        <td className="px-3 py-2 text-slate-gray">{p.menu_item || '-'}</td>
+                        <td className="px-3 py-2">
+                          {p.menu_item ? (
+                            <span className="text-slate-gray bg-sage/10 px-2 py-1 rounded text-sm">{p.menu_item}</span>
+                          ) : (
+                            <span className="text-slate-gray/50 text-sm">No menu item</span>
+                          )}
+                        </td>
                         <td className="px-3 py-2 text-center">
                           <input
                             type="checkbox"
                             checked={p.visible}
                             onChange={(e) => updatePermission(p.id, 'visible', e.target.checked)}
-                            className="w-4 h-4 text-forest-green"
+                            className="w-4 h-4 text-forest-green bg-white border-sage rounded focus:ring-forest-green"
+                            disabled={!p.menu_item}
                           />
                         </td>
                       </tr>
