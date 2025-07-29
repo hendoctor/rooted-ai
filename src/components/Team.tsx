@@ -13,6 +13,11 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
   const startXRef = useRef(0);
   const startRotationRef = useRef(0);
 
+  // Zoom state
+  const [zoomed, setZoomed] = useState(false);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const zoomStart = useRef<{ x: number; y: number } | null>(null);
+
   const logoUrl = "/lovable-uploads/ce6a66fb-80e8-4092-84eb-db436fcb1cad.png";
 
   // Physics animation for momentum
@@ -95,6 +100,16 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
     };
   }, []);
 
+  // Keep overlay mounted during close animation
+  useEffect(() => {
+    if (zoomed) {
+      setShowOverlay(true);
+    } else if (showOverlay) {
+      const timeout = setTimeout(() => setShowOverlay(false), 300);
+      return () => clearTimeout(timeout);
+    }
+  }, [zoomed]);
+
   return (
     <div className="relative w-24 h-24">
       <div
@@ -104,7 +119,15 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{ 
+        onClick={() => {
+          if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+          }
+          setIsAnimating(false);
+          setShowOverlay(true);
+          setZoomed(true);
+        }}
+        style={{
           perspective: '1000px',
           touchAction: 'none',
           userSelect: 'none',
@@ -144,6 +167,35 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
       
       {/* Background overlay to maintain original styling */}
       <div className="absolute inset-0 w-24 h-24 rounded-full bg-forest-green/10 pointer-events-none"></div>
+
+      {showOverlay && (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 transition-opacity duration-300 ${zoomed ? 'opacity-100' : 'opacity-0'}`}
+          onTouchStart={(e) => {
+            zoomStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          }}
+          onTouchEnd={(e) => {
+            if (zoomStart.current) {
+              const dx = e.changedTouches[0].clientX - zoomStart.current.x;
+              const dy = e.changedTouches[0].clientY - zoomStart.current.y;
+              if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+                setZoomed(false);
+              }
+            }
+          }}
+          onTransitionEnd={() => {
+            if (!zoomed) {
+              setShowOverlay(false);
+            }
+          }}
+        >
+          <img
+            src={member.image}
+            alt={member.name}
+            className={`w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl transition-transform duration-300 ${zoomed ? 'scale-100' : 'scale-50'}`}
+          />
+        </div>
+      )}
     </div>
   );
 };
