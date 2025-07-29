@@ -86,7 +86,8 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
         </p>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="overflow-x-auto">
+          <form onSubmit={handleSubmit} className="space-y-4 min-w-[20rem]">
           <div className="space-y-2">
             <Label htmlFor="email" className="flex items-center gap-2">
               <Mail className="h-4 w-4" />
@@ -140,14 +141,15 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
             </Select>
           </div>
 
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={isLoading}
             className="w-full bg-forest-green hover:bg-forest-green/90"
           >
             {isLoading ? "Sending..." : "Send Invitation"}
           </Button>
         </form>
+        </div>
       </CardContent>
     </Card>
   );
