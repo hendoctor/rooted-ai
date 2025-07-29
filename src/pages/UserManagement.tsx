@@ -198,52 +198,74 @@ const UserManagement = () => {
                 <table className="w-full border border-sage/50 divide-y divide-sage/50">
                   <thead className="bg-sage/20">
                     <tr>
-                      <th className="px-3 py-2 text-left text-sm font-medium text-forest-green">Role</th>
                       <th className="px-3 py-2 text-left text-sm font-medium text-forest-green">Page</th>
-                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Can Access</th>
-                      <th className="px-3 py-2 text-left text-sm font-medium text-forest-green">Menu Item</th>
-                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Show in Menu</th>
+                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Public Access</th>
+                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Client Access</th>
+                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Admin Access</th>
+                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Public Menu</th>
+                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Client Menu</th>
+                      <th className="px-3 py-2 text-center text-sm font-medium text-forest-green">Admin Menu</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-sage/30">
-                    {perms
-                      .filter((p) => {
-                        // Only show active pages that exist in the application
-                        const activePages = ['/', '/admin', '/auth'];
-                        return activePages.includes(p.page);
-                      })
-                      .map((p) => (
-                      <tr key={p.id} className="hover:bg-sage/10">
-                        <td className="px-3 py-2 text-slate-gray font-medium">{p.role}</td>
-                        <td className="px-3 py-2 text-slate-gray">
-                          <code className="bg-sage/20 px-2 py-1 rounded text-xs">{p.page}</code>
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={p.access}
-                            onChange={(e) => updatePermission(p.id, 'access', e.target.checked)}
-                            className="w-4 h-4 text-forest-green bg-white border-sage rounded focus:ring-forest-green"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          {p.menu_item ? (
-                            <span className="text-slate-gray bg-sage/10 px-2 py-1 rounded text-sm">{p.menu_item}</span>
-                          ) : (
-                            <span className="text-slate-gray/50 text-sm">No menu item</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-center">
-                          <input
-                            type="checkbox"
-                            checked={p.visible}
-                            onChange={(e) => updatePermission(p.id, 'visible', e.target.checked)}
-                            className="w-4 h-4 text-forest-green bg-white border-sage rounded focus:ring-forest-green"
-                            disabled={!p.menu_item}
-                          />
-                        </td>
-                      </tr>
-                    ))}
+                    {(() => {
+                      // Group permissions by page
+                      const activePages = ['/', '/admin', '/auth'];
+                      const filteredPerms = perms.filter(p => activePages.includes(p.page));
+                      const pageGroups = filteredPerms.reduce((acc, perm) => {
+                        if (!acc[perm.page]) {
+                          acc[perm.page] = {};
+                        }
+                        acc[perm.page][perm.role] = perm;
+                        return acc;
+                      }, {} as Record<string, Record<string, typeof perms[0]>>);
+                      
+                      const roles = ['Public', 'Client', 'Admin'];
+                      
+                      return Object.entries(pageGroups).map(([page, rolePerms]) => (
+                        <tr key={page} className="hover:bg-sage/10">
+                          <td className="px-3 py-2 text-slate-gray font-medium">
+                            <div className="flex flex-col">
+                              <code className="bg-sage/20 px-2 py-1 rounded text-xs">{page}</code>
+                              {rolePerms[roles[0]]?.menu_item && (
+                                <span className="text-xs text-slate-gray/70 mt-1">
+                                  Menu: {rolePerms[roles[0]].menu_item}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          {roles.map(role => (
+                            <td key={`${page}-${role}-access`} className="px-3 py-2 text-center">
+                              <input
+                                type="checkbox"
+                                checked={rolePerms[role]?.access || false}
+                                onChange={(e) => {
+                                  if (rolePerms[role]) {
+                                    updatePermission(rolePerms[role].id, 'access', e.target.checked);
+                                  }
+                                }}
+                                className="w-4 h-4 text-forest-green bg-white border-sage rounded focus:ring-forest-green"
+                              />
+                            </td>
+                          ))}
+                          {roles.map(role => (
+                            <td key={`${page}-${role}-menu`} className="px-3 py-2 text-center">
+                              <input
+                                type="checkbox"
+                                checked={rolePerms[role]?.visible || false}
+                                onChange={(e) => {
+                                  if (rolePerms[role]) {
+                                    updatePermission(rolePerms[role].id, 'visible', e.target.checked);
+                                  }
+                                }}
+                                className="w-4 h-4 text-forest-green bg-white border-sage rounded focus:ring-forest-green"
+                                disabled={!rolePerms[role]?.menu_item}
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>
