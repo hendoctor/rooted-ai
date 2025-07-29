@@ -103,7 +103,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send invitation email
     const emailResponse = await resend.emails.send({
-      from: "Team <onboarding@resend.dev>",
+      from: "Team <hi@rootedai.tech>",
       to: [email],
       subject: "You've been invited to join our platform!",
       html: `

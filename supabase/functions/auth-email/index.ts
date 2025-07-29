@@ -166,7 +166,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "RootedAI <onboarding@resend.dev>",
+      from: "RootedAI <hi@rootedai.tech>",
       to: [email],
       subject: subject,
       html: html,
