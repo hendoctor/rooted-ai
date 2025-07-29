@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import UserRoleManager from '@/components/UserRoleManager';
 import SecurityAuditDisplay from '@/components/SecurityAuditDisplay';
+import InviteUserForm from '@/components/InviteUserForm';
+import InvitationsTable from '@/components/InvitationsTable';
 
 const UserManagement = () => {
   const { user, userRole, profile, loading } = useAuth();
@@ -126,6 +128,12 @@ const UserManagement = () => {
 
           {/* Security Audit */}
           <SecurityAuditDisplay />
+
+          {/* User Invitation System */}
+          <div className="grid md:grid-cols-2 gap-8">
+            <InviteUserForm onInvitationSent={fetchUsers} />
+            <InvitationsTable />
+          </div>
 
           {/* User Management */}
           <UserRoleManager onUserUpdated={fetchUsers} />

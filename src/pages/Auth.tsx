@@ -19,6 +19,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [invitation, setInvitation] = useState<any>(null);
+  const [loadingInvitation, setLoadingInvitation] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -26,8 +28,15 @@ const Auth = () => {
   useEffect(() => {
     // Check if this is a password recovery flow
     const type = searchParams.get('type');
+    const inviteToken = searchParams.get('invite');
+    
     if (type === 'recovery') {
       setShowNewPassword(true);
+    }
+
+    // Load invitation if present
+    if (inviteToken) {
+      loadInvitation(inviteToken);
     }
 
     // Set up auth state listener
@@ -56,6 +65,58 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate, searchParams]);
 
+  const loadInvitation = async (token: string) => {
+    setLoadingInvitation(true);
+    try {
+      const { data, error } = await supabase
+        .from('user_invitations')
+        .select('*')
+        .eq('invitation_token', token)
+        .eq('status', 'pending')
+        .single();
+
+      if (error || !data) {
+        toast({
+          title: "Invalid Invitation",
+          description: "This invitation link is invalid or has expired.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if invitation is expired
+      const now = new Date();
+      const expiresAt = new Date(data.expires_at);
+      if (now > expiresAt) {
+        toast({
+          title: "Invitation Expired",
+          description: "This invitation has expired. Please contact an administrator for a new invitation.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setInvitation(data);
+      setEmail(data.email);
+      setFullName(data.full_name);
+      setIsLogin(false); // Switch to signup mode
+      
+      toast({
+        title: "Invitation Found!",
+        description: `Welcome ${data.full_name}! Complete your account setup below.`,
+      });
+    } catch (error: any) {
+      console.error('Failed to load invitation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load invitation details.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingInvitation(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -82,13 +143,14 @@ const Auth = () => {
       } else {
         const redirectUrl = `${window.location.origin}/`;
         
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: redirectUrl,
             data: {
               full_name: fullName,
+              invited_role: invitation?.role, // Include role if from invitation
             }
           }
         });
@@ -100,10 +162,39 @@ const Auth = () => {
             variant: "destructive",
           });
         } else {
-          toast({
-            title: "Account Created!",
-            description: "Please check your email to verify your account.",
-          });
+          // If this is from an invitation, mark it as accepted
+          if (invitation && data.user) {
+            try {
+              await supabase
+                .from('user_invitations')
+                .update({ 
+                  status: 'accepted',
+                  accepted_at: new Date().toISOString()
+                })
+                .eq('id', invitation.id);
+
+              // Set the user role immediately
+              await supabase
+                .from('users')
+                .upsert({ 
+                  id: data.user.id,
+                  email: data.user.email!,
+                  role: invitation.role 
+                }, { onConflict: 'id' });
+
+              toast({
+                title: "Welcome to the team!",
+                description: `Your account has been created with ${invitation.role} access.`,
+              });
+            } catch (inviteError) {
+              console.error('Failed to process invitation:', inviteError);
+            }
+          } else {
+            toast({
+              title: "Account Created!",
+              description: "Please check your email to verify your account.",
+            });
+          }
         }
       }
     } catch (error: unknown) {
@@ -368,8 +459,20 @@ const Auth = () => {
         <Card className="border-sage/30 shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl text-forest-green text-center">
-              {isLogin ? 'Login' : 'Sign Up'}
+              {isLogin ? 'Login' : invitation ? 'Complete Your Invitation' : 'Sign Up'}
             </CardTitle>
+            {invitation && (
+              <div className="text-center mt-2">
+                <div className="bg-forest-green/10 border border-forest-green/20 rounded-lg p-3">
+                  <p className="text-sm text-forest-green">
+                    <strong>Invited as:</strong> {invitation.role}
+                  </p>
+                  <p className="text-xs text-slate-gray mt-1">
+                    Welcome {invitation.full_name}! Create your password to complete signup.
+                  </p>
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -384,7 +487,8 @@ const Auth = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required={!isLogin}
-                    className="border-sage/50 focus:border-forest-green"
+                    disabled={!!invitation}
+                    className={`border-sage/50 focus:border-forest-green ${invitation ? 'bg-sage/20' : ''}`}
                     placeholder="Your full name"
                   />
                 </div>
@@ -400,7 +504,8 @@ const Auth = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="border-sage/50 focus:border-forest-green"
+                  disabled={!!invitation}
+                  className={`border-sage/50 focus:border-forest-green ${invitation ? 'bg-sage/20' : ''}`}
                   placeholder="your.email@company.com"
                 />
               </div>
