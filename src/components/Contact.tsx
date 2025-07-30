@@ -59,11 +59,11 @@ const Contact = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
           {/* Contact Form */}
-          <Card className="border-sage/30 shadow-lg">
+          <Card className="border-sage/30 shadow-lg h-full flex flex-col">
             <CardHeader>
               <CardTitle className="text-2xl text-forest-green">Send us a message</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-grow flex flex-col">
               <ContactForm />
             </CardContent>
           </Card>

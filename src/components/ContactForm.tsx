@@ -126,7 +126,7 @@ const ContactForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 flex flex-col h-full">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -185,8 +185,8 @@ const ContactForm = () => {
           value={formData.message}
           onChange={(e) => handleInputChange('message', e.target.value)}
           required
-          rows={6}
-          className="w-full"
+          rows={8}
+          className="w-full min-h-[150px] resize-y"
           placeholder="Tell us about your project or how we can help..."
           maxLength={5000}
         />
@@ -195,10 +195,10 @@ const ContactForm = () => {
         </div>
       </div>
       
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
         disabled={isSubmitting}
-        className="w-full bg-forest-green hover:bg-forest-green/90"
+        className="w-full bg-forest-green hover:bg-forest-green/90 mt-auto"
       >
         {isSubmitting ? 'Sending...' : 'Send Message'}
       </Button>
