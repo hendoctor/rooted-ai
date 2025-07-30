@@ -31,8 +31,13 @@ export const useAuthFix = () => {
               user_id: user.id,
               full_name: user.email,
               email: user.email,
-              role: 'client'
+              role: 'Client'
             });
+
+          // Ensure a matching entry exists in the users table
+          await supabase
+            .from('users')
+            .upsert({ id: user.id, email: user.email, role: 'Client' }, { onConflict: 'email' });
 
           if (insertError) {
             console.error('Error creating profile:', insertError);
