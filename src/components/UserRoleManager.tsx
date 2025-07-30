@@ -40,9 +40,9 @@ const UserRoleManager = ({ onUserUpdated }: UserRoleManagerProps) => {
       // Validate input data
       const validatedData = userRoleUpdateSchema.parse({ email, role });
 
-      // Check if user exists first
+      // Check if user profile exists first
       const { data: existingUser, error: checkError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('id, role')
         .eq('email', validatedData.email)
         .maybeSingle();
@@ -52,26 +52,15 @@ const UserRoleManager = ({ onUserUpdated }: UserRoleManagerProps) => {
       }
 
       if (!existingUser) {
-        // Create new user
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert({
-            email: validatedData.email,
-            role: validatedData.role
-          });
-
-        if (insertError) {
-          throw new Error(`Failed to create user: ${insertError.message}`);
-        }
-
         toast({
-          title: "User Created",
-          description: `User ${validatedData.email} created with role ${validatedData.role}`,
+          title: "User Not Found",
+          description: `No profile found for ${validatedData.email}`,
+          variant: "destructive"
         });
       } else {
         // Update existing user
         const { error: updateError } = await supabase
-          .from('users')
+          .from('profiles')
           .update({ role: validatedData.role })
           .eq('email', validatedData.email);
 

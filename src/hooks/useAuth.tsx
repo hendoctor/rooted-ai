@@ -35,29 +35,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const fetchUserRole = async (email: string) => {
+  const fetchUserRole = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('role')
-        .eq('email', email)
+        .eq('user_id', userId)
         .maybeSingle();
-      
+
       if (!error && data) {
         setUserRole(data.role);
-      } else if (!error && !data) {
-        // Create user with Public role by default
-        const { data: newUser, error: insertError } = await supabase
-          .from('users')
-          .insert({ email, role: 'Public' })
-          .select('role')
-          .single();
-        
-        if (!insertError && newUser) {
-          setUserRole(newUser.role);
-        }
-      } else {
-        console.error('Error fetching user role:', error);
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -70,9 +57,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        if (session?.user?.email) {
+        if (session?.user) {
           fetchProfile(session.user.id);
-          setTimeout(() => fetchUserRole(session.user.email!), 0);
+          setTimeout(() => fetchUserRole(session.user.id), 0);
         } else {
           setProfile(null);
           setUserRole(null);
@@ -85,9 +72,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user?.email) {
+      if (session?.user) {
         fetchProfile(session.user.id);
-        setTimeout(() => fetchUserRole(session.user.email!), 0);
+        setTimeout(() => fetchUserRole(session.user.id), 0);
       }
       setLoading(false);
     });

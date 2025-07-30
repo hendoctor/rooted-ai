@@ -9,9 +9,9 @@ export const useUserRole = () => {
     const ensureUserRole = async () => {
       if (!user?.email) return;
 
-      // Check if user exists in users table
+      // Check if user profile exists
       const { data: existingUser, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('role')
         .eq('email', user.email)
         .maybeSingle();
@@ -21,18 +21,7 @@ export const useUserRole = () => {
         return;
       }
 
-      if (!existingUser) {
-        // Create user with Public role by default
-        const { data: newUser, error: insertError } = await supabase
-          .from('users')
-          .insert({ email: user.email, role: 'Public' })
-          .select('role')
-          .single();
-
-        if (!insertError && newUser) {
-          setUserRole(newUser.role);
-        }
-      } else if (!userRole) {
+      if (existingUser && !userRole) {
         setUserRole(existingUser.role);
       }
     };
