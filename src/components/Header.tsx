@@ -123,7 +123,7 @@ const Header = () => {
             {/* Auth buttons */}
             {user ? (
               <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2 text-slate-gray dark:text-cream">
+                <div className="flex items-center space-x-2 text-slate-gray dark:text-white">
                   <User className="w-4 h-4" />
                   <span className="text-sm">
                     {user.email}
