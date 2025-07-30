@@ -184,12 +184,9 @@ const Auth = () => {
 
               // Set the user role immediately
               await supabase
-                .from('users')
-                .upsert({ 
-                  id: data.user.id,
-                  email: data.user.email!,
-                  role: invitation.role 
-                }, { onConflict: 'id' });
+                .from('profiles')
+                .update({ role: invitation.role })
+                .eq('user_id', data.user.id);
 
               toast({
                 title: "Welcome to the team!",

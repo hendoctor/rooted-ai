@@ -17,7 +17,7 @@ import InvitationsTable from '@/components/InvitationsTable';
 const UserManagement = () => {
   const { user, userRole, profile, loading } = useAuth();
   const { toast } = useToast();
-  const [users, setUsers] = useState<Tables<'users'>[]>([]);
+  const [users, setUsers] = useState<Tables<'profiles'>[]>([]);
   const [perms, setPerms] = useState<Tables<'role_permissions'>[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
 
@@ -32,11 +32,8 @@ const UserManagement = () => {
 
   const fetchUsers = async () => {
     const { data, error } = await supabase
-      .from('users')
-      .select(`
-        *,
-        profiles!left(full_name)
-      `)
+      .from('profiles')
+      .select('*')
       .order('created_at', { ascending: false });
     
     if (!error) {
@@ -58,9 +55,9 @@ const UserManagement = () => {
 
   const updateUserRole = async (userId: string, newRole: string) => {
     const { error } = await supabase
-      .from('users')
+      .from('profiles')
       .update({ role: newRole })
-      .eq('id', userId);
+      .eq('user_id', userId);
     
     if (!error) {
       setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
@@ -163,13 +160,13 @@ const UserManagement = () => {
                     {users.map((u: any) => (
                       <tr key={u.id} className="hover:bg-sage/10">
                         <td className="px-4 py-3 text-slate-gray font-medium">
-                          {u.profiles?.full_name || 'N/A'}
+                          {u.full_name || 'N/A'}
                         </td>
                         <td className="px-4 py-3 text-slate-gray">{u.email}</td>
                         <td className="px-4 py-3">
                           <Select
                             value={u.role}
-                            onValueChange={(newRole) => updateUserRole(u.id, newRole)}
+                            onValueChange={(newRole) => updateUserRole(u.user_id, newRole)}
                           >
                             <SelectTrigger className="w-24">
                               <SelectValue />
