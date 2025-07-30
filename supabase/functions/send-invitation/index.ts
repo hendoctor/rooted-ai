@@ -49,7 +49,26 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (userError || userData?.role !== "Admin") {
+      // Log unauthorized invitation attempt
+      await supabaseClient.rpc('log_security_event', {
+        event_type: 'unauthorized_invitation_attempt',
+        event_details: { attempted_by: user.email, ip_address: req.headers.get('x-forwarded-for') }
+      });
       throw new Error("Insufficient permissions");
+    }
+
+    // Check invitation rate limit
+    const { data: rateLimitCheck, error: rateLimitError } = await supabaseClient.rpc('check_invitation_rate_limit', {
+      admin_id: user.id
+    });
+
+    if (rateLimitError || !rateLimitCheck) {
+      // Log rate limit violation
+      await supabaseClient.rpc('log_security_event', {
+        event_type: 'invitation_rate_limit_exceeded',
+        event_details: { admin_id: user.id, admin_email: user.email }
+      });
+      throw new Error("Rate limit exceeded. Please wait before sending more invitations.");
     }
 
     const { email, full_name, role }: InvitationRequest = await req.json();
@@ -67,16 +86,17 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("User already exists with this email");
     }
 
-    // Check if there's already a pending invitation
+    // Check if there's already a pending invitation that hasn't expired
     const { data: existingInvitation } = await supabaseClient
       .from("user_invitations")
-      .select("id")
+      .select("id, expires_at")
       .eq("email", email)
       .eq("status", "pending")
-      .single();
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
 
     if (existingInvitation) {
-      throw new Error("Pending invitation already exists for this email");
+      throw new Error("Active invitation already exists for this email");
     }
 
     // Create invitation record
@@ -97,6 +117,17 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     console.log("Created invitation:", invitation);
+
+    // Log successful invitation creation
+    await supabaseClient.rpc('log_security_event', {
+      event_type: 'invitation_sent',
+      event_details: { 
+        invited_email: email, 
+        invited_role: role, 
+        invited_by: user.email,
+        invitation_id: invitation.id 
+      }
+    });
 
     // Create invitation URL
     const baseUrl = req.headers.get("origin") || "https://rootedai.tech";

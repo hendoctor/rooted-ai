@@ -73,24 +73,23 @@ const Auth = () => {
         .select('*')
         .eq('invitation_token', token)
         .eq('status', 'pending')
-        .single();
+        .gt('expires_at', new Date().toISOString()) // Enhanced expiration check
+        .maybeSingle();
 
       if (error || !data) {
+        // Log invalid invitation attempt for security monitoring
+        await supabase.rpc('log_security_event', {
+          event_type: 'invalid_invitation_access',
+          event_details: { 
+            token: token.substring(0, 8) + '...', // Log partial token for security
+            ip_address: window.location.hostname,
+            user_agent: navigator.userAgent 
+          }
+        });
+        
         toast({
           title: "Invalid Invitation",
           description: "This invitation link is invalid or has expired.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check if invitation is expired
-      const now = new Date();
-      const expiresAt = new Date(data.expires_at);
-      if (now > expiresAt) {
-        toast({
-          title: "Invitation Expired",
-          description: "This invitation has expired. Please contact an administrator for a new invitation.",
           variant: "destructive",
         });
         return;
@@ -100,6 +99,16 @@ const Auth = () => {
       setEmail(data.email);
       setFullName(data.full_name);
       setIsLogin(false); // Switch to signup mode
+      
+      // Log successful invitation access
+      await supabase.rpc('log_security_event', {
+        event_type: 'invitation_accessed',
+        event_details: { 
+          invitation_id: data.id,
+          invited_email: data.email,
+          invited_role: data.role
+        }
+      });
       
       toast({
         title: "Invitation Found!",

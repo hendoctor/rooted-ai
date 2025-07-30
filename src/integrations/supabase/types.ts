@@ -47,48 +47,24 @@ export type Database = {
         }
         Relationships: []
       }
-      newsletter_subscriptions: {
+      invitation_rate_limit: {
         Row: {
-          email: string
-          id: string
-          is_active: boolean
-          subscribed_at: string
-        }
-        Insert: {
-          email: string
-          id?: string
-          is_active?: boolean
-          subscribed_at?: string
-        }
-        Update: {
-          email?: string
-          id?: string
-          is_active?: boolean
-          subscribed_at?: string
-        }
-        Relationships: []
-      }
-      notification_schedules: {
-        Row: {
+          admin_user_id: string
           created_at: string
           id: string
-          next_notification_at: string
-          updated_at: string
-          user_id: string
+          ip_address: unknown | null
         }
         Insert: {
+          admin_user_id: string
           created_at?: string
           id?: string
-          next_notification_at: string
-          updated_at?: string
-          user_id: string
+          ip_address?: unknown | null
         }
         Update: {
+          admin_user_id?: string
           created_at?: string
           id?: string
-          next_notification_at?: string
-          updated_at?: string
-          user_id?: string
+          ip_address?: unknown | null
         }
         Relationships: []
       }
@@ -116,57 +92,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      push_subscriptions: {
-        Row: {
-          auth_key: string
-          created_at: string
-          endpoint: string
-          id: string
-          p256dh_key: string
-          updated_at: string
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          auth_key: string
-          created_at?: string
-          endpoint: string
-          id?: string
-          p256dh_key: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          auth_key?: string
-          created_at?: string
-          endpoint?: string
-          id?: string
-          p256dh_key?: string
-          updated_at?: string
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      rate_limit_log: {
-        Row: {
-          created_at: string
-          id: string
-          identifier_key: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          identifier_key: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          identifier_key?: string
         }
         Relationships: []
       }
@@ -266,39 +191,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_notification_settings: {
-        Row: {
-          created_at: string
-          enabled: boolean
-          frequency_days: number[] | null
-          frequency_type: string
-          frequency_value: number | null
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          enabled?: boolean
-          frequency_days?: number[] | null
-          frequency_type?: string
-          frequency_value?: number | null
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          enabled?: boolean
-          frequency_days?: number[] | null
-          frequency_type?: string
-          frequency_value?: number | null
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       users: {
         Row: {
           created_at: string | null
@@ -328,6 +220,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_invitation_rate_limit: {
+        Args: { admin_id: string; max_invites?: number; window_hours?: number }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           identifier: string
@@ -346,6 +242,10 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      log_security_event: {
+        Args: { event_type: string; event_details?: Json; user_id?: string }
+        Returns: undefined
       }
     }
     Enums: {
