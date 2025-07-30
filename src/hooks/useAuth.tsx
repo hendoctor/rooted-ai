@@ -35,16 +35,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const fetchUserRole = async (userId: string) => {
+  const fetchUserRole = async (userEmail: string) => {
     try {
+      // Roles are stored in the `users` table. Fall back to `profiles` for
+      // backward compatibility and normalise the case for consistency.
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('role')
-        .eq('user_id', userId)
+        .eq('email', userEmail)
         .maybeSingle();
 
       if (!error && data) {
         setUserRole(data.role);
+        return;
+      }
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('email', userEmail)
+        .maybeSingle();
+
+      if (profileData) {
+        const normalised =
+          profileData.role.charAt(0).toUpperCase() + profileData.role.slice(1).toLowerCase();
+        setUserRole(normalised);
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -59,7 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           fetchProfile(session.user.id);
-          setTimeout(() => fetchUserRole(session.user.id), 0);
+          setTimeout(() => fetchUserRole(session.user.email), 0);
         } else {
           setProfile(null);
           setUserRole(null);
@@ -74,7 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
-        setTimeout(() => fetchUserRole(session.user.id), 0);
+        setTimeout(() => fetchUserRole(session.user.email), 0);
       }
       setLoading(false);
     });

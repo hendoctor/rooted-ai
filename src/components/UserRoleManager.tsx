@@ -40,9 +40,9 @@ const UserRoleManager = ({ onUserUpdated }: UserRoleManagerProps) => {
       // Validate input data
       const validatedData = userRoleUpdateSchema.parse({ email, role });
 
-      // Check if user profile exists first
+      // Check if user exists first
       const { data: existingUser, error: checkError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('id, role')
         .eq('email', validatedData.email)
         .maybeSingle();
@@ -60,6 +60,12 @@ const UserRoleManager = ({ onUserUpdated }: UserRoleManagerProps) => {
       } else {
         // Update existing user
         const { error: updateError } = await supabase
+          .from('users')
+          .update({ role: validatedData.role })
+          .eq('email', validatedData.email);
+
+        // Keep profile table in sync if needed
+        await supabase
           .from('profiles')
           .update({ role: validatedData.role })
           .eq('email', validatedData.email);

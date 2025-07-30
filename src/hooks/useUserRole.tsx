@@ -9,9 +9,9 @@ export const useUserRole = () => {
     const ensureUserRole = async () => {
       if (!user?.email) return;
 
-      // Check if user profile exists
+      // Check the users table first for the current role
       const { data: existingUser, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('role')
         .eq('email', user.email)
         .maybeSingle();
@@ -23,6 +23,19 @@ export const useUserRole = () => {
 
       if (existingUser && !userRole) {
         setUserRole(existingUser.role);
+        return;
+      }
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('email', user.email)
+        .maybeSingle();
+
+      if (profileData && !userRole) {
+        const normalised =
+          profileData.role.charAt(0).toUpperCase() + profileData.role.slice(1).toLowerCase();
+        setUserRole(normalised);
       }
     };
 

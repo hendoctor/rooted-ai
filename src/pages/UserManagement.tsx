@@ -55,6 +55,12 @@ const UserManagement = () => {
 
   const updateUserRole = async (userId: string, newRole: string) => {
     const { error } = await supabase
+      .from('users')
+      .update({ role: newRole })
+      .eq('id', userId);
+
+    // Keep profiles in sync if they store a role
+    await supabase
       .from('profiles')
       .update({ role: newRole })
       .eq('user_id', userId);

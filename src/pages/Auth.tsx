@@ -184,6 +184,12 @@ const Auth = () => {
 
               // Set the user role immediately
               await supabase
+                .from('users')
+                .update({ role: invitation.role })
+                .eq('email', invitation.email);
+
+              // Keep the profile table in sync if it has a role column
+              await supabase
                 .from('profiles')
                 .update({ role: invitation.role })
                 .eq('user_id', data.user.id);
