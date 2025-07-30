@@ -45,29 +45,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('email', userEmail)
         .maybeSingle();
 
-      if (!error && data?.role) {
+      if (!error && data) {
         setUserRole(data.role);
         return;
       }
 
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('role')
         .eq('email', userEmail)
         .maybeSingle();
 
-      if (!profileError && profileData?.role) {
+      if (profileData) {
         const normalised =
           profileData.role.charAt(0).toUpperCase() + profileData.role.slice(1).toLowerCase();
         setUserRole(normalised);
-        return;
       }
-
-      // Fallback so PrivateRoute can resolve even if role lookups fail
-      setUserRole('Public');
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
-      setUserRole('Public');
     }
   };
 
