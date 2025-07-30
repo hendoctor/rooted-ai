@@ -99,7 +99,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Created invitation:", invitation);
 
     // Create invitation URL
-    const inviteUrl = `${req.headers.get("origin") || "https://ylewpehqfgltbhpkaout.supabase.co"}/auth?invite=${invitation.invitation_token}`;
+    const baseUrl = req.headers.get("origin") || "https://rootedai.tech";
+    const inviteUrl = `${baseUrl}/auth?invite=${invitation.invitation_token}`;
 
     // Send invitation email
     const emailResponse = await resend.emails.send({

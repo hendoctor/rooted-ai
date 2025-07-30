@@ -5,7 +5,18 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
-import { Mail, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Mail, Clock, CheckCircle, XCircle, RefreshCw, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const InvitationsTable = () => {
   const [invitations, setInvitations] = useState<Tables<'user_invitations'>[]>([]);
@@ -65,6 +76,30 @@ const InvitationsTable = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to resend invitation",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteInvitation = async (invitation: Tables<'user_invitations'>) => {
+    try {
+      const { error } = await supabase
+        .from('user_invitations')
+        .delete()
+        .eq('id', invitation.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Invitation Deleted",
+        description: `Successfully deleted invitation for ${invitation.email}`,
+      });
+
+      fetchInvitations();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete invitation",
         variant: "destructive",
       });
     }
@@ -174,16 +209,47 @@ const InvitationsTable = () => {
                         {new Date(invitation.expires_at).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        {canResend && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => resendInvitation(invitation)}
-                            className="text-forest-green border-forest-green hover:bg-forest-green hover:text-white"
-                          >
-                            Resend
-                          </Button>
-                        )}
+                        <div className="flex items-center justify-center gap-2">
+                          {canResend && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => resendInvitation(invitation)}
+                              className="text-forest-green border-forest-green hover:bg-forest-green hover:text-white"
+                            >
+                              Resend
+                            </Button>
+                          )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 border-red-600 hover:bg-red-600 hover:text-white"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Invitation</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete the invitation for {invitation.full_name} ({invitation.email})? 
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteInvitation(invitation)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </td>
                     </tr>
                   );

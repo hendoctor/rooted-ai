@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import UserRoleManager from '@/components/UserRoleManager';
 import SecurityAuditDisplay from '@/components/SecurityAuditDisplay';
@@ -32,7 +33,10 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     const { data, error } = await supabase
       .from('users')
-      .select('*')
+      .select(`
+        *,
+        profiles!left(full_name)
+      `)
       .order('created_at', { ascending: false });
     
     if (!error) {
@@ -148,15 +152,19 @@ const UserManagement = () => {
                 <table className="w-full border border-sage/50 divide-y divide-sage/50">
                   <thead className="bg-sage/20">
                     <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-forest-green">Name</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-forest-green">Email</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-forest-green">Role</th>
                       <th className="px-4 py-3 text-left text-sm font-medium text-forest-green">Created</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium text-forest-green">Actions</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-forest-green">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-sage/30">
-                    {users.map((u) => (
+                    {users.map((u: any) => (
                       <tr key={u.id} className="hover:bg-sage/10">
+                        <td className="px-4 py-3 text-slate-gray font-medium">
+                          {u.profiles?.full_name || 'N/A'}
+                        </td>
                         <td className="px-4 py-3 text-slate-gray">{u.email}</td>
                         <td className="px-4 py-3">
                           <Select
@@ -177,13 +185,20 @@ const UserManagement = () => {
                           {new Date(u.created_at!).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            u.role === 'Admin' ? 'bg-red-100 text-red-800' :
-                            u.role === 'Client' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
+                          <Badge 
+                            variant={
+                              u.role === 'Admin' ? 'destructive' :
+                              u.role === 'Client' ? 'default' :
+                              'secondary'
+                            }
+                            className={
+                              u.role === 'Admin' ? 'bg-red-100 text-red-800 hover:bg-red-100' :
+                              u.role === 'Client' ? 'bg-blue-100 text-blue-800 hover:bg-blue-100' :
+                              'bg-gray-100 text-gray-800 hover:bg-gray-100'
+                            }
+                          >
                             {u.role}
-                          </span>
+                          </Badge>
                         </td>
                       </tr>
                     ))}
