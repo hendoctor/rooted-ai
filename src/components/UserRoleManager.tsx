@@ -64,11 +64,7 @@ const UserRoleManager = ({ onUserUpdated }: UserRoleManagerProps) => {
           .update({ role: validatedData.role })
           .eq('email', validatedData.email);
 
-        // Keep profile table in sync if needed
-        await supabase
-          .from('profiles')
-          .update({ role: validatedData.role })
-          .eq('email', validatedData.email);
+        // Profiles table doesn't store role, only users table does
 
         if (updateError) {
           throw new Error(`Failed to update user: ${updateError.message}`);

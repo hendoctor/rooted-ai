@@ -188,11 +188,7 @@ const Auth = () => {
                 .update({ role: invitation.role })
                 .eq('email', invitation.email);
 
-              // Keep the profile table in sync if it has a role column
-              await supabase
-                .from('profiles')
-                .update({ role: invitation.role })
-                .eq('user_id', data.user.id);
+              // Profiles table doesn't store role, only users table does
 
               toast({
                 title: "Welcome to the team!",

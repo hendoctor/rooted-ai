@@ -26,16 +26,9 @@ export const useUserRole = () => {
         return;
       }
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('email', user.email)
-        .maybeSingle();
-
-      if (profileData && !userRole) {
-        const normalised =
-          profileData.role.charAt(0).toUpperCase() + profileData.role.slice(1).toLowerCase();
-        setUserRole(normalised);
+      // No role data in profiles, user should have role in users table
+      if (!userRole) {
+        setUserRole('Public');
       }
     };
 

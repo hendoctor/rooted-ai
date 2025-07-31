@@ -50,17 +50,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('email', userEmail)
-        .maybeSingle();
-
-      if (profileData) {
-        const normalised =
-          profileData.role.charAt(0).toUpperCase() + profileData.role.slice(1).toLowerCase();
-        setUserRole(normalised);
-      }
+      // Fallback: if no user role found, default to Public
+      setUserRole('Public');
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
     }
