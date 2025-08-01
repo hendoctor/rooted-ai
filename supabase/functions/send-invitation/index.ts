@@ -86,13 +86,14 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("User already exists with this email");
     }
 
-    // Check if there's already a pending invitation that hasn't expired
+    // Check if there's already a pending invitation that hasn't expired (using UTC)
+    const currentUTC = new Date().toISOString();
     const { data: existingInvitation } = await supabaseClient
       .from("user_invitations")
-      .select("id, expires_at")
+      .select("id, expires_at, status")
       .eq("email", email)
       .eq("status", "pending")
-      .gt('expires_at', new Date().toISOString())
+      .gt('expires_at', currentUTC)
       .maybeSingle();
 
     if (existingInvitation) {
@@ -129,9 +130,11 @@ const handler = async (req: Request): Promise<Response> => {
       }
     });
 
-    // Create invitation URL
-    const baseUrl = req.headers.get("origin") || "https://rootedai.tech";
+    // Create invitation URL with consistent domain
+    const baseUrl = req.headers.get("origin") || req.headers.get("referer")?.split('?')[0] || "https://rootedai.tech";
     const inviteUrl = `${baseUrl}/auth?invite=${invitation.invitation_token}`;
+    
+    console.log("Generated invitation URL:", inviteUrl);
 
     // Send invitation email
     const emailResponse = await resend.emails.send({

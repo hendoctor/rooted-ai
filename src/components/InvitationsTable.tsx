@@ -26,6 +26,9 @@ const InvitationsTable = () => {
   const fetchInvitations = async () => {
     setLoading(true);
     try {
+      // Clean up expired invitations first
+      await supabase.rpc('cleanup_expired_invitations');
+      
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')
@@ -131,6 +134,27 @@ const InvitationsTable = () => {
 
   useEffect(() => {
     fetchInvitations();
+
+    // Set up real-time subscription for invitations
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_invitations'
+        },
+        (payload) => {
+          console.log('Invitation change:', payload);
+          fetchInvitations(); // Refresh the list
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (loading) {

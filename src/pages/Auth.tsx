@@ -68,12 +68,14 @@ const Auth = () => {
   const loadInvitation = async (token: string) => {
     setLoadingInvitation(true);
     try {
+      // Use UTC for consistent timezone handling
+      const currentUTC = new Date().toISOString();
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')
         .eq('invitation_token', token)
         .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString()) // Enhanced expiration check
+        .gt('expires_at', currentUTC)
         .maybeSingle();
 
       if (error || !data) {
@@ -174,6 +176,7 @@ const Auth = () => {
           // If this is from an invitation, mark it as accepted
           if (invitation && data.user) {
             try {
+              // Mark invitation as accepted
               await supabase
                 .from('user_invitations')
                 .update({ 
@@ -182,11 +185,15 @@ const Auth = () => {
                 })
                 .eq('id', invitation.id);
 
-              // Set the user role immediately
+              // Set the user role immediately in users table
               await supabase
                 .from('users')
-                .update({ role: invitation.role })
-                .eq('email', invitation.email);
+                .upsert({ 
+                  email: invitation.email,
+                  role: invitation.role 
+                }, { 
+                  onConflict: 'email' 
+                });
 
               // Profiles table doesn't store role, only users table does
 
