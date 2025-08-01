@@ -232,6 +232,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_expired_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generate_vapid_keys: {
         Args: Record<PropertyKey, never>
         Returns: {
