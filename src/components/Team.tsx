@@ -18,7 +18,7 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
   const [showOverlay, setShowOverlay] = useState(false);
   const zoomStart = useRef<{ x: number; y: number } | null>(null);
 
-  const logoUrl = "/lovable-uploads/ce6a66fb-80e8-4092-84eb-db436fcb1cad.png";
+  const logoUrl = "/Assets/ce6a66fb-80e8-4092-84eb-db436fcb1cad.png";
 
   // Physics animation for momentum
   const animate = () => {

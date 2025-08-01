@@ -11,7 +11,7 @@ self.addEventListener('install', (event) => {
         cache.addAll([
           '/',
           '/manifest.json',
-          '/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png',
+          '/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png',
         ])
       )
       .then(() => self.skipWaiting())
@@ -56,10 +56,13 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (
-    event.request.destination === 'image' ||
-    event.request.url.includes('/lovable-uploads/')
-  ) {
+  if (event.request.url.includes('/lovable-uploads/')) {
+    const redirected = event.request.url.replace('/lovable-uploads/', '/Assets/');
+    event.respondWith(fetch(redirected));
+    return;
+  }
+
+  if (event.request.destination === 'image' || event.request.url.includes('/Assets/')) {
     event.respondWith(
       caches.match(event.request).then((response) => {
         return (

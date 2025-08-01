@@ -72,7 +72,7 @@ const Header = () => {
           {/* Logo */}
           <a href="#home" className="flex items-center space-x-2">
             <img
-              src="/lovable-uploads/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png"
+              src="/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png"
               alt="RootedAI Logo"
               className="w-8 h-8"
             />
