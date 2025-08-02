@@ -35,18 +35,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const fetchUserRole = async (userEmail: string) => {
+  const fetchUserRole = async (userId: string, userEmail: string) => {
     try {
-      // Roles are stored in the `users` table. Fall back to `profiles` for
-      // backward compatibility and normalise the case for consistency.
-      const { data, error } = await supabase
+      // First try to get role using user ID (more reliable)
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!userError && userData) {
+        setUserRole(userData.role);
+        return;
+      }
+
+      // Fallback: try using email
+      const { data: emailData, error: emailError } = await supabase
         .from('users')
         .select('role')
         .eq('email', userEmail)
         .maybeSingle();
 
-      if (!error && data) {
-        setUserRole(data.role);
+      if (!emailError && emailData) {
+        setUserRole(emailData.role);
         return;
       }
 
@@ -54,6 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUserRole('Public');
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
+      setUserRole('Public');
     }
   };
 
@@ -65,7 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           fetchProfile(session.user.id);
-          setTimeout(() => fetchUserRole(session.user.email), 0);
+          setTimeout(() => fetchUserRole(session.user.id, session.user.email || ''), 0);
         } else {
           setProfile(null);
           setUserRole(null);
@@ -80,7 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
-        setTimeout(() => fetchUserRole(session.user.email), 0);
+        setTimeout(() => fetchUserRole(session.user.id, session.user.email || ''), 0);
       }
       setLoading(false);
     });

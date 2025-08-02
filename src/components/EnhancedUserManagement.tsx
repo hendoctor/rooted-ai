@@ -63,7 +63,7 @@ const EnhancedUserManagement = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch users with profiles
+      // Fetch users with profiles using proper relationship
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select(`
@@ -71,19 +71,29 @@ const EnhancedUserManagement = () => {
           email,
           role,
           created_at,
-          updated_at,
-          profile:profiles(full_name)
+          updated_at
         `)
         .order('created_at', { ascending: false });
 
       if (usersError) throw usersError;
 
-      // Transform the data to handle the profile relationship
+      // Fetch profiles separately and match them up
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name');
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of profiles by user_id for efficient lookup
+      const profilesMap = (profilesData || []).reduce((acc, profile) => {
+        acc[profile.user_id] = profile;
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Combine users with their profiles
       const transformedUsers = (usersData || []).map(user => ({
         ...user,
-        profile: Array.isArray(user.profile) && user.profile.length > 0 
-          ? user.profile[0] 
-          : null
+        profile: profilesMap[user.id] || null
       }));
 
       setUsers(transformedUsers);

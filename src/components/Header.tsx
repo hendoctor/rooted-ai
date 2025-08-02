@@ -6,6 +6,7 @@ import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useAuthDebug } from '@/hooks/useAuthDebug';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +16,7 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const { user, userRole, profile, signOut } = useAuth();
+  useAuthDebug(); // Add debugging
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
 
