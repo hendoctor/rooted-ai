@@ -236,6 +236,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      delete_user_completely: {
+        Args: { user_email: string }
+        Returns: undefined
+      }
       generate_vapid_keys: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -249,6 +253,10 @@ export type Database = {
       }
       log_security_event: {
         Args: { event_type: string; event_details?: Json; user_id?: string }
+        Returns: undefined
+      }
+      resync_user_roles: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
     }

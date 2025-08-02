@@ -63,6 +63,9 @@ const EnhancedUserManagement = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Run synchronization to ensure invitations and users are in sync
+      await supabase.rpc('resync_user_roles');
+      
       // Fetch users with profiles using proper relationship
       const { data: usersData, error: usersError } = await supabase
         .from('users')
@@ -73,6 +76,7 @@ const EnhancedUserManagement = () => {
           created_at,
           updated_at
         `)
+        .neq('role', 'Public') // Only show Admin and Client users who have meaningful access
         .order('created_at', { ascending: false });
 
       if (usersError) throw usersError;
@@ -104,6 +108,7 @@ const EnhancedUserManagement = () => {
       const { data: invitationsData, error: invitationsError } = await supabase
         .from('user_invitations')
         .select('*')
+        .neq('role', 'Public') // Only show meaningful invitations
         .order('created_at', { ascending: false });
 
       if (invitationsError) throw invitationsError;
@@ -193,16 +198,16 @@ const EnhancedUserManagement = () => {
 
   const deleteUser = async (user: UserWithProfile) => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', user.id);
+      // Use the comprehensive delete function to clean up all related data
+      const { error } = await supabase.rpc('delete_user_completely', {
+        user_email: user.email
+      });
 
       if (error) throw error;
 
       toast({
         title: "User Deleted",
-        description: `Successfully deleted user ${user.email}`,
+        description: `Successfully deleted user ${user.email} and cancelled any pending invitations`,
       });
 
       fetchData();
@@ -342,10 +347,10 @@ const EnhancedUserManagement = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-forest-green flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Registered Users ({users.length})
-            </CardTitle>
+              <CardTitle className="text-forest-green flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Authenticated Users ({users.length}) - Admin & Client Access Only
+              </CardTitle>
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
                 <Button className="bg-forest-green hover:bg-forest-green/90">
@@ -486,10 +491,10 @@ const EnhancedUserManagement = () => {
       {/* Invitations Management */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-forest-green flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Pending Invitations ({invitations.filter(i => i.status === 'pending').length})
-          </CardTitle>
+            <CardTitle className="text-forest-green flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              User Invitations ({invitations.filter(i => i.status === 'pending').length} pending, {invitations.filter(i => i.status === 'accepted').length} accepted)
+            </CardTitle>
         </CardHeader>
         <CardContent>
           {invitations.length === 0 ? (
