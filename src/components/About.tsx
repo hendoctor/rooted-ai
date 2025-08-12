@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 const About = () => {
   const values = [
     {
-      title: "Growth-Focused",
+      title: "Growth-Oriented",
       description: "We believe in sustainable growth that builds on your existing strengths",
       icon: "🌱"
     },
@@ -20,7 +20,7 @@ const About = () => {
       icon: "🤝"
     },
     {
-      title: "Small Business Champions",
+      title: "Client Focused",
       description: "Tailored solutions that fit your scale, budget, and unique needs",
       icon: "⭐"
     }
