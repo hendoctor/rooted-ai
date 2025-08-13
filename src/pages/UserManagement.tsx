@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import UserRoleManager from '@/components/UserRoleManager';
 import SecurityAuditDisplay from '@/components/SecurityAuditDisplay';
 import EnhancedUserManagement from '@/components/EnhancedUserManagement';
+import { SecurityAuditMonitor } from '@/components/SecurityAuditMonitor';
 
 const UserManagement = () => {
   const { user, userRole, profile, loading } = useAuth();
@@ -126,7 +127,10 @@ const UserManagement = () => {
           </div>
 
           {/* Security Audit */}
-          <SecurityAuditDisplay />
+          <div className="grid gap-6 md:grid-cols-2">
+            <SecurityAuditDisplay />
+            <SecurityAuditMonitor />
+          </div>
 
           {/* Enhanced User Management with Real-time Updates */}
           <EnhancedUserManagement />
