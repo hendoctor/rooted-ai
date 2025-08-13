@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ChevronDown } from 'lucide-react';
 
 const Services = () => {
   const services = [
@@ -71,7 +72,10 @@ const Services = () => {
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {services.map((service, index) => (
-            <Card key={index} className="border-sage/30 hover:border-forest-green/50 transition-all duration-300 hover:shadow-lg group">
+            <Card
+              key={index}
+              className="service-card border-sage/30 hover:border-forest-green/50 transition-all duration-300 hover:shadow-lg group"
+            >
               <CardHeader>
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="text-4xl">{service.icon}</div>
@@ -86,7 +90,7 @@ const Services = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 mb-6">
+                <ul className="space-y-2 mb-6" data-feature-list>
                   {service.features.map((feature, featureIndex) => (
                     <li key={featureIndex} className="flex items-center space-x-2 text-slate-gray">
                       <div className="w-2 h-2 bg-sage rounded-full"></div>
@@ -96,8 +100,13 @@ const Services = () => {
                 </ul>
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-semibold text-earth-brown">{service.pricing}</span>
-                  <Button variant="outline" className="border-forest-green text-forest-green hover:bg-forest-green dark:hover:bg-[hsl(139_28%_25%)] hover:text-white transition-all duration-200">
-                    Learn More
+                  <Button
+                    variant="outline"
+                    data-learn-more
+                    className="border-forest-green text-forest-green hover:bg-forest-green dark:hover:bg-[hsl(139_28%_25%)] hover:text-white transition-all duration-200"
+                  >
+                    <span className="label">Learn More</span>
+                    <ChevronDown className="ml-2 h-4 w-4 transition-transform duration-300" aria-hidden="true" />
                   </Button>
                 </div>
               </CardContent>
