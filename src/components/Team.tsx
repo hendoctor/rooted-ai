@@ -216,7 +216,7 @@ const Team = () => {
       ],
       contact: {
         linkedin: "https://www.linkedin.com/in/philip-niemerg-9924337b",
-        email: "Niemergengineering@gmail.com"
+        email: "phil@rootedai.tech"
       }
     },
     {
@@ -234,7 +234,7 @@ const Team = () => {
       ],
       contact: {
         linkedin: "https://www.linkedin.com/in/jameshennahane/",
-        email: "james@hennahane.com",
+        email: "james@rootedai.tech",
         website: "https://james.hennahane.com"
       }
     }
