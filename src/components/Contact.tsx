@@ -5,12 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useNewsletterSubscription } from '@/hooks/useNewsletterSubscription';
 import ContactForm from '@/components/ContactForm';
 
 const Contact = () => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterLoading, setNewsletterLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { subscription, loading, subscribe, unsubscribe, isSubscribed } = useNewsletterSubscription();
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,23 +134,57 @@ const Contact = () => {
                 <p className="text-slate-gray mb-4">
                   Get AI tips, local business insights, and workshop announcements.
                 </p>
-                <form onSubmit={handleNewsletterSubmit} className="flex space-x-2">
-                  <Input
-                    type="email"
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    placeholder="Your email"
-                    required
-                    className="border-sage/50 focus:border-forest-green"
-                  />
-                  <Button 
-                    type="submit"
-                    disabled={newsletterLoading}
-                    className="bg-sage hover:bg-sage/80 text-slate-gray disabled:opacity-50"
-                  >
-                    {newsletterLoading ? 'Subscribing...' : 'Subscribe'}
-                  </Button>
-                </form>
+                
+                {user ? (
+                  <div className="space-y-4">
+                    {isSubscribed ? (
+                      <div className="text-center">
+                        <p className="text-forest-green font-medium mb-3">
+                          ✓ You're subscribed as {user.email}
+                        </p>
+                        <Button 
+                          onClick={unsubscribe}
+                          disabled={loading}
+                          variant="outline"
+                          className="border-sage text-slate-gray hover:bg-sage/10"
+                        >
+                          {loading ? 'Updating...' : 'Unsubscribe'}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <p className="text-slate-gray mb-3">
+                          Subscribe with your account: {user.email}
+                        </p>
+                        <Button 
+                          onClick={subscribe}
+                          disabled={loading}
+                          className="bg-sage hover:bg-sage/80 text-slate-gray disabled:opacity-50"
+                        >
+                          {loading ? 'Subscribing...' : 'Subscribe'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <form onSubmit={handleNewsletterSubmit} className="flex space-x-2">
+                    <Input
+                      type="email"
+                      value={newsletterEmail}
+                      onChange={(e) => setNewsletterEmail(e.target.value)}
+                      placeholder="Your email"
+                      required
+                      className="border-sage/50 focus:border-forest-green"
+                    />
+                    <Button 
+                      type="submit"
+                      disabled={newsletterLoading}
+                      className="bg-sage hover:bg-sage/80 text-slate-gray disabled:opacity-50"
+                    >
+                      {newsletterLoading ? 'Subscribing...' : 'Subscribe'}
+                    </Button>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </div>
