@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Trash2, Edit3, Plus, UserPlus } from 'lucide-react';
+import { validatePasswordStrength } from '@/utils/securityConfig';
 
 interface User {
   id: string;
@@ -44,6 +45,7 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({ onUserUpdated
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({ email: '', role: '', full_name: '' });
   const [createForm, setCreateForm] = useState({ email: '', password: '', role: 'Public', full_name: '' });
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
   const fetchUsers = async () => {
     try {
@@ -180,7 +182,23 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({ onUserUpdated
     }
   };
 
+  const validatePassword = (password: string) => {
+    const validation = validatePasswordStrength(password);
+    setPasswordErrors(validation.errors);
+    return validation.isValid;
+  };
+
   const handleCreateUser = async () => {
+    // Validate password strength before creating user
+    if (!validatePassword(createForm.password)) {
+      toast({
+        title: "Password Validation Failed",
+        description: "Please fix the password requirements below.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Create auth user first
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -226,6 +244,7 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({ onUserUpdated
       });
       setCreateDialogOpen(false);
       setCreateForm({ email: '', password: '', role: 'Public', full_name: '' });
+      setPasswordErrors([]);
       onUserUpdated?.();
     } catch (error) {
       console.error('Error creating user:', error);
@@ -326,9 +345,19 @@ const UserManagementTable: React.FC<UserManagementTableProps> = ({ onUserUpdated
                   id="create-password"
                   type="password"
                   value={createForm.password}
-                  onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                  placeholder="Minimum 6 characters"
+                  onChange={(e) => {
+                    setCreateForm({ ...createForm, password: e.target.value });
+                    validatePassword(e.target.value);
+                  }}
+                  placeholder="Strong password required"
                 />
+                {passwordErrors.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {passwordErrors.map((error, index) => (
+                      <p key={index} className="text-sm text-red-600">{error}</p>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <Label htmlFor="create-full-name">Full Name</Label>

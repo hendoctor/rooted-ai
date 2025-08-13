@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import type { User, Session } from '@supabase/supabase-js';
+import { validatePasswordStrength } from '@/utils/securityConfig';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,6 +22,7 @@ const Auth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [invitation, setInvitation] = useState<any>(null);
   const [loadingInvitation, setLoadingInvitation] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -128,8 +130,25 @@ const Auth = () => {
     }
   };
 
+  const validatePassword = (password: string) => {
+    const validation = validatePasswordStrength(password);
+    setPasswordErrors(validation.errors);
+    return validation.isValid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password strength for signup
+    if (!isLogin && !validatePassword(password)) {
+      toast({
+        title: "Password Validation Failed",
+        description: "Please fix the password requirements below.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -279,25 +298,12 @@ const Auth = () => {
       return;
     }
 
-    if (newPassword.length < 8) {
-      toast({
-        title: "Password Too Short",
-        description: "Password must be at least 8 characters long.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Enhanced password validation
-    const hasUpperCase = /[A-Z]/.test(newPassword);
-    const hasLowerCase = /[a-z]/.test(newPassword);
-    const hasNumbers = /\d/.test(newPassword);
-    const hasSpecialChar = /[!@#$%^&*]/.test(newPassword);
-
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+    // Use centralized password validation
+    if (!validatePasswordStrength(newPassword).isValid) {
+      const errors = validatePasswordStrength(newPassword).errors;
       toast({
         title: "Password Too Weak",
-        description: "Password must contain uppercase, lowercase, numbers, and special characters.",
+        description: errors.join(', '),
         variant: "destructive",
       });
       return;
@@ -544,12 +550,22 @@ const Auth = () => {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (!isLogin) validatePassword(e.target.value);
+                  }}
                   required
                   className="border-sage/50 focus:border-forest-green"
-                  placeholder="Your password"
+                  placeholder={isLogin ? "Enter your password" : "Create a secure password"}
                   minLength={8}
                 />
+                {!isLogin && passwordErrors.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {passwordErrors.map((error, index) => (
+                      <p key={index} className="text-sm text-red-600">{error}</p>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <Button
