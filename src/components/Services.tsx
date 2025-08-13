@@ -200,8 +200,11 @@ const Services = () => {
           <p className="text-lg text-slate-gray mb-6 max-w-2xl mx-auto">
             Let's discuss how AI can help your business grow smarter while staying rooted in your values.
           </p>
-          <Button className="bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-8 py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg">
-            Book a Workshop
+          <Button
+            asChild
+            className="bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-8 py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg"
+          >
+            <a href="#contact">Book a Workshop</a>
           </Button>
         </div>
       </div>
