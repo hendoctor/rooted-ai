@@ -165,7 +165,7 @@ const Services = () => {
                   <ul className="space-y-2 mb-6">
                     {service.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-start space-x-2 text-slate-gray">
-                        <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
+                        <div className="w-2 h-2 bg-sage rounded-full mt-2 flex-shrink-0"></div>
                         <div>
                           <span className="font-medium">{feature.title}</span>
                           <CollapsibleContent className="text-sm text-slate-gray/90 mt-1 overflow-hidden transition-all duration-300 ease-in-out data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
