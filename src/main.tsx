@@ -3,6 +3,7 @@ import App from './App.tsx'
 import './index.css'
 import { ThemeProvider } from 'next-themes'
 import './utils/securityEnhancer'
+import './components/scripts/services-learn-more'
 
 const root = createRoot(document.getElementById('root')!);
 
