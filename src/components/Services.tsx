@@ -168,7 +168,7 @@ const Services = () => {
                         <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
                         <div>
                           <span className="font-medium">{feature.title}</span>
-                          <CollapsibleContent className="text-sm text-slate-gray/90 mt-1 overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                          <CollapsibleContent className="text-sm text-slate-gray/90 mt-1 overflow-hidden transition-all duration-300 ease-in-out data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                             {feature.description}
                           </CollapsibleContent>
                         </div>
