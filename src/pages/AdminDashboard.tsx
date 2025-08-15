@@ -8,9 +8,7 @@ import type { Tables } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import InviteUserForm from '@/components/InviteUserForm';
-import { ResetUsersButton } from '@/components/ResetUsersButton';
-import { AuthMonitor } from '@/components/AuthMonitor';
-import { Shield, Users, Settings, UserCheck, Building, Edit, Trash2 } from 'lucide-react';
+import { Shield, Users, UserCheck, Building, Edit, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -351,28 +349,7 @@ const AdminDashboard = () => {
             </p>
           </div>
 
-          {/* Reset Users */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-forest-green flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                System Administration
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-forest-green mb-2">Reset All Users</h3>
-                  <p className="text-sm text-slate-gray mb-4">
-                    Delete all existing users and create a fresh Admin account for james@hennahane.com
-                  </p>
-                  <ResetUsersButton />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Invite Users */}
+          {/* User Invitations */}
           <Card>
             <CardHeader>
               <CardTitle className="text-forest-green flex items-center gap-2">
@@ -711,8 +688,6 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Authentication Monitor */}
-          <AuthMonitor />
         </div>
       </main>
       <Footer />
