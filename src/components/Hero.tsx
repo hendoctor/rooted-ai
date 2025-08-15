@@ -21,28 +21,29 @@ const Hero = () => {
         }}
       />
       
-      {/* Smart Overlay System */}
-      <div className="absolute inset-0 bg-gradient-to-br from-forest-green/20 via-transparent to-sage/30 dark:from-forest-green/40 dark:via-transparent dark:to-slate/40"></div>
-      <div className="absolute inset-0 bg-gradient-to-t from-cream/60 via-transparent to-transparent dark:from-background/80 dark:via-transparent dark:to-transparent"></div>
+      {/* Smart Overlay System - More Subtle Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cream/85 via-cream/75 to-sage/60 dark:from-background/90 dark:via-background/85 dark:to-slate/70"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-cream/70 via-cream/40 to-transparent dark:from-background/80 dark:via-background/50 dark:to-transparent"></div>
+      <div className="absolute inset-0 bg-forest-green/5 dark:bg-forest-green/10"></div>
       
       {/* Background Pattern (Enhanced) */}
-      <div className="absolute inset-0 opacity-10 dark:opacity-5">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-forest-green rounded-full blur-sm"></div>
-        <div className="absolute bottom-20 right-10 w-24 h-24 bg-earth-brown rounded-full blur-sm"></div>
-        <div className="absolute top-1/2 right-20 w-16 h-16 bg-sage rounded-full blur-sm"></div>
+      <div className="absolute inset-0 opacity-8 dark:opacity-4">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-forest-green/20 rounded-full blur-xl"></div>
+        <div className="absolute bottom-20 right-10 w-24 h-24 bg-earth-brown/20 rounded-full blur-xl"></div>
+        <div className="absolute top-1/2 right-20 w-16 h-16 bg-sage/20 rounded-full blur-xl"></div>
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
         <div className="max-w-4xl mx-auto">
           {/* Main Heading */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-forest-green dark:text-white mb-6 animate-fade-in-up drop-shadow-lg">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-forest-green dark:text-white mb-6 animate-fade-in-up [text-shadow:_0_2px_8px_rgb(255_255_255_/_0.8)] dark:[text-shadow:_0_2px_8px_rgb(0_0_0_/_0.6)]">
             Grow Smarter.
             <br />
             <span className="text-earth-brown dark:text-sage">Stay Rooted.</span>
           </h1>
 
           {/* Subheading */}
-          <p className="text-lg sm:text-xl lg:text-2xl text-slate-gray dark:text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed animate-fade-in-up drop-shadow-md" style={{animationDelay: '0.2s'}}>
+          <p className="text-lg sm:text-xl lg:text-2xl text-slate-gray dark:text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed animate-fade-in-up [text-shadow:_0_1px_4px_rgb(255_255_255_/_0.9)] dark:[text-shadow:_0_1px_4px_rgb(0_0_0_/_0.5)]" style={{animationDelay: '0.2s'}}>
             Helping small businesses in Kansas City flourish with AI solutions built on Microsoft tools. 
             From awareness to adoption, we're your local growth partners.
           </p>
