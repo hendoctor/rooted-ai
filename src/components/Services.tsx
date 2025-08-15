@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/collapsible';
 
 const Services = () => {
-  const [openIndex, setOpenIndex] = React.useState<number | null>(null);
+  const [openStates, setOpenStates] = React.useState<Record<number, boolean>>({});
 
   const services = [
     {
@@ -144,8 +144,8 @@ const Services = () => {
           {services.map((service, index) => (
             <Collapsible
               key={index}
-              open={openIndex === index}
-              onOpenChange={(open) => setOpenIndex(open ? index : null)}
+              open={openStates[index] || false}
+              onOpenChange={(open) => setOpenStates(prev => ({ ...prev, [index]: open }))}
             >
               <Card className="border-sage/30 hover:border-forest-green/50 transition-all duration-300 hover:shadow-lg group">
                 <CardHeader>
@@ -182,7 +182,7 @@ const Services = () => {
                         variant="outline"
                         className="border-forest-green text-forest-green hover:bg-forest-green dark:hover:bg-[hsl(139_28%_25%)] hover:text-white transition-all duration-200"
                       >
-                        {openIndex === index ? 'Show Less' : 'Learn More'}
+                        {openStates[index] ? 'Show Less' : 'Learn More'}
                       </Button>
                     </CollapsibleTrigger>
                   </div>
