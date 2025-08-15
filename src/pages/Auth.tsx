@@ -539,61 +539,60 @@ const Auth = () => {
   }
 
   return (
-    <div className="h-screen bg-cream flex items-center justify-center px-4 py-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6">
-          <div className="text-center">
-            <img
-              src="/Assets/22badab3-8f25-475f-92d7-167cbc732868.png"
-              alt="RootedAI logo"
-              className="mx-auto h-16 w-auto mb-4"
-            />
-            <h2 className="text-3xl font-bold text-forest-green">
-              {invitation ? 'Complete Your Invitation' : 'Sign in to your account'}
-            </h2>
-            <p className="mt-2 text-slate-gray">
-              {invitation ? 'Create your account with your invitation' : 'Access your RootedAI dashboard'}
-            </p>
-            {!invitation && (
-              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
-                <p className="text-sm text-amber-800">
-                  <strong>Active Clients Only</strong>
-                </p>
-              </div>
-            )}
-            {loadingInvitation && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-sm text-blue-800">
-                  Loading invitation details...
-                </p>
-              </div>
-            )}
-            {invitationError && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
-                <p className="text-sm text-red-800">
-                  <strong>Error:</strong> {invitationError}
-                </p>
-              </div>
-            )}
-          </div>
+    <div className="min-h-screen bg-cream flex items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center space-y-4">
+          <img
+            src="/Assets/22badab3-8f25-475f-92d7-167cbc732868.png"
+            alt="RootedAI logo"
+            className="mx-auto h-24 w-auto"
+          />
+          <h2 className="text-3xl font-bold text-forest-green">
+            {invitation ? 'Complete Your Invitation' : 'Access Your RootedAI Dashboard'}
+          </h2>
+          {!invitation && (
+            <div className="mt-6 p-3 bg-amber-50 border border-amber-200 rounded">
+              <p className="text-sm text-amber-800">
+                <strong>Active Clients Only</strong>
+              </p>
+            </div>
+          )}
+          {loadingInvitation && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm text-blue-800">
+                Loading invitation details...
+              </p>
+            </div>
+          )}
+          {invitationError && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
+              <p className="text-sm text-red-800">
+                <strong>Error:</strong> {invitationError}
+              </p>
+            </div>
+          )}
+        </div>
 
         <Card className="border-sage/30 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl text-forest-green text-center">
-              {isLogin ? 'Login' : invitation ? 'Complete Your Invitation' : 'Sign Up'}
-            </CardTitle>
-            {invitation && (
-              <div className="text-center mt-2">
-                <div className="bg-forest-green/10 border border-forest-green/20 rounded-lg p-3">
-                  <p className="text-sm text-forest-green">
-                    <strong>Invited as:</strong> {invitation.role}
-                  </p>
-                  <p className="text-xs text-slate-gray mt-1">
-                    Welcome {invitation.full_name}! Create your password to complete signup.
-                  </p>
+          {!isLogin && (
+            <CardHeader>
+              <CardTitle className="text-xl text-forest-green text-center">
+                {invitation ? 'Complete Your Invitation' : 'Sign Up'}
+              </CardTitle>
+              {invitation && (
+                <div className="text-center mt-2">
+                  <div className="bg-forest-green/10 border border-forest-green/20 rounded-lg p-3">
+                    <p className="text-sm text-forest-green">
+                      <strong>Invited as:</strong> {invitation.role}
+                    </p>
+                    <p className="text-xs text-slate-gray mt-1">
+                      Welcome {invitation.full_name}! Create your password to complete signup.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </CardHeader>
+              )}
+            </CardHeader>
+          )}
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {invitation && (
