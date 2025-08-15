@@ -539,9 +539,14 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="h-screen bg-cream flex items-center justify-center px-4 py-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6">
           <div className="text-center">
+            <img
+              src="/Assets/22badab3-8f25-475f-92d7-167cbc732868.png"
+              alt="RootedAI logo"
+              className="mx-auto h-16 w-auto mb-4"
+            />
             <h2 className="text-3xl font-bold text-forest-green">
               {invitation ? 'Complete Your Invitation' : 'Sign in to your account'}
             </h2>
@@ -551,8 +556,7 @@ const Auth = () => {
             {!invitation && (
               <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
                 <p className="text-sm text-amber-800">
-                  <strong>Invitation Only:</strong> New users must be invited by an administrator. 
-                  Contact your admin if you need access.
+                  <strong>Active Clients Only</strong>
                 </p>
               </div>
             )}
@@ -720,13 +724,6 @@ const Auth = () => {
               </Button>
             </form>
 
-            {!invitation && (
-              <div className="mt-6 text-center">
-                <p className="text-sm text-slate-gray">
-                  Need an account? Contact your administrator for an invitation.
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
