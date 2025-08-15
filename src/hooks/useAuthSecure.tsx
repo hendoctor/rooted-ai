@@ -137,6 +137,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+  const [authSubscription, setAuthSubscription] = useState<any>(null);
 
   // Optimized role fetching with database functions
   const fetchUserRole = useCallback(async (userEmail: string, userId: string) => {
@@ -146,10 +147,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     try {
+      console.log('🔍 Fetching role for user:', userEmail);
+      
       // Use the optimized database function
       const { data, error } = await supabase.rpc('get_user_role_secure', {
         user_email: userEmail
       });
+
+      console.log('📊 Role fetch result:', { data, error });
 
       if (error) {
         console.warn('Primary role fetch failed, trying backup method:', error);
@@ -159,15 +164,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           auth_user_id: userId
         });
         
+        console.log('📊 Backup role fetch result:', { backupData, backupError });
+        
         if (backupError || !backupData) {
           console.error('Both role fetch methods failed:', { error, backupError });
           return { role: 'Client', clientName: null };
         }
         
-        return { 
+        const result = { 
           role: (backupData as any)?.role || 'Client', 
           clientName: (backupData as any)?.client_name || null 
         };
+        console.log('✅ Using backup role result:', result);
+        return result;
       }
 
       if (!data) {
@@ -175,10 +184,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { role: 'Client', clientName: null };
       }
 
-      return { 
+      const result = { 
         role: (data as any)?.role || 'Client', 
         clientName: (data as any)?.client_name || null 
       };
+      console.log('✅ Final role result:', result);
+      return result;
     } catch (error) {
       console.error('Role fetch error:', error);
       return { role: 'Client', clientName: null };
@@ -283,6 +294,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+    setAuthSubscription(subscription);
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
@@ -301,7 +313,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       console.log('🧹 Cleaning up auth subscription');
-      subscription.unsubscribe();
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
     };
   }, [initialized, handleAuthStateChange]);
 

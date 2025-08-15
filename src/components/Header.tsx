@@ -11,7 +11,6 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import AuthDebug from './AuthDebug';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -78,11 +77,9 @@ const Header = () => {
   };
 
   return (
-    <>
-      <AuthDebug />
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled
             ? 'bg-white/95 dark:bg-slate-900/90 backdrop-blur-sm shadow-lg'
             : 'bg-transparent'
         }`}
@@ -258,7 +255,6 @@ const Header = () => {
           isInstallable={isInstallable}
         />
       </header>
-    </>
   );
 };
 

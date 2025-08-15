@@ -24,7 +24,7 @@ export const SECURITY_HEADERS = {
   ].join(', ')
 };
 
-// Apply security headers to document
+// Apply security headers to document (but avoid meta tags for frame-related headers)
 export const applySecurityHeaders = () => {
   // CSP via meta tag for client-side applications
   const cspMeta = document.createElement('meta');
@@ -37,6 +37,8 @@ export const applySecurityHeaders = () => {
   referrerMeta.setAttribute('name', 'referrer');
   referrerMeta.setAttribute('content', 'strict-origin-when-cross-origin');
   document.head.appendChild(referrerMeta);
+
+  // Note: X-Frame-Options and frame-ancestors should be set via HTTP headers in production
 };
 
 // Enhanced security monitoring
