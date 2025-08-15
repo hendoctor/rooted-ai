@@ -185,6 +185,7 @@ export type Database = {
       user_invitations: {
         Row: {
           accepted_at: string | null
+          client_name: string | null
           created_at: string
           email: string
           expires_at: string
@@ -197,6 +198,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          client_name?: string | null
           created_at?: string
           email: string
           expires_at?: string
@@ -209,6 +211,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          client_name?: string | null
           created_at?: string
           email?: string
           expires_at?: string
@@ -224,6 +227,7 @@ export type Database = {
       users: {
         Row: {
           auth_user_id: string | null
+          client_name: string | null
           created_at: string | null
           email: string
           id: string
@@ -232,6 +236,7 @@ export type Database = {
         }
         Insert: {
           auth_user_id?: string | null
+          client_name?: string | null
           created_at?: string | null
           email: string
           id?: string
@@ -240,6 +245,7 @@ export type Database = {
         }
         Update: {
           auth_user_id?: string | null
+          client_name?: string | null
           created_at?: string | null
           email?: string
           id?: string

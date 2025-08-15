@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, User, Shield } from 'lucide-react';
+import { Mail, User, Shield, Building } from 'lucide-react';
 
 interface InviteUserFormProps {
   onInvitationSent?: () => void;
@@ -16,7 +16,8 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    role: 'Client'
+    role: 'Client',
+    client_name: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -57,7 +58,8 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
       setFormData({
         email: '',
         full_name: '',
-        role: 'Client'
+        role: 'Client',
+        client_name: ''
       });
 
       onInvitationSent?.();
@@ -117,6 +119,24 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
               required
               disabled={isLoading}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="client_name" className="flex items-center gap-2">
+              <Building className="h-4 w-4" />
+              Client Company Name
+            </Label>
+            <Input
+              id="client_name"
+              type="text"
+              value={formData.client_name}
+              onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+              placeholder="ACME Corporation"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-slate-gray">
+              Users with the same company name will share access to a dedicated portal
+            </p>
           </div>
 
           <div className="space-y-2">

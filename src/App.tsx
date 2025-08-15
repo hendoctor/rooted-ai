@@ -10,6 +10,8 @@ import { useRolePersistence } from "@/hooks/useRolePersistence";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
+import Profile from "./pages/Profile";
+import ClientPortal from "./pages/ClientPortal";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 import PrivateRoute from "./components/PrivateRoute";
@@ -27,6 +29,22 @@ const AppContent = () => {
         element={
           <PrivateRoute requiredRoles={["Admin"]}>
             <AdminDashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute requiredRoles={["Admin", "Client"]}>
+            <Profile />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/:clientSlug"
+        element={
+          <PrivateRoute requiredRoles={["Admin", "Client"]}>
+            <ClientPortal />
           </PrivateRoute>
         }
       />

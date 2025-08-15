@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sprout, LogOut, User, Download } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
+import ProfileMenu from './ProfileMenu';
 import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useAuthDebug } from '@/hooks/useAuthDebug';
@@ -141,24 +142,7 @@ const Header = () => {
             
             {/* Auth buttons */}
             {user ? (
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2 text-slate-gray dark:text-white">
-                  <User className="w-4 h-4" />
-                  <span className="text-sm">
-                    {user.email}
-                    {userRole && ` (${userRole})`}
-                  </span>
-                </div>
-                <Button
-                  onClick={handleSignOut}
-                  variant="outline"
-                  size="sm"
-                  className="border-sage hover:bg-sage/20"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
-              </div>
+              <ProfileMenu onSignOut={handleSignOut} />
             ) : (
               <div className="flex items-center space-x-3">
                 <Link to="/auth">
@@ -235,6 +219,12 @@ const Header = () => {
                         {userRole && ` (${userRole})`}
                       </span>
                     </div>
+                    <Link to="/profile">
+                      <Button variant="outline" className="w-full border-sage hover:bg-sage/20 mb-2">
+                        <User className="w-4 h-4 mr-2" />
+                        Profile
+                      </Button>
+                    </Link>
                     <Button
                       onClick={handleSignOut}
                       variant="outline"

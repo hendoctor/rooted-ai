@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Tables<'profiles'> | null;
   userRole: string | null;
+  clientName: string | null;
   loading: boolean;
   signOut: () => Promise<void>;
   setUserRole: (role: string | null) => void;
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Tables<'profiles'> | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [clientName, setClientName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [roleLoadingRef, setRoleLoadingRef] = useState<{ current: boolean }>({ current: false });
 
@@ -51,30 +53,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Try using email lookup (most reliable for current schema)
       const { data: emailData, error: emailError } = await supabase
         .from('users')
-        .select('role')
+        .select('role, client_name')
         .eq('email', userEmail)
         .maybeSingle();
 
       console.log('📊 Database query result:', { emailData, emailError });
 
       if (!emailError && emailData) {
-        console.log('✅ Role fetched successfully:', emailData.role);
+        console.log('✅ Role and client fetched successfully:', emailData.role, emailData.client_name);
         setUserRole(emailData.role);
+        setClientName(emailData.client_name);
         return;
       }
 
       // If email lookup failed, try auth_user_id lookup as backup
       const { data: idData, error: idError } = await supabase
         .from('users')
-        .select('role')
+        .select('role, client_name')
         .eq('auth_user_id', userId)
         .maybeSingle();
 
       console.log('📊 Auth ID query result:', { idData, idError });
 
       if (!idError && idData) {
-        console.log('✅ Role fetched by auth_user_id:', idData.role);
+        console.log('✅ Role and client fetched by auth_user_id:', idData.role, idData.client_name);
         setUserRole(idData.role);
+        setClientName(idData.client_name);
         return;
       }
 
@@ -124,6 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           console.log('👋 User logged out, clearing profile and role');
           setProfile(null);
           setUserRole(null);
+          setClientName(null);
         }
         setLoading(false);
       }
@@ -159,6 +164,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('✅ Successfully signed out');
         // Clear all state immediately
         setUserRole(null);
+        setClientName(null);
         setProfile(null);
         setUser(null);
         setSession(null);
@@ -177,6 +183,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     profile,
     userRole,
+    clientName,
     loading,
     signOut,
     setUserRole,

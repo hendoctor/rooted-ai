@@ -13,6 +13,7 @@ interface InvitationRequest {
   email: string;
   full_name: string;
   role: string;
+  client_name?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -71,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Rate limit exceeded. Please wait before sending more invitations.");
     }
 
-    const { email, full_name, role }: InvitationRequest = await req.json();
+    const { email, full_name, role, client_name }: InvitationRequest = await req.json();
 
     console.log("Processing invitation for:", { email, full_name, role });
 
@@ -108,6 +109,7 @@ const handler = async (req: Request): Promise<Response> => {
         email,
         full_name,
         role,
+        client_name,
       })
       .select()
       .single();
