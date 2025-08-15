@@ -23,10 +23,13 @@ const AdminDashboard = () => {
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
+    console.log('AdminDashboard: useEffect triggered, userRole:', userRole);
     if (userRole === 'Admin') {
+      console.log('AdminDashboard: Fetching data as Admin');
       fetchAllData();
       setupRealtimeSubscriptions();
     } else {
+      console.log('AdminDashboard: Not admin, userRole:', userRole);
       setLoadingData(false);
     }
   }, [userRole]);
@@ -179,20 +182,33 @@ const AdminDashboard = () => {
   };
 
   const cancelInvitation = async (invitationId: string) => {
-    const { error } = await supabase
-      .from('user_invitations')
-      .update({ status: 'cancelled' })
-      .eq('id', invitationId);
-    
-    if (!error) {
-      toast({
-        title: "Success",
-        description: "Invitation cancelled successfully",
-      });
-    } else {
+    console.log('Cancelling invitation:', invitationId);
+    try {
+      const { error } = await supabase
+        .from('user_invitations')
+        .update({ status: 'cancelled' })
+        .eq('id', invitationId);
+      
+      console.log('Cancel invitation result:', { error });
+      
+      if (!error) {
+        toast({
+          title: "Success",
+          description: "Invitation cancelled successfully",
+        });
+      } else {
+        console.error('Failed to cancel invitation:', error);
+        toast({
+          title: "Error",
+          description: `Failed to cancel invitation: ${error.message}`,
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error('Unexpected error cancelling invitation:', err);
       toast({
         title: "Error",
-        description: "Failed to cancel invitation",
+        description: "An unexpected error occurred while cancelling the invitation",
         variant: "destructive",
       });
     }
@@ -218,6 +234,7 @@ const AdminDashboard = () => {
   };
 
   if (loading || loadingData) {
+    console.log('AdminDashboard: Loading state - loading:', loading, 'loadingData:', loadingData);
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">
@@ -229,6 +246,7 @@ const AdminDashboard = () => {
   }
 
   if (!user || userRole !== 'Admin') {
+    console.log('AdminDashboard: Access denied - user:', !!user, 'userRole:', userRole);
     return <AccessDenied />;
   }
 
