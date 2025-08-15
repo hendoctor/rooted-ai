@@ -1,28 +1,48 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import heroPlantLight from '@/assets/hero-plants-light.jpg';
+import heroPlantDark from '@/assets/hero-plants-dark.jpg';
 
 const Hero = () => {
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-cream to-sage/20 overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-forest-green rounded-full"></div>
-        <div className="absolute bottom-20 right-10 w-24 h-24 bg-earth-brown rounded-full"></div>
-        <div className="absolute top-1/2 right-20 w-16 h-16 bg-sage rounded-full"></div>
+    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Photorealistic Plant Background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-300"
+        style={{
+          backgroundImage: `url(${heroPlantLight})`,
+        }}
+      />
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-0 dark:opacity-100 transition-all duration-300"
+        style={{
+          backgroundImage: `url(${heroPlantDark})`,
+        }}
+      />
+      
+      {/* Smart Overlay System */}
+      <div className="absolute inset-0 bg-gradient-to-br from-forest-green/20 via-transparent to-sage/30 dark:from-forest-green/40 dark:via-transparent dark:to-slate/40"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-cream/60 via-transparent to-transparent dark:from-background/80 dark:via-transparent dark:to-transparent"></div>
+      
+      {/* Background Pattern (Enhanced) */}
+      <div className="absolute inset-0 opacity-10 dark:opacity-5">
+        <div className="absolute top-20 left-10 w-32 h-32 bg-forest-green rounded-full blur-sm"></div>
+        <div className="absolute bottom-20 right-10 w-24 h-24 bg-earth-brown rounded-full blur-sm"></div>
+        <div className="absolute top-1/2 right-20 w-16 h-16 bg-sage rounded-full blur-sm"></div>
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
         <div className="max-w-4xl mx-auto">
           {/* Main Heading */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-forest-green mb-6 animate-fade-in-up">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-forest-green dark:text-white mb-6 animate-fade-in-up drop-shadow-lg">
             Grow Smarter.
             <br />
-            <span className="text-earth-brown">Stay Rooted.</span>
+            <span className="text-earth-brown dark:text-sage">Stay Rooted.</span>
           </h1>
 
           {/* Subheading */}
-          <p className="text-lg sm:text-xl lg:text-2xl text-slate-gray mb-8 max-w-3xl mx-auto leading-relaxed animate-fade-in-up" style={{animationDelay: '0.2s'}}>
+          <p className="text-lg sm:text-xl lg:text-2xl text-slate-gray dark:text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed animate-fade-in-up drop-shadow-md" style={{animationDelay: '0.2s'}}>
             Helping small businesses in Kansas City flourish with AI solutions built on Microsoft tools. 
             From awareness to adoption, we're your local growth partners.
           </p>
@@ -45,17 +65,17 @@ const Hero = () => {
           </div>
 
           {/* Trust Indicators */}
-          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-sm text-slate-gray/80 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-sm text-slate-gray/90 dark:text-muted-foreground animate-fade-in-up drop-shadow-sm" style={{animationDelay: '0.6s'}}>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-forest-green rounded-full"></div>
+              <div className="w-4 h-4 bg-forest-green rounded-full shadow-sm"></div>
               <span>Local Kansas City Experts</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-earth-brown rounded-full"></div>
+              <div className="w-4 h-4 bg-earth-brown rounded-full shadow-sm"></div>
               <span>Experience Microsoft Developers</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-sage rounded-full"></div>
+              <div className="w-4 h-4 bg-sage rounded-full shadow-sm"></div>
               <span>Small Business Focused</span>
             </div>
           </div>
