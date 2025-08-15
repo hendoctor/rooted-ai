@@ -2,13 +2,14 @@ import React, { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AccessDenied from './AccessDenied';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuthSecure';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import InviteUserForm from '@/components/InviteUserForm';
 import { ResetUsersButton } from '@/components/ResetUsersButton';
+import { AuthMonitor } from '@/components/AuthMonitor';
 import { Shield, Users, Settings, UserCheck } from 'lucide-react';
 
 interface UserWithRole extends Tables<'profiles'> {
@@ -493,6 +494,9 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Authentication Monitor */}
+          <AuthMonitor />
         </div>
       </main>
       <Footer />

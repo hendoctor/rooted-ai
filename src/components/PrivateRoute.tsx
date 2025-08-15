@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuthSecure';
 import { supabase } from '@/integrations/supabase/client';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface PrivateRouteProps {
   children: JSX.Element;
@@ -35,7 +36,13 @@ const PrivateRoute = ({ children, requiredRoles }: PrivateRouteProps) => {
     checkAccess();
   }, [user, userRole, loading, currentPath, requiredRoles]);
 
-  if (loading || hasAccess === null) return null;
+  if (loading || hasAccess === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Checking permissions..." />
+      </div>
+    );
+  }
   
   const role = userRole ?? 'Client';
   if (!user || (!hasAccess && !requiredRoles.includes(role))) {

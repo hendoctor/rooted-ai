@@ -4,8 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
-import { useRolePersistence } from "@/hooks/useRolePersistence";
+import { AuthProvider } from "@/hooks/useAuthSecure";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+// Removed useRolePersistence - now handled in useAuthSecure
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -17,8 +18,7 @@ import NotFound from "./pages/NotFound";
 import PrivateRoute from "./components/PrivateRoute";
 
 const AppContent = () => {
-  // Ensure role persistence across page refreshes and errors
-  useRolePersistence();
+  // Role persistence now handled in useAuthSecure
   
   return (
     <Routes>
@@ -59,17 +59,19 @@ const queryClient = new QueryClient();
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

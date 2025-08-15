@@ -294,6 +294,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_role_by_auth_id: {
+        Args: { auth_user_id: string }
+        Returns: Json
+      }
+      get_user_role_secure: {
+        Args: { user_email: string }
+        Returns: Json
+      }
       log_security_event: {
         Args: { event_details?: Json; event_type: string; user_id?: string }
         Returns: undefined

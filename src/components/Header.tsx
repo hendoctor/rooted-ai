@@ -5,10 +5,9 @@ import { Sprout, LogOut, User, Download } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
 import ProfileMenu from './ProfileMenu';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuthSecure';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
-import { useAuthDebug } from '@/hooks/useAuthDebug';
-import { useAuthRecovery } from '@/hooks/useAuthRecovery';
+// Removed useAuthDebug and useAuthRecovery - functionality now in useAuthSecure
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -19,8 +18,7 @@ const Header = () => {
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const { user, userRole, profile, signOut } = useAuth();
   const location = useLocation();
-  useAuthDebug(); // Add debugging
-  useAuthRecovery(); // Add role recovery
+  // Auth debugging and recovery now built into useAuthSecure
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
 
