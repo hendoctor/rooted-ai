@@ -18,7 +18,7 @@ const Profile = () => {
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
-    full_name: '',
+    display_name: '',
     email: '',
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -27,7 +27,7 @@ const Profile = () => {
   useEffect(() => {
     if (profile && user) {
       setFormData({
-        full_name: profile.full_name || '',
+        display_name: profile.display_name || '',
         email: user.email || '',
       });
     }
@@ -35,26 +35,27 @@ const Profile = () => {
 
   useEffect(() => {
     if (profile && user) {
-      const hasNameChange = formData.full_name !== (profile.full_name || '');
+      const hasNameChange = formData.display_name !== (profile.display_name || '');
       const hasEmailChange = formData.email !== (user.email || '');
       setHasChanges(hasNameChange || hasEmailChange);
     }
   }, [formData, profile, user]);
 
   const handleSave = async () => {
-    if (!user || !profile) return;
+    if (!user) return;
 
     setIsSaving(true);
     try {
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
+      // Update user display_name in users table
+      const { error: userError } = await supabase
+        .from('users')
         .update({
-          full_name: formData.full_name,
+          display_name: formData.display_name,
+          updated_at: new Date().toISOString()
         })
-        .eq('user_id', user.id);
+        .eq('email', user.email);
 
-      if (profileError) throw profileError;
+      if (userError) throw userError;
 
       // Update email if changed
       if (formData.email !== user.email) {
@@ -133,12 +134,12 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
+                  <Label htmlFor="display_name">Display Name</Label>
                   <Input
-                    id="full_name"
-                    value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    placeholder="Enter your full name"
+                    id="display_name"
+                    value={formData.display_name}
+                    onChange={(e) => setFormData({ ...formData, display_name: e.target.value })}
+                    placeholder="Enter your display name"
                   />
                 </div>
 

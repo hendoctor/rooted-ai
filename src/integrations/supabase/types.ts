@@ -122,33 +122,6 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
-        Row: {
-          created_at: string
-          email: string
-          full_name: string | null
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          full_name?: string | null
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          full_name?: string | null
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       role_permissions: {
         Row: {
           access: boolean
@@ -253,6 +226,7 @@ export type Database = {
           auth_user_id: string
           client_name: string | null
           created_at: string | null
+          display_name: string | null
           email: string
           id: string
           role: string
@@ -262,6 +236,7 @@ export type Database = {
           auth_user_id: string
           client_name?: string | null
           created_at?: string | null
+          display_name?: string | null
           email: string
           id?: string
           role?: string
@@ -271,6 +246,7 @@ export type Database = {
           auth_user_id?: string
           client_name?: string | null
           created_at?: string | null
+          display_name?: string | null
           email?: string
           id?: string
           role?: string

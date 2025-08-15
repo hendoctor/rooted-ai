@@ -6,7 +6,7 @@ import type { Tables } from '@/integrations/supabase/types';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  profile: Tables<'profiles'> | null;
+  profile: { display_name?: string } | null;
   userRole: string | null;
   clientName: string | null;
   loading: boolean;
@@ -131,7 +131,7 @@ const clearRoleBackup = () => {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Tables<'profiles'> | null>(null);
+  const [profile, setProfile] = useState<{ display_name?: string } | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [clientName, setClientName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -196,17 +196,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  // Optimized profile fetching
-  const fetchProfile = useCallback(async (userId: string) => {
+  // Optimized profile fetching from users table
+  const fetchProfile = useCallback(async (userEmail: string) => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
+        .from('users')
+        .select('display_name')
+        .eq('email', userEmail)
         .maybeSingle();
 
       if (!error && data) {
-        setProfile(data);
+        setProfile({ display_name: data.display_name });
       } else if (error) {
         console.warn('Profile fetch error (non-critical):', error);
       }
@@ -248,7 +248,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Fetch current role and profile in parallel
         const [roleResult] = await Promise.all([
           fetchUserRole(userEmail, userId),
-          fetchProfile(userId)
+          fetchProfile(userEmail)
         ]);
 
         // Update role if different from backup or if no backup
@@ -335,7 +335,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await saveRoleBackup(user.email, roleResult.role, roleResult.clientName);
       }
       
-      await fetchProfile(user.id);
+      await fetchProfile(user.email);
     } catch (error) {
       console.error('Auth refresh error:', error);
       setError('Failed to refresh user data');

@@ -16,9 +16,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface UserWithRole extends Tables<'profiles'> {
-  user_role?: string;
-  client_name?: string | null;
+interface UserWithRole {
+  id: string;
+  auth_user_id: string;
+  email: string;
+  display_name: string | null;
+  role: string;
+  client_name: string | null;
+  created_at: string;
+  updated_at: string;
+  user_role?: string; // For compatibility
 }
 
 interface ClientCompany {
@@ -28,7 +35,7 @@ interface ClientCompany {
 }
 
 const AdminDashboard = () => {
-  const { user, userRole, profile, loading } = useAuth();
+  const { user, userRole, loading } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [rolePermissions, setRolePermissions] = useState<Tables<'role_permissions'>[]>([]);
@@ -36,7 +43,7 @@ const AdminDashboard = () => {
   const [clientCompanies, setClientCompanies] = useState<ClientCompany[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
-  const [editForm, setEditForm] = useState({ full_name: '', role: '', client_name: '' });
+  const [editForm, setEditForm] = useState({ display_name: '', role: '', client_name: '' });
 
   useEffect(() => {
     console.log('AdminDashboard: useEffect triggered, userRole:', userRole);
@@ -60,10 +67,10 @@ const AdminDashboard = () => {
   };
 
   const fetchUsersWithRoles = async () => {
-    // Get all users first (this is the authoritative source)
+    // Get all users directly - no need for profiles table anymore
     const { data: usersData, error: usersError } = await supabase
       .from('users')
-      .select('auth_user_id, email, role, client_name')
+      .select('id, auth_user_id, email, role, client_name, display_name, created_at, updated_at')
       .order('created_at', { ascending: false });
     
     if (usersError || !usersData) {
@@ -71,29 +78,18 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Get profiles to enrich with profile data
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select('*');
-    
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-    }
-
-    // Combine the data - users is the primary source, profiles enriches it
-    const usersWithRoles = usersData.map(user => {
-      const profileData = profilesData?.find(p => p.email === user.email);
-      return {
-        id: profileData?.id || user.auth_user_id,
-        user_id: profileData?.user_id || user.auth_user_id,
-        email: user.email,
-        full_name: profileData?.full_name || null,
-        created_at: profileData?.created_at || new Date().toISOString(),
-        updated_at: profileData?.updated_at || new Date().toISOString(),
-        user_role: user.role || 'Client',
-        client_name: user.client_name || null
-      };
-    });
+    // Map users to the expected interface
+    const usersWithRoles: UserWithRole[] = usersData.map(user => ({
+      id: user.id,
+      auth_user_id: user.auth_user_id,
+      email: user.email,
+      display_name: user.display_name,
+      role: user.role,
+      client_name: user.client_name,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      user_role: user.role // For compatibility
+    }));
     
     setUsers(usersWithRoles);
     
@@ -160,19 +156,11 @@ const AdminDashboard = () => {
       })
       .subscribe();
 
-    // Subscribe to profiles changes
-    const profilesChannel = supabase
-      .channel('profiles-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
-        fetchUsersWithRoles();
-      })
-      .subscribe();
-
+    // No need to subscribe to profiles changes anymore
     return () => {
       supabase.removeChannel(usersChannel);
       supabase.removeChannel(permissionsChannel);
       supabase.removeChannel(invitationsChannel);
-      supabase.removeChannel(profilesChannel);
     };
   };
 
@@ -271,7 +259,7 @@ const AdminDashboard = () => {
   const openEditUser = (user: UserWithRole) => {
     setEditingUser(user);
     setEditForm({
-      full_name: user.full_name || '',
+      display_name: user.display_name || '',
       role: user.user_role || 'Client',
       client_name: user.client_name || ''
     });
@@ -280,20 +268,18 @@ const AdminDashboard = () => {
   const createMissingProfile = async (user: UserWithRole) => {
     try {
       const { error } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: user.user_id,
-          email: user.email,
-          full_name: user.email.split('@')[0], // Default to username part of email
-          created_at: new Date().toISOString(),
+        .from('users')
+        .update({
+          display_name: user.email.split('@')[0], // Default to username part of email
           updated_at: new Date().toISOString()
-        });
+        })
+        .eq('id', user.id);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "Profile created successfully",
+        description: "Display name created successfully",
       });
       
       // Refresh the users list
@@ -301,7 +287,7 @@ const AdminDashboard = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create profile",
+        description: "Failed to create display name",
         variant: "destructive",
       });
     }
@@ -311,40 +297,18 @@ const AdminDashboard = () => {
     if (!editingUser) return;
 
     try {
-      // If user has a profile, update it; if not, create it
-      if (editingUser.full_name) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ full_name: editForm.full_name })
-          .eq('id', editingUser.id);
-
-        if (profileError) throw profileError;
-      } else {
-        // Create new profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: editingUser.user_id,
-            email: editingUser.email,
-            full_name: editForm.full_name,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (profileError) throw profileError;
-      }
-
-      // Update user role and client_name
-      const { error: userError } = await supabase
+      // Update user with display_name, role and client_name
+      const { error } = await supabase
         .from('users')
         .update({ 
+          display_name: editForm.display_name,
           role: editForm.role, 
           client_name: editForm.client_name || null,
           updated_at: new Date().toISOString() 
         })
         .eq('email', editingUser.email);
 
-      if (userError) throw userError;
+      if (error) throw error;
 
       toast({
         title: "Success",
@@ -395,7 +359,7 @@ const AdminDashboard = () => {
           <div className="text-center">
             <h1 className="text-3xl font-bold text-forest-green mb-4">Admin Dashboard</h1>
             <p className="text-slate-gray mb-6">
-              Welcome, {profile?.full_name || user.email}! Manage users and permissions.
+              Welcome, {user.email}! Manage users and permissions.
             </p>
           </div>
 
@@ -561,17 +525,17 @@ const AdminDashboard = () => {
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
-                            {user.full_name || (
-                              <span className="text-slate-gray italic">No profile created</span>
+                            {user.display_name || (
+                              <span className="text-slate-gray italic">No display name set</span>
                             )}
-                            {!user.full_name && (
+                            {!user.display_name && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => createMissingProfile(user)}
                                 className="text-xs px-2 py-1 h-6"
                               >
-                                Create Profile
+                                Create Display Name
                               </Button>
                             )}
                           </div>
@@ -613,12 +577,12 @@ const AdminDashboard = () => {
                                 </DialogHeader>
                                 <div className="space-y-4">
                                   <div>
-                                    <Label htmlFor="edit-name">Full Name</Label>
+                                    <Label htmlFor="edit-name">Display Name</Label>
                                     <Input
                                       id="edit-name"
-                                      value={editForm.full_name}
-                                      onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
-                                      placeholder="Enter full name"
+                                      value={editForm.display_name}
+                                      onChange={(e) => setEditForm({...editForm, display_name: e.target.value})}
+                                      placeholder="Enter display name"
                                     />
                                   </div>
                                   <div>
