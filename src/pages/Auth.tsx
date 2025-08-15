@@ -14,8 +14,9 @@ const Auth = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -23,6 +24,8 @@ const Auth = () => {
   const [invitation, setInvitation] = useState<any>(null);
   const [loadingInvitation, setLoadingInvitation] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+  const [invitationError, setInvitationError] = useState<string | null>(null);
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -67,38 +70,89 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate, searchParams]);
 
-  const loadInvitation = async (token: string) => {
+  const loadInvitation = async (token: string, retryCount = 0) => {
     setLoadingInvitation(true);
+    setInvitationError(null);
+    
     try {
-      // Use UTC for consistent timezone handling
+      console.log(`Loading invitation for token: ${token.substring(0, 8)}...`, 'retry:', retryCount);
+      
+      // Use UTC for consistent timezone handling and case-insensitive search
       const currentUTC = new Date().toISOString();
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')
-        .eq('invitation_token', token)
+        .eq('invitation_token', token.toLowerCase()) // Ensure lowercase comparison
         .eq('status', 'pending')
         .gt('expires_at', currentUTC)
         .maybeSingle();
 
-      if (error || !data) {
-        // Log invalid invitation attempt for security monitoring
-        await supabase.rpc('log_security_event', {
-          event_type: 'invalid_invitation_access',
-          event_details: { 
-            token: token.substring(0, 8) + '...', // Log partial token for security
-            ip_address: window.location.hostname,
-            user_agent: navigator.userAgent 
+      console.log('Invitation query result:', { data, error, currentUTC });
+
+      if (error) {
+        console.error('Database error loading invitation:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      if (!data) {
+        // Check if invitation exists but is expired or already used
+        const { data: anyInvitation } = await supabase
+          .from('user_invitations')
+          .select('*')
+          .eq('invitation_token', token.toLowerCase())
+          .maybeSingle();
+
+        console.log('Checking any invitation with token:', anyInvitation);
+
+        if (anyInvitation) {
+          const expiredMsg = new Date(anyInvitation.expires_at) < new Date() 
+            ? "This invitation has expired." 
+            : "This invitation has already been used.";
+          
+          setInvitationError(expiredMsg);
+          
+          await supabase.rpc('log_security_event', {
+            event_type: 'expired_invitation_access',
+            event_details: { 
+              token: token.substring(0, 8) + '...', 
+              status: anyInvitation.status,
+              expires_at: anyInvitation.expires_at
+            }
+          });
+          
+          toast({
+            title: "Invitation Unavailable",
+            description: expiredMsg,
+            variant: "destructive",
+          });
+        } else {
+          // If no invitation found and first attempt, retry with case variations
+          if (retryCount === 0) {
+            console.log('Retrying with different case...');
+            setTimeout(() => loadInvitation(token.toUpperCase(), 1), 1000);
+            return;
           }
-        });
-        
-        toast({
-          title: "Invalid Invitation",
-          description: "This invitation link is invalid or has expired.",
-          variant: "destructive",
-        });
+          
+          setInvitationError("This invitation link is invalid.");
+          
+          await supabase.rpc('log_security_event', {
+            event_type: 'invalid_invitation_access',
+            event_details: { 
+              token: token.substring(0, 8) + '...',
+              attempt: retryCount + 1
+            }
+          });
+          
+          toast({
+            title: "Invalid Invitation",
+            description: "This invitation link is invalid or has expired.",
+            variant: "destructive",
+          });
+        }
         return;
       }
 
+      // Success - invitation found and valid
       setInvitation(data);
       setEmail(data.email);
       setFullName(data.full_name);
@@ -118,11 +172,20 @@ const Auth = () => {
         title: "Invitation Found!",
         description: `Welcome ${data.full_name}! Complete your account setup below.`,
       });
+      
     } catch (error: any) {
       console.error('Failed to load invitation:', error);
+      setInvitationError(error.message || "Failed to load invitation details.");
+      
+      if (retryCount === 0) {
+        console.log('Retrying invitation load...');
+        setTimeout(() => loadInvitation(token, 1), 2000);
+        return;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to load invitation details.",
+        description: "Failed to load invitation details. Please check the link and try again.",
         variant: "destructive",
       });
     } finally {
@@ -133,26 +196,54 @@ const Auth = () => {
   const validatePassword = (password: string) => {
     const validation = validatePasswordStrength(password);
     setPasswordErrors(validation.errors);
+    
+    // Set password strength indicator
+    if (password.length === 0) {
+      setPasswordStrength(null);
+    } else if (validation.errors.length > 2) {
+      setPasswordStrength('weak');
+    } else if (validation.errors.length > 0) {
+      setPasswordStrength('medium');
+    } else {
+      setPasswordStrength('strong');
+    }
+    
     return validation.isValid;
+  };
+
+  const validatePasswordMatch = () => {
+    return password === confirmPassword;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate password strength for invitation signup
-    if (invitation && !validatePassword(password)) {
-      toast({
-        title: "Password Validation Failed",
-        description: "Please fix the password requirements below.",
-        variant: "destructive",
-      });
-      return;
+    // For invitation signup, validate both password strength and confirmation
+    if (invitation) {
+      if (!validatePassword(password)) {
+        toast({
+          title: "Password Validation Failed",
+          description: "Please fix the password requirements below.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!validatePasswordMatch()) {
+        toast({
+          title: "Password Mismatch",
+          description: "Passwords do not match. Please check both password fields.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setLoading(true);
 
     try {
       if (!invitation) {
+        // Login flow
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -171,67 +262,105 @@ const Auth = () => {
           });
         }
       } else {
+        // Invitation signup flow
+        console.log('Starting invitation signup for:', invitation.email);
+        
         const redirectUrl = `${window.location.origin}/`;
         
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: invitation.email, // Use invitation email explicitly
           password,
           options: {
             emailRedirectTo: redirectUrl,
             data: {
-              full_name: fullName,
-              invited_role: invitation?.role, // Include role if from invitation
+              full_name: invitation.full_name, // Use invitation name
+              invited_role: invitation.role,
+              invitation_id: invitation.id
             }
           }
         });
 
+        console.log('Signup result:', { data, error });
+
         if (error) {
+          console.error('Signup error:', error);
           toast({
-            title: "Signup Failed",
+            title: "Account Creation Failed",
             description: error.message,
             variant: "destructive",
           });
-        } else {
-          // If this is from an invitation, mark it as accepted
-          if (invitation && data.user) {
-            try {
-              // Mark invitation as accepted
-              await supabase
-                .from('user_invitations')
-                .update({ 
-                  status: 'accepted',
-                  accepted_at: new Date().toISOString()
-                })
-                .eq('id', invitation.id);
+        } else if (data.user) {
+          console.log('User created successfully:', data.user.id);
+          
+          try {
+            // Mark invitation as accepted with real-time update
+            const { error: updateError } = await supabase
+              .from('user_invitations')
+              .update({ 
+                status: 'accepted',
+                accepted_at: new Date().toISOString()
+              })
+              .eq('id', invitation.id);
 
-              // Set the user role immediately in users table
-              await supabase
-                .from('users')
-                .upsert({ 
-                  email: invitation.email,
-                  role: invitation.role 
-                }, { 
-                  onConflict: 'email' 
-                });
-
-              // Profiles table doesn't store role, only users table does
-
-              toast({
-                title: "Welcome to the team!",
-                description: `Your account has been created with ${invitation.role} access.`,
-              });
-            } catch (inviteError) {
-              console.error('Failed to process invitation:', inviteError);
+            if (updateError) {
+              console.error('Failed to update invitation:', updateError);
             }
-          } else {
+
+            // Create/update user record with role
+            const { error: userError } = await supabase
+              .from('users')
+              .upsert({ 
+                auth_user_id: data.user.id,
+                email: invitation.email,
+                role: invitation.role,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }, { 
+                onConflict: 'email',
+                ignoreDuplicates: false
+              });
+
+            if (userError) {
+              console.error('Failed to create user record:', userError);
+            }
+
+            // Log successful account creation
+            await supabase.rpc('log_security_event', {
+              event_type: 'invitation_account_created',
+              event_details: { 
+                user_id: data.user.id,
+                email: invitation.email,
+                role: invitation.role,
+                invitation_id: invitation.id
+              }
+            });
+
             toast({
-              title: "Account Created!",
-              description: "Please check your email to verify your account.",
+              title: "Welcome to the team!",
+              description: `Your account has been created successfully with ${invitation.role} access. You can now sign in.`,
+            });
+
+            // Reset form and redirect to login
+            setPassword('');
+            setConfirmPassword('');
+            setInvitation(null);
+            setIsLogin(true);
+            
+            // Remove invite parameter from URL
+            navigate('/auth', { replace: true });
+            
+          } catch (processError) {
+            console.error('Failed to process invitation after signup:', processError);
+            toast({
+              title: "Account Created",
+              description: "Your account was created but there was an issue setting up your role. Please contact support.",
+              variant: "destructive",
             });
           }
         }
       }
     } catch (error: unknown) {
+      console.error('Unexpected error during submit:', error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
@@ -289,7 +418,7 @@ const Auth = () => {
   const handleNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (newPassword !== confirmPassword) {
+    if (newPassword !== confirmNewPassword) {
       toast({
         title: "Password Mismatch",
         description: "Passwords do not match. Please try again.",
@@ -382,8 +511,8 @@ const Auth = () => {
                   <Input
                     id="confirm-password"
                     type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
                     required
                     minLength={8}
                     className="border-sage/50 focus:border-forest-green"
@@ -468,22 +597,36 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-cream flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-forest-green">
-            {invitation ? 'Complete Your Invitation' : 'Sign in to your account'}
-          </h2>
-          <p className="mt-2 text-slate-gray">
-            {invitation ? 'Create your account with your invitation' : 'Access your RootedAI dashboard'}
-          </p>
-          {!invitation && (
-            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
-              <p className="text-sm text-amber-800">
-                <strong>Invitation Only:</strong> New users must be invited by an administrator. 
-                Contact your admin if you need access.
-              </p>
-            </div>
-          )}
-        </div>
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-forest-green">
+              {invitation ? 'Complete Your Invitation' : 'Sign in to your account'}
+            </h2>
+            <p className="mt-2 text-slate-gray">
+              {invitation ? 'Create your account with your invitation' : 'Access your RootedAI dashboard'}
+            </p>
+            {!invitation && (
+              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
+                <p className="text-sm text-amber-800">
+                  <strong>Invitation Only:</strong> New users must be invited by an administrator. 
+                  Contact your admin if you need access.
+                </p>
+              </div>
+            )}
+            {loadingInvitation && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-sm text-blue-800">
+                  Loading invitation details...
+                </p>
+              </div>
+            )}
+            {invitationError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
+                <p className="text-sm text-red-800">
+                  <strong>Error:</strong> {invitationError}
+                </p>
+              </div>
+            )}
+          </div>
 
         <Card className="border-sage/30 shadow-lg">
           <CardHeader>
@@ -567,6 +710,28 @@ const Auth = () => {
                   placeholder={invitation ? "Create a secure password" : "Enter your password"}
                   minLength={8}
                 />
+                {invitation && passwordStrength && (
+                  <div className="mt-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-1 bg-sage/30 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            passwordStrength === 'weak' ? 'w-1/3 bg-red-500' :
+                            passwordStrength === 'medium' ? 'w-2/3 bg-yellow-500' :
+                            'w-full bg-green-500'
+                          }`}
+                        />
+                      </div>
+                      <span className={`text-xs font-medium ${
+                        passwordStrength === 'weak' ? 'text-red-600' :
+                        passwordStrength === 'medium' ? 'text-yellow-600' :
+                        'text-green-600'
+                      }`}>
+                        {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+                )}
                 {invitation && passwordErrors.length > 0 && (
                   <div className="mt-2 space-y-1">
                     {passwordErrors.map((error, index) => (
@@ -575,6 +740,32 @@ const Auth = () => {
                   </div>
                 )}
               </div>
+
+              {invitation && (
+                <div>
+                  <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-gray mb-2">
+                    Confirm Password *
+                  </label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className={`border-sage/50 focus:border-forest-green ${
+                      confirmPassword && !validatePasswordMatch() ? 'border-red-500' : ''
+                    }`}
+                    placeholder="Confirm your password"
+                    minLength={8}
+                  />
+                  {confirmPassword && !validatePasswordMatch() && (
+                    <p className="mt-1 text-sm text-red-600">Passwords do not match</p>
+                  )}
+                  {confirmPassword && validatePasswordMatch() && password && (
+                    <p className="mt-1 text-sm text-green-600">Passwords match ✓</p>
+                  )}
+                </div>
+              )}
 
               <Button
                 type="submit"

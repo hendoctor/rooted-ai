@@ -130,11 +130,30 @@ const handler = async (req: Request): Promise<Response> => {
       }
     });
 
-    // Create invitation URL with consistent domain
-    const baseUrl = req.headers.get("origin") || req.headers.get("referer")?.split('?')[0] || "https://rootedai.tech";
-    const inviteUrl = `${baseUrl}/auth?invite=${invitation.invitation_token}`;
+    // Create invitation URL with consistent domain and proper token handling
+    const refererUrl = req.headers.get("referer");
+    const originUrl = req.headers.get("origin");
+    
+    // Extract base URL more reliably
+    let baseUrl = "https://rootedai.tech"; // Fallback
+    
+    if (originUrl) {
+      baseUrl = originUrl;
+    } else if (refererUrl) {
+      try {
+        const refererObj = new URL(refererUrl);
+        baseUrl = `${refererObj.protocol}//${refererObj.host}`;
+      } catch (e) {
+        console.warn("Could not parse referer URL:", refererUrl);
+      }
+    }
+    
+    // Ensure token is properly formatted (lowercase for consistency)
+    const inviteUrl = `${baseUrl}/auth?invite=${invitation.invitation_token.toLowerCase()}`;
     
     console.log("Generated invitation URL:", inviteUrl);
+    console.log("Base URL:", baseUrl);
+    console.log("Token:", invitation.invitation_token);
 
     // Send invitation email
     const emailResponse = await resend.emails.send({
