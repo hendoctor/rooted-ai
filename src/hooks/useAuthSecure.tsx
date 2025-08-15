@@ -18,28 +18,59 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Secure role persistence with encryption-like obfuscation
-const STORAGE_KEY = 'auth_state_backup';
-const BACKUP_EXPIRY_HOURS = 24;
+// Secure role persistence with proper encryption
+const STORAGE_KEY = 'auth_state_secure';
+const BACKUP_EXPIRY_MINUTES = 30; // Reduced expiry time
 
-const encodeState = (data: any): string => {
-  try {
-    return btoa(JSON.stringify(data));
-  } catch {
-    return '';
+// Generate encryption key
+let encryptionKey: CryptoKey | null = null;
+
+const getEncryptionKey = async (): Promise<CryptoKey> => {
+  if (!encryptionKey) {
+    encryptionKey = await crypto.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
   }
+  return encryptionKey;
 };
 
-const decodeState = (encoded: string): any => {
-  try {
-    return JSON.parse(atob(encoded));
-  } catch {
-    return null;
-  }
+const encryptData = async (data: string): Promise<string> => {
+  const key = await getEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encodedData = new TextEncoder().encode(data);
+  
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encodedData
+  );
+  
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  
+  return btoa(String.fromCharCode(...combined));
 };
 
-const saveRoleBackup = (email: string, role: string, clientName: string | null) => {
-  if (role !== 'Admin') return; // Only backup Admin roles
+const decryptData = async (encryptedData: string): Promise<string> => {
+  const key = await getEncryptionKey();
+  const combined = new Uint8Array(atob(encryptedData).split('').map(c => c.charCodeAt(0)));
+  const iv = combined.slice(0, 12);
+  const encrypted = combined.slice(12);
+  
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encrypted
+  );
+  
+  return new TextDecoder().decode(decrypted);
+};
+
+const saveRoleBackup = async (email: string, role: string, clientName: string | null) => {
+  if (role !== 'Admin') return; // Only backup Admin roles for security
   
   try {
     const backup = {
@@ -47,43 +78,51 @@ const saveRoleBackup = (email: string, role: string, clientName: string | null) 
       role,
       clientName,
       timestamp: Date.now(),
-      checksum: btoa(email + role + Date.now().toString())
+      integrity: crypto.getRandomValues(new Uint8Array(16)).join('')
     };
-    localStorage.setItem(STORAGE_KEY, encodeState(backup));
+    
+    const encrypted = await encryptData(JSON.stringify(backup));
+    sessionStorage.setItem(STORAGE_KEY, encrypted); // Use sessionStorage for better security
   } catch (error) {
-    console.warn('Role backup failed:', error);
+    console.warn('Secure role backup failed:', error);
   }
 };
 
-const loadRoleBackup = (email: string): { role: string; clientName: string | null } | null => {
+const loadRoleBackup = async (email: string): Promise<{ role: string; clientName: string | null } | null> => {
   try {
-    const encoded = localStorage.getItem(STORAGE_KEY);
-    if (!encoded) return null;
+    const encrypted = sessionStorage.getItem(STORAGE_KEY);
+    if (!encrypted) return null;
     
-    const backup = decodeState(encoded);
+    const decrypted = await decryptData(encrypted);
+    const backup = JSON.parse(decrypted);
+    
     if (!backup || backup.email !== email) return null;
     
-    // Check expiry
-    const hoursSince = (Date.now() - backup.timestamp) / (1000 * 60 * 60);
-    if (hoursSince > BACKUP_EXPIRY_HOURS) {
-      localStorage.removeItem(STORAGE_KEY);
+    // Check expiry (reduced to 30 minutes)
+    const minutesSince = (Date.now() - backup.timestamp) / (1000 * 60);
+    if (minutesSince > BACKUP_EXPIRY_MINUTES) {
+      sessionStorage.removeItem(STORAGE_KEY);
       return null;
     }
+    
+    // Only return Admin roles
+    if (backup.role !== 'Admin') return null;
     
     return {
       role: backup.role,
       clientName: backup.clientName
     };
   } catch (error) {
-    console.warn('Role backup load failed:', error);
-    localStorage.removeItem(STORAGE_KEY);
+    console.warn('Secure role backup load failed:', error);
+    sessionStorage.removeItem(STORAGE_KEY);
     return null;
   }
 };
 
 const clearRoleBackup = () => {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
+    encryptionKey = null; // Clear encryption key
   } catch (error) {
     console.warn('Role backup clear failed:', error);
   }
@@ -188,7 +227,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       try {
         // Check for backup role first (for Admin persistence)
-        const backup = loadRoleBackup(userEmail);
+        const backup = await loadRoleBackup(userEmail);
         if (backup && backup.role === 'Admin') {
           console.log('🔄 Restoring Admin role from secure backup');
           setUserRole(backup.role);
@@ -209,7 +248,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           // Save backup for Admin roles
           if (roleResult.role === 'Admin') {
-            saveRoleBackup(userEmail, roleResult.role, roleResult.clientName);
+            await saveRoleBackup(userEmail, roleResult.role, roleResult.clientName);
           }
         }
       } catch (error) {
@@ -275,7 +314,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setClientName(roleResult.clientName);
       
       if (roleResult.role === 'Admin') {
-        saveRoleBackup(user.email, roleResult.role, roleResult.clientName);
+        await saveRoleBackup(user.email, roleResult.role, roleResult.clientName);
       }
       
       await fetchProfile(user.id);

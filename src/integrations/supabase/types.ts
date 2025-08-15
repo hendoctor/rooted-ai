@@ -68,6 +68,30 @@ export type Database = {
         }
         Relationships: []
       }
+      invitation_token_attempts: {
+        Row: {
+          attempt_time: string
+          id: string
+          ip_address: unknown
+          success: boolean
+          token_prefix: string
+        }
+        Insert: {
+          attempt_time?: string
+          id?: string
+          ip_address: unknown
+          success?: boolean
+          token_prefix: string
+        }
+        Update: {
+          attempt_time?: string
+          id?: string
+          ip_address?: unknown
+          success?: boolean
+          token_prefix?: string
+        }
+        Relationships: []
+      }
       newsletter_subscriptions_auth: {
         Row: {
           created_at: string
@@ -259,6 +283,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_invitation_attempt_rate_limit: {
+        Args: {
+          client_ip: unknown
+          max_attempts?: number
+          window_minutes?: number
+        }
+        Returns: boolean
+      }
       check_invitation_rate_limit: {
         Args: { admin_id: string; max_invites?: number; window_hours?: number }
         Returns: boolean
@@ -302,6 +334,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: Json
       }
+      log_invitation_access: {
+        Args: { access_result: string; token_used: string; user_ip?: unknown }
+        Returns: undefined
+      }
       log_security_event: {
         Args: { event_details?: Json; event_type: string; user_id?: string }
         Returns: undefined
@@ -309,6 +345,10 @@ export type Database = {
       resync_user_roles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      validate_invitation_secure: {
+        Args: { token_input: string }
+        Returns: Json
       }
     }
     Enums: {

@@ -3,6 +3,11 @@ import App from './App.tsx'
 import './index.css'
 import { ThemeProvider } from 'next-themes'
 import './utils/securityEnhancer'
+import { applySecurityHeaders, setupSecurityMonitoring } from './utils/securityHeaders'
+
+// Apply security hardening
+applySecurityHeaders();
+setupSecurityMonitoring();
 
 const root = createRoot(document.getElementById('root')!);
 

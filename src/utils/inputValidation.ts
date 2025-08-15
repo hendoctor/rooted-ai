@@ -82,30 +82,33 @@ export const sanitizeHtml = (content: string): string => {
     .replace(/\//g, '&#x2F;');
 };
 
-// Rate limiting helper
+// Enhanced rate limiting with stricter controls
 export const rateLimitCheck = (
   key: string, 
-  maxRequests: number = 5, 
-  windowMs: number = 60000
+  maxRequests: number = 3, // Reduced from 5
+  windowMs: number = 300000 // Increased to 5 minutes
 ): boolean => {
   const now = Date.now();
   const windowStart = now - windowMs;
   
-  // Get existing requests from localStorage
+  // Get existing requests from sessionStorage (more secure)
   const storageKey = `rate_limit_${key}`;
-  const requests = JSON.parse(localStorage.getItem(storageKey) || '[]');
+  const stored = sessionStorage.getItem(storageKey);
+  const requests = stored ? JSON.parse(stored) : [];
   
   // Filter requests within the time window
   const recentRequests = requests.filter((timestamp: number) => timestamp > windowStart);
   
   // Check if rate limit exceeded
   if (recentRequests.length >= maxRequests) {
+    // Log rate limit violation
+    console.warn(`Rate limit exceeded for ${key}. Attempts: ${recentRequests.length}`);
     return false;
   }
   
   // Add current request
   recentRequests.push(now);
-  localStorage.setItem(storageKey, JSON.stringify(recentRequests));
+  sessionStorage.setItem(storageKey, JSON.stringify(recentRequests));
   
   return true;
 };

@@ -115,34 +115,28 @@ export class SecurityEnhancer {
     error?: string;
   }> {
     try {
-      const { data: invitation, error } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('invitation_token', token)
-        .eq('status', 'pending')
-        .gt('expires_at', new Date().toISOString())
-        .maybeSingle();
+      // Use the new secure validation function
+      const { data, error } = await supabase.rpc('validate_invitation_secure', {
+        token_input: token
+      });
 
-      if (error || !invitation) {
-        await SecurityMiddleware.logSecurityEvent({
-          event_type: 'invalid_invitation_token_used',
-          event_details: {
-            token: token.substring(0, 8) + '...',
-            timestamp: new Date().toISOString()
-          }
-        });
-
+      if (error) {
+        console.error('Invitation validation error:', error);
         return {
           isValid: false,
-          error: 'Invalid or expired invitation token'
+          error: 'Failed to validate invitation token'
         };
       }
 
+      const result = data as { valid: boolean; invitation?: any; error?: string };
+      
       return {
-        isValid: true,
-        invitation
+        isValid: result.valid,
+        invitation: result.invitation,
+        error: result.error
       };
     } catch (error) {
+      console.error('Invitation validation failed:', error);
       return {
         isValid: false,
         error: 'Failed to validate invitation token'

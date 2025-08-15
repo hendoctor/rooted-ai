@@ -10,19 +10,23 @@ export const SECURITY_CONFIG = {
     SPECIAL_CHARS: '!@#$%^&*()_+-=[]{}|;:,.<>?'
   },
 
-  // Rate limiting
+  // Enhanced rate limiting
   RATE_LIMITS: {
     CONTACT_FORM: {
-      MAX_REQUESTS: 5,
-      WINDOW_SECONDS: 300 // 5 minutes
+      MAX_REQUESTS: 3, // Reduced from 5
+      WINDOW_SECONDS: 600 // Increased to 10 minutes
     },
     LOGIN_ATTEMPTS: {
-      MAX_REQUESTS: 10,
-      WINDOW_SECONDS: 900 // 15 minutes
+      MAX_REQUESTS: 5, // Reduced from 10
+      WINDOW_SECONDS: 1800 // Increased to 30 minutes
     },
     PASSWORD_RESET: {
-      MAX_REQUESTS: 3,
+      MAX_REQUESTS: 2, // Reduced from 3
       WINDOW_SECONDS: 3600 // 1 hour
+    },
+    INVITATION_ATTEMPTS: {
+      MAX_REQUESTS: 5,
+      WINDOW_SECONDS: 900 // 15 minutes
     }
   },
 
