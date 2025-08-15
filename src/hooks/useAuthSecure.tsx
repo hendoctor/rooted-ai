@@ -243,13 +243,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Update role if different from backup or if no backup
         if (!backup || roleResult.role !== backup.role) {
           console.log('✅ Setting role:', roleResult.role, 'client:', roleResult.clientName);
+          console.log('📊 Role result details:', JSON.stringify(roleResult, null, 2));
           setUserRole(roleResult.role);
           setClientName(roleResult.clientName);
           
           // Save backup for Admin roles
           if (roleResult.role === 'Admin') {
+            console.log('💾 Saving Admin role backup for persistence');
             await saveRoleBackup(userEmail, roleResult.role, roleResult.clientName);
           }
+        } else {
+          console.log('📋 Using cached role from backup:', backup.role);
         }
       } catch (error) {
         console.error('Auth state change error:', error);
