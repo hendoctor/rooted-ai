@@ -49,13 +49,18 @@ const Header = () => {
   const navItems = [...baseNavItems, ...dynamicNav];
 
   const handleSignOut = async () => {
+    console.log('🔄 Header: Sign out button clicked');
     try {
       await signOut();
+      console.log('✅ Header: Sign out successful');
       toast({
         title: "Signed out successfully",
         description: "You have been logged out.",
       });
+      // Force navigation to home page after sign out
+      window.location.href = '/';
     } catch (error) {
+      console.error('❌ Header: Sign out failed:', error);
       toast({
         title: "Error signing out",
         description: "Please try again.",

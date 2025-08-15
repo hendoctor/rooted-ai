@@ -8,6 +8,7 @@ export const useRolePersistence = () => {
   useEffect(() => {
     if (!user) {
       // Clear any stored role when user logs out
+      console.log('🧹 User logged out, clearing role backup');
       localStorage.removeItem('user_role_backup');
       return;
     }
