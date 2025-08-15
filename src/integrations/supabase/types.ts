@@ -250,7 +250,7 @@ export type Database = {
       }
       users: {
         Row: {
-          auth_user_id: string | null
+          auth_user_id: string
           client_name: string | null
           created_at: string | null
           email: string
@@ -259,7 +259,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          auth_user_id?: string | null
+          auth_user_id: string
           client_name?: string | null
           created_at?: string | null
           email: string
@@ -268,7 +268,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          auth_user_id?: string | null
+          auth_user_id?: string
           client_name?: string | null
           created_at?: string | null
           email?: string

@@ -249,9 +249,7 @@ const Auth = () => {
               auth_user_id: data.user.id,
               email: invitation.email,
               role: invitation.role,
-              client_name: invitation.client_name || null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+              client_name: invitation.client_name || null
             };
 
             console.log('Creating user record:', userRecord);
@@ -259,7 +257,8 @@ const Auth = () => {
             const { error: userError } = await supabase
               .from('users')
               .upsert(userRecord, { 
-                onConflict: 'auth_user_id'
+                onConflict: 'auth_user_id',
+                ignoreDuplicates: false
               });
 
             if (userError) {
