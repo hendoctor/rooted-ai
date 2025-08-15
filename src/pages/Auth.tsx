@@ -241,25 +241,33 @@ const Auth = () => {
 
             if (updateError) {
               console.error('Failed to update invitation:', updateError);
+              throw new Error('Failed to update invitation status');
             }
 
-            // Create/update user record with role
+            // Create/update user record with role and client_name
+            const userRecord = {
+              auth_user_id: data.user.id,
+              email: invitation.email,
+              role: invitation.role,
+              client_name: invitation.client_name || null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+
+            console.log('Creating user record:', userRecord);
+
             const { error: userError } = await supabase
               .from('users')
-              .upsert({ 
-                auth_user_id: data.user.id,
-                email: invitation.email,
-                role: invitation.role,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }, { 
-                onConflict: 'email',
-                ignoreDuplicates: false
+              .upsert(userRecord, { 
+                onConflict: 'auth_user_id'
               });
 
             if (userError) {
               console.error('Failed to create user record:', userError);
+              throw new Error(`Database error: ${userError.message}`);
             }
+
+            console.log('User record created successfully');
 
             // Log successful account creation
             await supabase.rpc('log_security_event', {
