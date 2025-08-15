@@ -178,6 +178,26 @@ const AdminDashboard = () => {
     }
   };
 
+  const cancelInvitation = async (invitationId: string) => {
+    const { error } = await supabase
+      .from('user_invitations')
+      .update({ status: 'cancelled' })
+      .eq('id', invitationId);
+    
+    if (!error) {
+      toast({
+        title: "Success",
+        description: "Invitation cancelled successfully",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to cancel invitation",
+        variant: "destructive",
+      });
+    }
+  };
+
   const deleteUser = async (userEmail: string) => {
     const { error } = await supabase.rpc('delete_user_completely', {
       user_email: userEmail
@@ -251,12 +271,24 @@ const AdminDashboard = () => {
                     {invitations.filter(inv => inv.status === 'pending').map(invitation => (
                       <div key={invitation.id} className="p-3 bg-sage/10 rounded border border-sage/20">
                         <div className="flex justify-between items-start">
-                          <div>
+                          <div className="flex-1">
                             <p className="font-medium text-sm">{invitation.full_name}</p>
                             <p className="text-xs text-slate-gray">{invitation.email}</p>
                             <p className="text-xs text-forest-green">{invitation.role}</p>
+                            <p className="text-xs text-slate-gray/70">
+                              Expires: {new Date(invitation.expires_at).toLocaleDateString()}
+                            </p>
                           </div>
-                          <span className="text-xs text-amber-600">Pending</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-amber-600">Pending</span>
+                            <button
+                              onClick={() => cancelInvitation(invitation.id)}
+                              className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded"
+                              title="Cancel invitation"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -264,6 +296,35 @@ const AdminDashboard = () => {
                       <p className="text-sm text-slate-gray">No pending invitations</p>
                     )}
                   </div>
+                  
+                  {/* Cancelled/Expired Invitations */}
+                  {invitations.filter(inv => inv.status !== 'pending' && inv.status !== 'accepted').length > 0 && (
+                    <div className="mt-6">
+                      <h4 className="font-medium text-slate-gray mb-3">Recent Cancelled/Expired</h4>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {invitations
+                          .filter(inv => inv.status !== 'pending' && inv.status !== 'accepted')
+                          .slice(0, 5)
+                          .map(invitation => (
+                          <div key={invitation.id} className="p-2 bg-slate-50 rounded border border-slate-200">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="text-xs font-medium">{invitation.full_name}</p>
+                                <p className="text-xs text-slate-gray">{invitation.email}</p>
+                              </div>
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                invitation.status === 'cancelled' 
+                                  ? 'bg-red-100 text-red-600' 
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {invitation.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>

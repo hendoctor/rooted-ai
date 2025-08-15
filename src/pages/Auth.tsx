@@ -105,14 +105,18 @@ const Auth = () => {
         console.log('Checking any invitation with token:', anyInvitation);
 
         if (anyInvitation) {
-          const expiredMsg = new Date(anyInvitation.expires_at) < new Date() 
-            ? "This invitation has expired." 
-            : "This invitation has already been used.";
+          let expiredMsg = "This invitation has already been used.";
+          
+          if (anyInvitation.status === 'cancelled') {
+            expiredMsg = "This invitation has been cancelled by the administrator. Please contact support for a new invitation.";
+          } else if (new Date(anyInvitation.expires_at) < new Date()) {
+            expiredMsg = "This invitation has expired.";
+          }
           
           setInvitationError(expiredMsg);
           
           await supabase.rpc('log_security_event', {
-            event_type: 'expired_invitation_access',
+            event_type: 'invalid_invitation_access',
             event_details: { 
               token: token.substring(0, 8) + '...', 
               status: anyInvitation.status,
