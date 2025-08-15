@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import ScrollReveal from '@/components/ScrollReveal';
 
 const About = () => {
   const values = [
@@ -30,25 +31,25 @@ const About = () => {
     <section id="about" className="py-20 bg-sage/5 dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <ScrollReveal className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-forest-green mb-4">
             Why RootedAI?
           </h2>
           <p className="text-lg sm:text-xl text-slate-gray max-w-3xl mx-auto">
             We understand that small businesses need AI solutions that are practical, affordable, and aligned with their values.
           </p>
-        </div>
+        </ScrollReveal>
 
         {/* Mission Statement */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 sm:p-12 mb-16 shadow-lg">
+        <ScrollReveal className="bg-white dark:bg-slate-900 rounded-2xl p-8 sm:p-12 mb-16 shadow-lg">
           <div className="max-w-4xl mx-auto text-center">
             <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-6">Our Mission</h3>
             <p className="text-lg text-slate-gray leading-relaxed mb-8">
-              To empower small businesses in Kansas City and beyond with practical AI solutions that drive growth 
-              while preserving the personal touch and community values that make them special. We believe that 
+              To empower small businesses in Kansas City and beyond with practical AI solutions that drive growth
+              while preserving the personal touch and community values that make them special. We believe that
               technology should enhance human connection, not replace it.
             </p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
               <div>
                 <div className="text-3xl font-bold text-earth-brown mb-2">5+</div>
@@ -64,10 +65,10 @@ const About = () => {
               </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Core Values */}
-        <div className="mb-16">
+        <ScrollReveal className="mb-16">
           <h3 className="text-2xl sm:text-3xl font-bold text-forest-green text-center mb-12">
             Our Core Values
           </h3>
@@ -86,10 +87,10 @@ const About = () => {
               </Card>
             ))}
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Target Market */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 sm:p-12 shadow-lg">
+        <ScrollReveal className="bg-white dark:bg-slate-900 rounded-2xl p-8 sm:p-12 shadow-lg">
           <div className="max-w-4xl mx-auto">
             <h3 className="text-2xl sm:text-3xl font-bold text-forest-green text-center mb-8">
               Who We Serve
@@ -147,7 +148,7 @@ const About = () => {
               </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
         
       </div>
     </section>
