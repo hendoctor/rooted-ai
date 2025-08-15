@@ -277,17 +277,62 @@ const AdminDashboard = () => {
     });
   };
 
+  const createMissingProfile = async (user: UserWithRole) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: user.user_id,
+          email: user.email,
+          full_name: user.email.split('@')[0], // Default to username part of email
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Profile created successfully",
+      });
+      
+      // Refresh the users list
+      fetchUsersWithRoles();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create profile",
+        variant: "destructive",
+      });
+    }
+  };
+
   const saveUserEdit = async () => {
     if (!editingUser) return;
 
     try {
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ full_name: editForm.full_name })
-        .eq('id', editingUser.id);
+      // If user has a profile, update it; if not, create it
+      if (editingUser.full_name) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ full_name: editForm.full_name })
+          .eq('id', editingUser.id);
 
-      if (profileError) throw profileError;
+        if (profileError) throw profileError;
+      } else {
+        // Create new profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: editingUser.user_id,
+            email: editingUser.email,
+            full_name: editForm.full_name,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (profileError) throw profileError;
+      }
 
       // Update user role and client_name
       const { error: userError } = await supabase
@@ -514,7 +559,21 @@ const AdminDashboard = () => {
                     {users.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">
-                          {user.full_name || 'No name set'}
+                          <div className="flex items-center gap-2">
+                            {user.full_name || (
+                              <span className="text-slate-gray italic">No profile created</span>
+                            )}
+                            {!user.full_name && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => createMissingProfile(user)}
+                                className="text-xs px-2 py-1 h-6"
+                              >
+                                Create Profile
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
