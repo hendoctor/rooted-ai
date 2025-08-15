@@ -60,41 +60,45 @@ const AdminDashboard = () => {
   };
 
   const fetchUsersWithRoles = async () => {
-    // Get profiles and their corresponding user roles
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (profilesError || !profilesData) {
-      console.error('Error fetching profiles:', profilesError);
-      return;
-    }
-
-    // Get user roles and client names separately
+    // Get all users first (this is the authoritative source)
     const { data: usersData, error: usersError } = await supabase
       .from('users')
-      .select('email, role, client_name');
+      .select('auth_user_id, email, role, client_name')
+      .order('created_at', { ascending: false });
     
-    if (usersError) {
+    if (usersError || !usersData) {
       console.error('Error fetching users:', usersError);
       return;
     }
 
-    // Combine the data
-    const usersWithRoles = profilesData.map(profile => {
-      const userData = usersData?.find(u => u.email === profile.email);
+    // Get profiles to enrich with profile data
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*');
+    
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
+    }
+
+    // Combine the data - users is the primary source, profiles enriches it
+    const usersWithRoles = usersData.map(user => {
+      const profileData = profilesData?.find(p => p.email === user.email);
       return {
-        ...profile,
-        user_role: userData?.role || 'Client',
-        client_name: userData?.client_name || null
+        id: profileData?.id || user.auth_user_id,
+        user_id: profileData?.user_id || user.auth_user_id,
+        email: user.email,
+        full_name: profileData?.full_name || null,
+        created_at: profileData?.created_at || new Date().toISOString(),
+        updated_at: profileData?.updated_at || new Date().toISOString(),
+        user_role: user.role || 'Client',
+        client_name: user.client_name || null
       };
     });
     
     setUsers(usersWithRoles);
     
     // Extract client companies for B2B management
-    const companies = usersData?.reduce((acc, user) => {
+    const companies = usersData.reduce((acc, user) => {
       if (user.client_name) {
         if (!acc[user.client_name]) {
           acc[user.client_name] = { name: user.client_name, userCount: 0, users: [] };
@@ -103,7 +107,7 @@ const AdminDashboard = () => {
         acc[user.client_name].users.push(user.email);
       }
       return acc;
-    }, {} as Record<string, ClientCompany>) || {};
+    }, {} as Record<string, ClientCompany>);
     
     setClientCompanies(Object.values(companies));
   };
