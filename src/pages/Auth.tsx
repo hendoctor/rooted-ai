@@ -44,15 +44,17 @@ const Auth = () => {
       loadInvitation(inviteToken);
     }
 
-    // Set up auth state listener
+    // Set up minimal auth state listener - don't redirect immediately
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Redirect authenticated users to home
-        if (session?.user && type !== 'recovery') {
-          navigate('/');
+        // Only redirect after successful login and a short delay to allow main auth system to catch up
+        if (event === 'SIGNED_IN' && session?.user && type !== 'recovery') {
+          setTimeout(() => {
+            navigate('/');
+          }, 2000); // 2 second delay to let main auth system establish session
         }
       }
     );
@@ -62,9 +64,7 @@ const Auth = () => {
       setSession(session);
       setUser(session?.user ?? null);
       
-      if (session?.user && type !== 'recovery') {
-        navigate('/');
-      }
+      // Don't redirect on initial load - let user interact first
     });
 
     return () => subscription.unsubscribe();

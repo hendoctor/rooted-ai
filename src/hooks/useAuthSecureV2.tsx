@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Simple session-based role persistence without encryption
 const ROLE_STORAGE_KEY = 'auth_role_simple';
-const SESSION_TIMEOUT = 10000; // 10 seconds max for any auth operation
+const SESSION_TIMEOUT = 30000; // 30 seconds max for any auth operation
 
 const saveRoleSimple = (email: string, role: string, clientName: string | null) => {
   if (role !== 'Admin') return; // Only persist Admin roles
@@ -95,26 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const authSubscriptionRef = useRef<any>(null);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Force loading to false after maximum timeout
-  useEffect(() => {
-    if (loading) {
-      loadingTimeoutRef.current = setTimeout(() => {
-        console.warn('⏰ Auth loading timeout - forcing completion');
-        setLoading(false);
-      }, SESSION_TIMEOUT);
-    } else {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = null;
-      }
-    }
-    
-    return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-      }
-    };
-  }, [loading]);
+  // Force loading to false after maximum timeout - removed for debugging
 
   // Optimized role fetching with caching and timeout
   const fetchUserRole = useCallback(async (userEmail: string, userId: string) => {
@@ -248,7 +229,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // For SIGNED_IN events, add a small delay to ensure database is ready
         if (event === 'SIGNED_IN') {
           console.log('🔄 Login detected, waiting for database sync...');
-          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+          await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
         }
 
         // Fetch current role with timeout
