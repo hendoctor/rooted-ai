@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import ScrollReveal from '@/components/ScrollReveal';
 
 const Reviews = () => {
   const testimonials = [
@@ -44,21 +43,22 @@ const Reviews = () => {
     <section id="reviews" className="py-20 bg-cream dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <ScrollReveal className="text-center mb-16">
+        <div className="text-center mb-16 animate-fade-in-up">
           <h2 className="text-4xl lg:text-5xl font-bold text-forest-green mb-6">
             What Our Clients Say
           </h2>
           <p className="text-lg text-slate-gray max-w-3xl mx-auto leading-relaxed">
             Real stories from Kansas City businesses who've embraced AI with our help
           </p>
-        </ScrollReveal>
+        </div>
 
         {/* Testimonials Grid */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           {testimonials.map((testimonial, index) => {
             const card = (
               <Card
-                className="bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 border-0"
+                className="bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 border-0 animate-fade-in-up"
+                style={{ animationDelay: `${index * 0.2}s` }}
               >
                 <CardContent className="p-8">
                   {/* Quote Icon */}
@@ -86,27 +86,24 @@ const Reviews = () => {
               </Card>
             );
 
-            return (
-              <ScrollReveal key={index} delay={index * 200}>
-                {testimonial.company === "The Survey Institute" ? (
-                  <a
-                    href="https://surveyinstitute.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
-                    {card}
-                  </a>
-                ) : (
-                  <React.Fragment>{card}</React.Fragment>
-                )}
-              </ScrollReveal>
+            return testimonial.company === "The Survey Institute" ? (
+              <a
+                key={index}
+                href="https://surveyinstitute.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                {card}
+              </a>
+            ) : (
+              <React.Fragment key={index}>{card}</React.Fragment>
             );
           })}
         </div>
 
         {/* Stats Section */}
-        <ScrollReveal className="bg-forest-green dark:bg-[hsl(139_28%_25%)] rounded-2xl p-8 lg:p-12">
+        <div className="bg-forest-green dark:bg-[hsl(139_28%_25%)] rounded-2xl p-8 lg:p-12 animate-fade-in-up">
           <div className="grid md:grid-cols-3 gap-8 text-center">
             {stats.map((stat, index) => (
               <div key={index} className="text-white">
@@ -119,7 +116,7 @@ const Reviews = () => {
               </div>
             ))}
           </div>
-        </ScrollReveal>
+        </div>
       </div>
     </section>
   );

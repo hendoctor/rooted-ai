@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Globe } from 'lucide-react';
-import ScrollReveal from '@/components/ScrollReveal';
 
 const ProfileImage = ({ member, index }: { member: any, index: number }) => {
   const [rotation, setRotation] = useState(0);
@@ -258,21 +257,20 @@ const Team = () => {
     <section id="team" className="py-20 bg-white dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <ScrollReveal className="text-center mb-16">
+        <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-forest-green mb-4">
             Meet Our Team
           </h2>
           <p className="text-lg sm:text-xl text-slate-gray max-w-3xl mx-auto">
             Local Kansas City experts with deep experience in AI, technology, and small business growth
           </p>
-        </ScrollReveal>
+        </div>
 
         {/* Team Members */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
           {teamMembers.map((member, index) => (
-            <ScrollReveal key={index} delay={index * 100}>
-              <Card className="border-sage/30 hover:border-forest-green/50 transition-all duration-300 hover:shadow-xl overflow-hidden">
-                <div className="p-8">
+            <Card key={index} className="border-sage/30 hover:border-forest-green/50 transition-all duration-300 hover:shadow-xl overflow-hidden">
+              <div className="p-8">
                 {/* Profile Section */}
                 <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 mb-6">
                   <ProfileImage member={member} index={index} />
@@ -325,23 +323,22 @@ const Team = () => {
                     ))}
                   </div>
                 </div>
-                </div>
-              </Card>
-            </ScrollReveal>
+              </div>
+            </Card>
           ))}
         </div>
 
         {/* Team Philosophy */}
-        <ScrollReveal className="mt-16 bg-sage/5 dark:bg-slate-900 rounded-2xl p-8 sm:p-12 text-center">
+        <div className="mt-16 bg-sage/5 dark:bg-slate-900 rounded-2xl p-8 sm:p-12 text-center">
           <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-6">
             Our Approach
           </h3>
           <p className="text-lg text-slate-gray max-w-4xl mx-auto leading-relaxed">
-            We believe that successful AI implementation requires both technical expertise and human understanding.
-            Our team combines deep technical knowledge with a genuine commitment to helping small businesses thrive.
+            We believe that successful AI implementation requires both technical expertise and human understanding. 
+            Our team combines deep technical knowledge with a genuine commitment to helping small businesses thrive. 
             We're not just consultants—we're your local partners in growth, here to support you every step of the way.
           </p>
-        </ScrollReveal>
+        </div>
       </div>
     </section>
   );

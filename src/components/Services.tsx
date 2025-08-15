@@ -2,7 +2,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import ScrollReveal from '@/components/ScrollReveal';
 import {
   Collapsible,
   CollapsibleContent,
@@ -131,24 +130,24 @@ const Services = () => {
     <section id="services" className="py-20 bg-white dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <ScrollReveal className="text-center mb-16">
+        <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-forest-green mb-4">
             Our Services
           </h2>
           <p className="text-lg sm:text-xl text-slate-gray max-w-3xl mx-auto">
             From initial awareness to full adoption, we guide your AI journey every step of the way
           </p>
-        </ScrollReveal>
+        </div>
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {services.map((service, index) => (
-            <ScrollReveal key={index} delay={index * 100}>
-              <Collapsible
-                open={openStates[index] || false}
-                onOpenChange={(open) => setOpenStates(prev => ({ ...prev, [index]: open }))}
-              >
-                <Card className="border-sage/30 hover:border-forest-green/50 transition-all duration-300 hover:shadow-lg group">
+            <Collapsible
+              key={index}
+              open={openStates[index] || false}
+              onOpenChange={(open) => setOpenStates(prev => ({ ...prev, [index]: open }))}
+            >
+              <Card className="border-sage/30 hover:border-forest-green/50 transition-all duration-300 hover:shadow-lg group">
                 <CardHeader>
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="text-4xl">{service.icon}</div>
@@ -188,14 +187,13 @@ const Services = () => {
                     </CollapsibleTrigger>
                   </div>
                 </CardContent>
-                </Card>
-              </Collapsible>
-            </ScrollReveal>
+              </Card>
+            </Collapsible>
           ))}
         </div>
 
         {/* CTA Section */}
-        <ScrollReveal className="text-center bg-sage/10 dark:bg-slate-900 rounded-2xl p-8 sm:p-12">
+        <div className="text-center bg-sage/10 dark:bg-slate-900 rounded-2xl p-8 sm:p-12">
           <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-4">
             Ready to Transform Your Business?
           </h3>
@@ -208,7 +206,7 @@ const Services = () => {
           >
             <a href="#contact">Cultivate Your Vision</a>
           </Button>
-        </ScrollReveal>
+        </div>
       </div>
     </section>
   );
