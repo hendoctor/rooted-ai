@@ -352,6 +352,7 @@ const AdminDashboard = () => {
       });
       
       setEditingUser(null);
+      fetchAllData(); // Refresh all data to show updated information
     } catch (error) {
       toast({
         title: "Error",
