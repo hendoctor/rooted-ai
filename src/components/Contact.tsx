@@ -114,7 +114,7 @@ const Contact = () => {
             <Card className="border-forest-green/30 bg-forest-green/5 dark:bg-slate-900 shadow-lg">
               <CardContent className="p-8 text-center">
                 <h3 className="text-xl font-semibold text-forest-green mb-4">
-                  Ready for a Growth Session?
+                  Ready for a Growth?
                 </h3>
                 <p className="text-slate-gray mb-6">
                   Skip the form and schedule a free 30-minute discovery call to discuss your AI readiness.
