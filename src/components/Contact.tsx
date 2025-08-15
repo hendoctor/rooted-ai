@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import ScrollReveal from '@/components/ScrollReveal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuthSecureV2';
@@ -52,32 +53,35 @@ const Contact = () => {
     <section id="contact" className="py-20 bg-sage/5 dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
+        <ScrollReveal className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-forest-green mb-4">
             Get Rooted Today
           </h2>
           <p className="text-lg sm:text-xl text-slate-gray max-w-3xl mx-auto">
             Ready to explore how AI can help your business grow? Let's start the conversation.
           </p>
-        </div>
+        </ScrollReveal>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
           {/* Contact Form */}
-          <Card className="border-sage/30 shadow-lg h-full flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-2xl text-forest-green">Send us a message</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col">
-              <ContactForm />
-            </CardContent>
-          </Card>
+          <ScrollReveal>
+            <Card className="border-sage/30 shadow-lg h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-2xl text-forest-green">Send us a message</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-grow flex flex-col">
+                <ContactForm />
+              </CardContent>
+            </Card>
+          </ScrollReveal>
 
           {/* Contact Information & CTA */}
           <div className="space-y-8">
             {/* Contact Details */}
-            <Card className="border-sage/30 dark:bg-slate-900 shadow-lg">
-              <CardContent className="p-8">
-                <h3 className="text-xl font-semibold text-forest-green mb-6">Get in Touch</h3>
+            <ScrollReveal>
+              <Card className="border-sage/30 dark:bg-slate-900 shadow-lg">
+                <CardContent className="p-8">
+                  <h3 className="text-xl font-semibold text-forest-green mb-6">Get in Touch</h3>
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-sage/20 rounded-full flex items-center justify-center">
@@ -111,23 +115,26 @@ const Contact = () => {
             </Card>
 
             {/* Schedule a Workshop */}
-            <Card className="border-forest-green/30 bg-forest-green/5 dark:bg-slate-900 shadow-lg">
-              <CardContent className="p-8 text-center">
-                <h3 className="text-xl font-semibold text-forest-green mb-4">
-                  Ready for a Growth?
-                </h3>
-                <p className="text-slate-gray mb-6">
-                  Skip the form and schedule a free 30-minute discovery call to discuss your AI readiness.
-                </p>
-                <Button className="bg-earth-brown dark:bg-[hsl(24_25%_38%)] hover:bg-earth-brown/90 dark:hover:bg-[hsl(24_25%_33%)] text-white px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg">
-                  Schedule Discovery Session
-                </Button>
-              </CardContent>
-            </Card>
+            <ScrollReveal>
+              <Card className="border-forest-green/30 bg-forest-green/5 dark:bg-slate-900 shadow-lg">
+                <CardContent className="p-8 text-center">
+                  <h3 className="text-xl font-semibold text-forest-green mb-4">
+                    Ready for a Growth?
+                  </h3>
+                  <p className="text-slate-gray mb-6">
+                    Skip the form and schedule a free 30-minute discovery call to discuss your AI readiness.
+                  </p>
+                  <Button className="bg-earth-brown dark:bg-[hsl(24_25%_38%)] hover:bg-earth-brown/90 dark:hover:bg-[hsl(24_25%_33%)] text-white px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg">
+                    Schedule Discovery Session
+                  </Button>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
 
             {/* Newsletter Signup */}
-            <Card className="border-sage/30 shadow-lg">
-              <CardContent className="p-8">
+            <ScrollReveal>
+              <Card className="border-sage/30 shadow-lg">
+                <CardContent className="p-8">
                 <h3 className="text-xl font-semibold text-forest-green mb-4">
                   Stay Updated
                 </h3>
@@ -185,8 +192,9 @@ const Contact = () => {
                     </Button>
                   </form>
                 )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
           </div>
         </div>
       </div>
