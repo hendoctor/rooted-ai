@@ -35,21 +35,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const fetchUserRole = async (userId: string, userEmail: string) => {
+  const fetchUserRole = async (userId: string, userEmail: string, retryCount: number = 0) => {
     try {
-      // First try to get role using user ID (more reliable)
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (!userError && userData) {
-        setUserRole(userData.role);
-        return;
-      }
-
-      // Fallback: try using email
+      console.log('Fetching role for user:', userEmail, 'retry:', retryCount);
+      
+      // Try using email lookup (most reliable for current schema)
       const { data: emailData, error: emailError } = await supabase
         .from('users')
         .select('role')
@@ -57,15 +47,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .maybeSingle();
 
       if (!emailError && emailData) {
+        console.log('Role fetched by email:', emailData.role);
         setUserRole(emailData.role);
         return;
       }
 
-      // Fallback: if no user role found, default to Public
-      setUserRole('Public');
+      // If role fetch failed and we haven't retried, attempt once more
+      if (retryCount === 0) {
+        console.log('First attempt failed, retrying...');
+        setTimeout(() => fetchUserRole(userId, userEmail, 1), 2000);
+        return;
+      }
+
+      console.log('Role fetch failed after retry, checking current state');
+      
+      // Don't reset to Public if we already have an Admin role (preserve admin access)
+      if (userRole !== 'Admin') {
+        console.log('Setting role to Public as fallback');
+        setUserRole('Public');
+      } else {
+        console.log('Preserving existing admin role');
+      }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
-      setUserRole('Public');
+      // Don't reset admin role on error
+      if (!userRole || userRole === 'Public') {
+        setUserRole('Public');
+      }
     }
   };
 

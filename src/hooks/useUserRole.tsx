@@ -9,7 +9,7 @@ export const useUserRole = () => {
     const ensureUserRole = async () => {
       if (!user?.email) return;
 
-      // Check the users table first for the current role
+      // Check the users table for current role using email
       const { data: existingUser, error } = await supabase
         .from('users')
         .select('role')

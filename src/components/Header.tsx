@@ -7,6 +7,7 @@ import PWAInstallDialog from './PWAInstallDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useAuthDebug } from '@/hooks/useAuthDebug';
+import { useAuthRecovery } from '@/hooks/useAuthRecovery';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +18,7 @@ const Header = () => {
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const { user, userRole, profile, signOut } = useAuth();
   useAuthDebug(); // Add debugging
+  useAuthRecovery(); // Add role recovery
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
 
