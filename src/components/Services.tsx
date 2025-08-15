@@ -204,7 +204,7 @@ const Services = () => {
             asChild
             className="bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-8 py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg"
           >
-            <a href="#contact">Book a Workshop</a>
+            <a href="#contact">Cultivate Your Vision</a>
           </Button>
         </div>
       </div>
