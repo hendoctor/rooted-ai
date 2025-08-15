@@ -9,7 +9,7 @@ import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { useAuthDebug } from '@/hooks/useAuthDebug';
 import { useAuthRecovery } from '@/hooks/useAuthRecovery';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
@@ -17,6 +17,7 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   const { user, userRole, profile, signOut } = useAuth();
+  const location = useLocation();
   useAuthDebug(); // Add debugging
   useAuthRecovery(); // Add role recovery
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
@@ -63,6 +64,14 @@ const Header = () => {
     }
   };
 
+  const handleNavClick = (href: string) => {
+    // If we're not on the home page and the href is an anchor, navigate to home with anchor
+    if (location.pathname !== '/' && href.startsWith('#')) {
+      return `/${href}`;
+    }
+    return href;
+  };
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -85,11 +94,12 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              item.href.startsWith('/') ? (
+            {navItems.map((item) => {
+              const targetHref = handleNavClick(item.href);
+              return item.href.startsWith('/') || targetHref.startsWith('/') ? (
                 <Link
                   key={item.name}
-                  to={item.href}
+                  to={targetHref}
                   className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
                 >
                   {item.name}
@@ -102,8 +112,8 @@ const Header = () => {
                 >
                   {item.name}
                 </a>
-              )
-            ))}
+              );
+            })}
           </nav>
 
           {/* CTA Button / Auth */}
@@ -188,11 +198,12 @@ const Header = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-white dark:bg-slate-900 border-t border-sage/20 dark:border-sage/50 py-4 animate-fade-in">
             <nav className="flex flex-col space-y-4">
-            {navItems.map((item) => (
-              item.href.startsWith('/') ? (
+            {navItems.map((item) => {
+              const targetHref = handleNavClick(item.href);
+              return item.href.startsWith('/') || targetHref.startsWith('/') ? (
                 <Link
                   key={item.name}
-                  to={item.href}
+                  to={targetHref}
                   className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
@@ -207,8 +218,8 @@ const Header = () => {
                 >
                   {item.name}
                 </a>
-              )
-            ))}
+              );
+            })}
               <div className="px-4 pt-2 space-y-2">
                 {user ? (
                   <div className="space-y-2">
