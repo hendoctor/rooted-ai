@@ -70,122 +70,55 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate, searchParams]);
 
-  const loadInvitation = async (token: string, retryCount = 0) => {
+  const loadInvitation = async (token: string) => {
     setLoadingInvitation(true);
     setInvitationError(null);
     
     try {
-      console.log(`Loading invitation for token: ${token.substring(0, 8)}...`, 'retry:', retryCount);
+      console.log(`Loading invitation for token: ${token.substring(0, 8)}...`);
       
-      // Use UTC for consistent timezone handling and case-insensitive search
-      const currentUTC = new Date().toISOString();
-      const { data, error } = await supabase
-        .from('user_invitations')
-        .select('*')
-        .eq('invitation_token', token) // Use exact token without case conversion
-        .eq('status', 'pending')
-        .gt('expires_at', currentUTC)
-        .maybeSingle();
+      // Use secure validation function
+      const { data, error } = await supabase.rpc('validate_invitation_secure', {
+        token_input: token
+      });
 
-      console.log('Invitation query result:', { data, error, currentUTC });
+      console.log('Invitation validation result:', { data, error });
 
       if (error) {
-        console.error('Database error loading invitation:', error);
+        console.error('Database error validating invitation:', error);
         throw new Error(`Database error: ${error.message}`);
       }
 
-      if (!data) {
-        // Check if invitation exists but is expired or already used
-        const { data: anyInvitation } = await supabase
-          .from('user_invitations')
-          .select('*')
-          .eq('invitation_token', token)
-          .maybeSingle();
+      // Type-safe handling of the JSON response
+      const validationResult = data as { valid: boolean; error?: string; invitation?: any };
 
-        console.log('Checking any invitation with token:', anyInvitation);
-
-        if (anyInvitation) {
-          let expiredMsg = "This invitation has already been used.";
-          
-          if (anyInvitation.status === 'cancelled') {
-            expiredMsg = "This invitation has been cancelled by the administrator. Please contact support for a new invitation.";
-          } else if (new Date(anyInvitation.expires_at) < new Date()) {
-            expiredMsg = "This invitation has expired.";
-          }
-          
-          setInvitationError(expiredMsg);
-          
-          await supabase.rpc('log_security_event', {
-            event_type: 'invalid_invitation_access',
-            event_details: { 
-              token: token.substring(0, 8) + '...', 
-              status: anyInvitation.status,
-              expires_at: anyInvitation.expires_at
-            }
-          });
-          
-          toast({
-            title: "Invitation Unavailable",
-            description: expiredMsg,
-            variant: "destructive",
-          });
-        } else {
-          // If no invitation found and first attempt, retry with case variations
-          if (retryCount === 0) {
-            console.log('Retrying with different case...');
-            setTimeout(() => loadInvitation(token.toUpperCase(), 1), 1000);
-            return;
-          }
-          
-          setInvitationError("This invitation link is invalid.");
-          
-          await supabase.rpc('log_security_event', {
-            event_type: 'invalid_invitation_access',
-            event_details: { 
-              token: token.substring(0, 8) + '...',
-              attempt: retryCount + 1
-            }
-          });
-          
-          toast({
-            title: "Invalid Invitation",
-            description: "This invitation link is invalid or has expired.",
-            variant: "destructive",
-          });
-        }
+      if (!validationResult?.valid) {
+        const errorMsg = validationResult?.error || "This invitation link is invalid or has expired.";
+        setInvitationError(errorMsg);
+        
+        toast({
+          title: "Invalid Invitation",
+          description: errorMsg,
+          variant: "destructive",
+        });
         return;
       }
 
       // Success - invitation found and valid
-      setInvitation(data);
-      setEmail(data.email);
-      setFullName(data.full_name);
+      const invitation = validationResult.invitation;
+      setInvitation(invitation);
+      setEmail(invitation.email);
+      setFullName(invitation.full_name);
       setIsLogin(false); // Switch to signup mode
-      
-      // Log successful invitation access
-      await supabase.rpc('log_security_event', {
-        event_type: 'invitation_accessed',
-        event_details: { 
-          invitation_id: data.id,
-          invited_email: data.email,
-          invited_role: data.role
-        }
-      });
       
       toast({
         title: "Invitation Found!",
-        description: `Welcome ${data.full_name}! Complete your account setup below.`,
+        description: `Welcome ${invitation.full_name}! Complete your account setup below.`,
       });
       
     } catch (error: any) {
       console.error('Failed to load invitation:', error);
       setInvitationError(error.message || "Failed to load invitation details.");
-      
-      if (retryCount === 0) {
-        console.log('Retrying invitation load...');
-        setTimeout(() => loadInvitation(token, 1), 2000);
-        return;
-      }
       
       toast({
         title: "Error",
