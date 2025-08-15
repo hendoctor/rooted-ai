@@ -61,7 +61,7 @@ const Hero = () => {
               variant="outline"
               className="border-earth-brown text-earth-brown hover:bg-earth-brown dark:hover:bg-[hsl(24_25%_38%)] hover:text-white px-8 py-3 text-lg rounded-lg transition-all duration-200"
             >
-              <a href="#contact">Request Consultation</a>
+              <a href="#contact">Grow With Us</a>
             </Button>
           </div>
 
