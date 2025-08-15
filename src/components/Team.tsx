@@ -171,6 +171,7 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
       {showOverlay && (
         <div
           className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 transition-opacity duration-300 ${zoomed ? 'opacity-100' : 'opacity-0'}`}
+          onClick={() => setZoomed(false)}
           onTouchStart={(e) => {
             zoomStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
           }}
@@ -189,11 +190,23 @@ const ProfileImage = ({ member, index }: { member: any, index: number }) => {
             }
           }}
         >
-          <img
-            src={member.image}
-            alt={member.name}
-            className={`w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl transition-transform duration-300 ${zoomed ? 'scale-100' : 'scale-50'}`}
-          />
+          <div
+            className={`relative w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl transition-transform duration-300 ${zoomed ? 'scale-100' : 'scale-50'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-3 right-3 text-white text-3xl leading-none"
+              aria-label="Close"
+              onClick={() => setZoomed(false)}
+            >
+              &times;
+            </button>
+            <img
+              src={member.image}
+              alt={member.name}
+              className="w-full aspect-square object-cover rounded-lg"
+            />
+          </div>
         </div>
       )}
     </div>
