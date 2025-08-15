@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuthSecure';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuthSecureV2';
+import { useRolePermissions } from '@/hooks/useRolePermissionsV2';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface PrivateRouteProps {
@@ -10,36 +10,80 @@ interface PrivateRouteProps {
 }
 
 const PrivateRoute = ({ children, requiredRoles }: PrivateRouteProps) => {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
+  const { hasPageAccessSync, hasPageAccess } = useRolePermissions();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+  const [checking, setChecking] = useState(true);
   const currentPath = window.location.pathname;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const checkAccess = async () => {
-      if (loading || !userRole) return;
+      if (authLoading) return;
 
-      // Check if user has access to this specific page
-      const { data } = await supabase
-        .from('role_permissions')
-        .select('access')
-        .eq('role', userRole)
-        .eq('page', currentPath)
-        .eq('access', true)
-        .maybeSingle();
+      // Set a maximum timeout for permission checking
+      timeoutRef.current = setTimeout(() => {
+        console.warn('⏰ Permission check timeout - using fallback');
+        const roleAccess = userRole ? requiredRoles.includes(userRole) : false;
+        setHasAccess(roleAccess);
+        setChecking(false);
+      }, 8000); // 8 second max timeout
 
-      // Also check by required roles (fallback)
-      const roleAccess = requiredRoles.includes(userRole);
-      
-      setHasAccess(!!data || roleAccess);
+      try {
+        if (!userRole || !user) {
+          setHasAccess(false);
+          setChecking(false);
+          return;
+        }
+
+        // First try synchronous cache check
+        const cachedAccess = hasPageAccessSync(currentPath);
+        if (cachedAccess !== null) {
+          console.log('🎯 Using cached access for', currentPath, ':', cachedAccess);
+          const roleAccess = requiredRoles.includes(userRole);
+          setHasAccess(cachedAccess || roleAccess);
+          setChecking(false);
+          return;
+        }
+
+        // If no cache, do async check with timeout
+        try {
+          const pageAccess = await Promise.race([
+            hasPageAccess(currentPath),
+            new Promise<boolean>((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout')), 5000)
+            )
+          ]);
+          
+          const roleAccess = requiredRoles.includes(userRole);
+          setHasAccess(pageAccess || roleAccess);
+        } catch (error) {
+          console.warn('Permission check failed, using role fallback:', error);
+          const roleAccess = requiredRoles.includes(userRole);
+          setHasAccess(roleAccess);
+        }
+      } catch (error) {
+        console.error('Access check error:', error);
+        setHasAccess(false);
+      } finally {
+        setChecking(false);
+      }
     };
 
     checkAccess();
-  }, [user, userRole, loading, currentPath, requiredRoles]);
 
-  if (loading || hasAccess === null) {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [user, userRole, authLoading, currentPath, requiredRoles, hasPageAccess, hasPageAccessSync]);
+
+  // Show loading only for a limited time
+  if ((authLoading || checking) && hasAccess === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" text="Checking permissions..." />
+        <LoadingSpinner size="lg" text="Checking access..." />
       </div>
     );
   }
