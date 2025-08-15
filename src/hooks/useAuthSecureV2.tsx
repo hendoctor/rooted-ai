@@ -245,6 +245,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setClientName(backup.clientName);
         }
 
+        // For SIGNED_IN events, add a small delay to ensure database is ready
+        if (event === 'SIGNED_IN') {
+          console.log('🔄 Login detected, waiting for database sync...');
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+        }
+
         // Fetch current role with timeout
         const rolePromise = fetchUserRole(userEmail, userId);
         const profilePromise = fetchProfile(userEmail);
@@ -305,27 +311,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     }, SESSION_TIMEOUT);
     
-    // Set up auth state listener
+    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
     authSubscriptionRef.current = subscription;
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      clearTimeout(initTimeout);
-      
-      if (error) {
-        console.error('Session check error:', error);
-        setLoading(false);
-        return;
-      }
+    // Check for existing session with retry logic
+    const checkSession = async (retryCount = 0) => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session check error:', error);
+          if (retryCount < 2) {
+            console.log('Retrying session check...');
+            setTimeout(() => checkSession(retryCount + 1), 1000);
+            return;
+          }
+          setLoading(false);
+          return;
+        }
 
-      console.log('🔍 Initial session check:', session?.user?.email || 'no session');
-      handleAuthStateChange('INITIAL_SESSION', session);
-    }).catch(error => {
-      clearTimeout(initTimeout);
-      console.error('Session check failed:', error);
-      setLoading(false);
-    });
+        console.log('🔍 Initial session check:', session?.user?.email || 'no session');
+        handleAuthStateChange('INITIAL_SESSION', session);
+      } catch (error) {
+        console.error('Session check failed:', error);
+        if (retryCount < 2) {
+          setTimeout(() => checkSession(retryCount + 1), 1000);
+          return;
+        }
+        setLoading(false);
+      }
+    };
+
+    checkSession();
+    clearTimeout(initTimeout);
 
     setInitialized(true);
 
