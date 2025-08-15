@@ -1,23 +1,42 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import heroPlantLight from '@/assets/hero-plants-light.jpg';
 import heroPlantDark from '@/assets/hero-plants-dark.jpg';
 
 const Hero = () => {
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const parallaxTransform = `translateY(${scrollY * 0.5}px)`;
+
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Photorealistic Plant Background */}
+      {/* Photorealistic Plant Background with Parallax */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-300"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-300 will-change-transform"
         style={{
           backgroundImage: `url(${heroPlantLight})`,
+          transform: parallaxTransform,
+          top: '-20%',
+          height: '120%',
         }}
       />
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-0 dark:opacity-100 transition-all duration-300"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-0 dark:opacity-100 transition-all duration-300 will-change-transform"
         style={{
           backgroundImage: `url(${heroPlantDark})`,
+          transform: parallaxTransform,
+          top: '-20%',
+          height: '120%',
         }}
       />
       
