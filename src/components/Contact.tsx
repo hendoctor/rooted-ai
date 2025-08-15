@@ -54,7 +54,7 @@ const Contact = () => {
         {/* Section Header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-forest-green mb-4">
-            Get Started Today
+            Get Rooted Today
           </h2>
           <p className="text-lg sm:text-xl text-slate-gray max-w-3xl mx-auto">
             Ready to explore how AI can help your business grow? Let's start the conversation.
@@ -103,7 +103,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <p className="font-medium text-slate-gray">Response Time</p>
-                      <p className="text-earth-brown">Within 2 hours</p>
+                      <p className="text-earth-brown">Within 1 hour</p>
                     </div>
                   </div>
                 </div>
@@ -114,13 +114,13 @@ const Contact = () => {
             <Card className="border-forest-green/30 bg-forest-green/5 dark:bg-slate-900 shadow-lg">
               <CardContent className="p-8 text-center">
                 <h3 className="text-xl font-semibold text-forest-green mb-4">
-                  Ready for a Workshop?
+                  Ready for a Growth Session?
                 </h3>
                 <p className="text-slate-gray mb-6">
                   Skip the form and schedule a free 30-minute discovery call to discuss your AI readiness.
                 </p>
                 <Button className="bg-earth-brown dark:bg-[hsl(24_25%_38%)] hover:bg-earth-brown/90 dark:hover:bg-[hsl(24_25%_33%)] text-white px-6 py-3 rounded-lg transition-all duration-200 hover:shadow-lg">
-                  Schedule Discovery Call
+                  Schedule Discovery Session
                 </Button>
               </CardContent>
             </Card>
@@ -132,7 +132,7 @@ const Contact = () => {
                   Stay Updated
                 </h3>
                 <p className="text-slate-gray mb-4">
-                  Get AI tips, local business insights, and workshop announcements.
+                  Stay rooted in the signal: 5 credible AI stories a day, distilled and easy to read.
                 </p>
                 
                 {user ? (
