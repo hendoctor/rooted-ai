@@ -82,7 +82,7 @@ const Auth = () => {
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')
-        .eq('invitation_token', token.toLowerCase()) // Ensure lowercase comparison
+        .eq('invitation_token', token) // Use exact token without case conversion
         .eq('status', 'pending')
         .gt('expires_at', currentUTC)
         .maybeSingle();
@@ -99,7 +99,7 @@ const Auth = () => {
         const { data: anyInvitation } = await supabase
           .from('user_invitations')
           .select('*')
-          .eq('invitation_token', token.toLowerCase())
+          .eq('invitation_token', token)
           .maybeSingle();
 
         console.log('Checking any invitation with token:', anyInvitation);
