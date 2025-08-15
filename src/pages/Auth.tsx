@@ -139,8 +139,8 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate password strength for signup
-    if (!isLogin && !validatePassword(password)) {
+    // Validate password strength for invitation signup
+    if (invitation && !validatePassword(password)) {
       toast({
         title: "Password Validation Failed",
         description: "Please fix the password requirements below.",
@@ -152,7 +152,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (!invitation) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -470,11 +470,19 @@ const Auth = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-forest-green">
-            {isLogin ? 'Sign in to your account' : 'Create your account'}
+            {invitation ? 'Complete Your Invitation' : 'Sign in to your account'}
           </h2>
           <p className="mt-2 text-slate-gray">
-            {isLogin ? 'Access your RootedAI dashboard' : 'Join RootedAI today'}
+            {invitation ? 'Create your account with your invitation' : 'Access your RootedAI dashboard'}
           </p>
+          {!invitation && (
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded">
+              <p className="text-sm text-amber-800">
+                <strong>Invitation Only:</strong> New users must be invited by an administrator. 
+                Contact your admin if you need access.
+              </p>
+            </div>
+          )}
         </div>
 
         <Card className="border-sage/30 shadow-lg">
@@ -497,7 +505,7 @@ const Auth = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {!isLogin && (
+              {invitation && (
                 <div>
                   <label htmlFor="fullName" className="block text-sm font-medium text-slate-gray mb-2">
                     Full Name *
@@ -507,7 +515,7 @@ const Auth = () => {
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    required={!isLogin}
+                    required={!!invitation}
                     disabled={!!invitation}
                     className={`border-sage/50 focus:border-forest-green ${invitation ? 'bg-sage/20' : ''}`}
                     placeholder="Your full name"
@@ -552,14 +560,14 @@ const Auth = () => {
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
-                    if (!isLogin) validatePassword(e.target.value);
+                    if (invitation) validatePassword(e.target.value);
                   }}
                   required
                   className="border-sage/50 focus:border-forest-green"
-                  placeholder={isLogin ? "Enter your password" : "Create a secure password"}
+                  placeholder={invitation ? "Create a secure password" : "Enter your password"}
                   minLength={8}
                 />
-                {!isLogin && passwordErrors.length > 0 && (
+                {invitation && passwordErrors.length > 0 && (
                   <div className="mt-2 space-y-1">
                     {passwordErrors.map((error, index) => (
                       <p key={index} className="text-sm text-red-600">{error}</p>
@@ -573,19 +581,17 @@ const Auth = () => {
                 disabled={loading}
                 className="w-full bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg"
               >
-                {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+                {loading ? 'Please wait...' : (invitation ? 'Create Account' : 'Sign In')}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-forest-green hover:text-forest-green/80 font-medium"
-              >
-                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-              </button>
-            </div>
+            {!invitation && (
+              <div className="mt-6 text-center">
+                <p className="text-sm text-slate-gray">
+                  Need an account? Contact your administrator for an invitation.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

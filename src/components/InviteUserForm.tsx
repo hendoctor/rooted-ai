@@ -16,7 +16,7 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    role: 'Public'
+    role: 'Client'
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -57,7 +57,7 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
       setFormData({
         email: '',
         full_name: '',
-        role: 'Public'
+        role: 'Client'
       });
 
       onInvitationSent?.();
@@ -132,8 +132,7 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
               <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Public">Public</SelectItem>
+                <SelectContent>
                 <SelectItem value="Client">Client</SelectItem>
                 <SelectItem value="Admin">Admin</SelectItem>
               </SelectContent>

@@ -61,18 +61,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       console.log('Role fetch failed after retry, checking current state');
       
-      // Don't reset to Public if we already have an Admin role (preserve admin access)
+      // Don't reset to Client if we already have an Admin role (preserve admin access)
       if (userRole !== 'Admin') {
-        console.log('Setting role to Public as fallback');
-        setUserRole('Public');
+        console.log('Setting role to Client as fallback');
+        setUserRole('Client');
       } else {
         console.log('Preserving existing admin role');
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
       // Don't reset admin role on error
-      if (!userRole || userRole === 'Public') {
-        setUserRole('Public');
+      if (!userRole || userRole === 'Client') {
+        setUserRole('Client');
       }
     }
   };

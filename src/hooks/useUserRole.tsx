@@ -28,7 +28,7 @@ export const useUserRole = () => {
 
       // No role data in profiles, user should have role in users table
       if (!userRole) {
-        setUserRole('Public');
+        setUserRole('Client');
       }
     };
 

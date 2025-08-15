@@ -37,7 +37,7 @@ const PrivateRoute = ({ children, requiredRoles }: PrivateRouteProps) => {
 
   if (loading || hasAccess === null) return null;
   
-  const role = userRole ?? 'Public';
+  const role = userRole ?? 'Client';
   if (!user || (!hasAccess && !requiredRoles.includes(role))) {
     return <Navigate to="/access-denied" replace />;
   }

@@ -8,7 +8,7 @@ export const usePermissions = () => {
   const [permissions, setPermissions] = useState<Tables<'role_permissions'>[]>([]);
 
   useEffect(() => {
-    const role = userRole ?? 'public';
+    const role = userRole ?? 'Client';
     supabase
       .from('role_permissions')
       .select('*')
