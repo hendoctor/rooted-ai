@@ -21,9 +21,9 @@ const Hero = () => {
         }}
       />
       
-      {/* Smart Overlay System - 10% Light Mode, Perfect Dark Mode */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cream/85 via-cream/80 to-sage/70 dark:from-background/75 dark:via-background/65 dark:to-slate/50"></div>
-      <div className="absolute inset-0 bg-gradient-to-t from-cream/75 via-cream/55 to-transparent dark:from-background/60 dark:via-background/30 dark:to-transparent"></div>
+      {/* Smart Overlay System - 12% Light Mode, Perfect Dark Mode */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cream/88 via-cream/82 to-sage/72 dark:from-background/75 dark:via-background/65 dark:to-slate/50"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-cream/78 via-cream/58 to-transparent dark:from-background/60 dark:via-background/30 dark:to-transparent"></div>
       <div className="absolute inset-0 bg-forest-green/6 dark:bg-forest-green/6"></div>
       
       {/* Background Pattern (Enhanced) */}
