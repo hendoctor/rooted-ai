@@ -316,7 +316,7 @@ const AdminDashboard: React.FC = () => {
       if (userError) throw userError;
 
       // Update company membership if selected
-      if (editForm.companyId) {
+      if (editForm.companyId && editForm.companyId !== 'none') {
         const { error: membershipError } = await supabase
           .from('company_memberships')
           .upsert({
@@ -672,7 +672,7 @@ const AdminDashboard: React.FC = () => {
                       <SelectValue placeholder="Select company" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No company</SelectItem>
+                      <SelectItem value="none">No company</SelectItem>
                       {allCompanies.map((company) => (
                         <SelectItem key={company.id} value={company.id}>
                           {company.name}
