@@ -292,10 +292,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     }, SESSION_TIMEOUT);
     
-    // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
-    authSubscriptionRef.current = subscription;
+    // Set up auth state listener first (synchronous only in callback)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Only sync updates here
+      setError(null);
+      setSession(session);
+      setUser(session?.user ?? null);
 
+      // Defer any Supabase calls/heavy work to avoid deadlocks
+      setTimeout(() => {
+        handleAuthStateChange(event, session);
+      }, 0);
+    });
+    authSubscriptionRef.current = subscription;
     // Check for existing session with retry logic
     const checkSession = async (retryCount = 0) => {
       try {
