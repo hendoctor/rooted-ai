@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AccessDenied from './AccessDenied';
-import { useAuth } from '@/hooks/useAuthSecure';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

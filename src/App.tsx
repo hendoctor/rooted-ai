@@ -4,10 +4,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuthSecure";
+import { AuthProvider } from "@/hooks/useAuthReliable";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SessionSecurity from "@/components/SessionSecurity";
-// Removed useRolePersistence - now handled in useAuthSecure
+import AuthGuardRoute from "@/components/AuthGuardRoute";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -16,41 +16,56 @@ import Profile from "./pages/Profile";
 import ClientPortal from "./pages/ClientPortal";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
-import PrivateRoute from "./components/PrivateRoute";
 
 const AppContent = () => {
-  // Role persistence now handled in useAuthSecure
-  
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/auth" element={<Auth />} />
+      {/* Public routes with auth guard */}
+      <Route 
+        path="/" 
+        element={
+          <AuthGuardRoute>
+            <Index />
+          </AuthGuardRoute>
+        } 
+      />
+      <Route 
+        path="/auth" 
+        element={
+          <AuthGuardRoute>
+            <Auth />
+          </AuthGuardRoute>
+        } 
+      />
+      
+      {/* Protected routes with role requirements */}
       <Route
         path="/admin"
         element={
-          <PrivateRoute requiredRoles={["Admin"]}>
+          <AuthGuardRoute requiredRoles={["Admin"]}>
             <AdminDashboard />
-          </PrivateRoute>
+          </AuthGuardRoute>
         }
       />
       <Route
         path="/profile"
         element={
-          <PrivateRoute requiredRoles={["Admin", "Client"]}>
+          <AuthGuardRoute requiredRoles={["Admin", "Client"]}>
             <Profile />
-          </PrivateRoute>
+          </AuthGuardRoute>
         }
       />
       <Route
         path="/:clientSlug"
         element={
-          <PrivateRoute requiredRoles={["Admin", "Client"]}>
+          <AuthGuardRoute requiredRoles={["Admin", "Client"]}>
             <ClientPortal />
-          </PrivateRoute>
+          </AuthGuardRoute>
         }
       />
+      
+      {/* Error routes */}
       <Route path="/access-denied" element={<AccessDenied />} />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

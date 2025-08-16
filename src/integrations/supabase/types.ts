@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          settings: Json | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          settings?: Json | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          settings?: Json | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      company_memberships: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           created_at: string
@@ -240,6 +297,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_user_companies: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          company_id: string
+          company_name: string
+          company_slug: string
+          is_admin: boolean
+          user_role: string
+        }[]
+      }
       get_user_role_by_auth_id: {
         Args: { auth_user_id: string }
         Returns: Json
@@ -255,6 +322,10 @@ export type Database = {
       log_security_event: {
         Args: { event_details?: Json; event_type: string; user_id?: string }
         Returns: undefined
+      }
+      require_role: {
+        Args: { company_id_param?: string; required_roles: string[] }
+        Returns: boolean
       }
       resync_user_roles: {
         Args: Record<PropertyKey, never>

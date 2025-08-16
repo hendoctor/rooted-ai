@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuthSecure';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +16,8 @@ interface CompanyUser {
 
 const ClientPortal = () => {
   const { clientSlug } = useParams<{ clientSlug: string }>();
-  const { user, clientName, loading: authLoading } = useAuth();
+  const { user, companies, loading: authLoading } = useAuth();
+  const clientName = companies.find(c => c.slug === clientSlug)?.name;
   const [companyUsers, setCompanyUsers] = useState<CompanyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);

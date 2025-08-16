@@ -1,13 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sprout, LogOut, User, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
 import ProfileMenu from './ProfileMenu';
-import { useAuth } from '@/hooks/useAuthSecure';
-import { useRolePermissions } from '@/hooks/useRolePermissions';
-// Removed useAuthDebug and useAuthRecovery - functionality now in useAuthSecure
+import { useAuth } from '@/hooks/useAuthReliable';
+import { RBACManager } from '@/utils/rbacUtils';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -16,9 +14,15 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
-  const { user, userRole, profile, signOut } = useAuth();
+  const [accessibleRoutes, setAccessibleRoutes] = useState<Array<{
+    label: string;
+    path: string;
+    isActive: boolean;
+    isExternal: boolean;
+  }>>([]);
+  
+  const { user, userRole, companies, signOut } = useAuth();
   const location = useLocation();
-  // Auth debugging and recovery now built into useAuthSecure
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
 
@@ -31,21 +35,42 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const { menuPermissions } = useRolePermissions();
+  // Build accessible navigation menu
+  useEffect(() => {
+    const buildMenu = async () => {
+      try {
+        // Base navigation items for home page
+        const baseNavItems = [
+          { name: 'About', href: '#about' },
+          { name: 'Services', href: '#services' },
+          { name: 'Reviews', href: '#reviews' },
+          { name: 'Team', href: '#team' },
+          { name: 'Contact', href: '#contact' }
+        ];
 
-  const baseNavItems = [
-    { name: 'About', href: '#about' },
-    { name: 'Services', href: '#services' },
-    { name: 'Reviews', href: '#reviews' },
-    { name: 'Team', href: '#team' },
-    { name: 'Contact', href: '#contact' }
-  ];
+        // Get accessible application routes
+        const appRoutes = await RBACManager.getAccessibleRoutes(userRole, companies);
+        
+        // Combine base nav with accessible routes
+        const allItems = [
+          ...baseNavItems.map(item => ({
+            label: item.name,
+            path: item.href,
+            isActive: false,
+            isExternal: false
+          })),
+          ...RBACManager.buildNavigationMenu(appRoutes, location.pathname)
+            .filter(route => route.path !== '/') // Don't duplicate home
+        ];
 
-  const dynamicNav = user ? menuPermissions
-    .filter((p) => p.visible && p.menu_item)
-    .map((p) => ({ name: p.menu_item, href: p.page })) : [];
+        setAccessibleRoutes(allItems);
+      } catch (error) {
+        console.error('Failed to build navigation menu:', error);
+      }
+    };
 
-  const navItems = [...baseNavItems, ...dynamicNav];
+    buildMenu();
+  }, [userRole, companies, location.pathname]);
 
   const handleSignOut = async () => {
     console.log('🔄 Header: Sign out button clicked');
@@ -56,8 +81,6 @@ const Header = () => {
         title: "Signed out successfully",
         description: "You have been logged out.",
       });
-      // Force navigation to home page after sign out
-      window.location.href = '/';
     } catch (error) {
       console.error('❌ Header: Sign out failed:', error);
       toast({
@@ -98,23 +121,23 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              {navItems.map((item) => {
-                const targetHref = handleNavClick(item.href);
-                return item.href.startsWith('/') || targetHref.startsWith('/') ? (
+              {accessibleRoutes.map((item) => {
+                const targetHref = handleNavClick(item.path);
+                return item.path.startsWith('/') || targetHref.startsWith('/') ? (
                   <Link
-                    key={item.name}
+                    key={item.label}
                     to={targetHref}
                     className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
                   >
-                    {item.name}
+                    {item.label}
                   </Link>
                 ) : (
                   <a
-                    key={item.name}
-                    href={item.href}
+                    key={item.label}
+                    href={item.path}
                     className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
                   >
-                    {item.name}
+                    {item.label}
                   </a>
                 );
               })}
@@ -122,7 +145,7 @@ const Header = () => {
 
             {/* CTA Button / Auth */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* Theme toggle and PWA install - moved to left of auth buttons */}
+              {/* Theme toggle and PWA install */}
               <div className="flex items-center space-x-2">
                 <ThemeToggle />
                 {(isInstallable || !isInstalled) && (
@@ -185,57 +208,66 @@ const Header = () => {
           {isMobileMenuOpen && (
             <div className="md:hidden bg-white dark:bg-slate-900 border-t border-sage/20 dark:border-sage/50 py-4 animate-fade-in">
               <nav className="flex flex-col space-y-4">
-              {navItems.map((item) => {
-                const targetHref = handleNavClick(item.href);
-                return item.href.startsWith('/') || targetHref.startsWith('/') ? (
-                  <Link
-                    key={item.name}
-                    to={targetHref}
-                    className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                ) : (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </a>
-                );
-              })}
+                {accessibleRoutes.map((item) => {
+                  const targetHref = handleNavClick(item.path);
+                  return item.path.startsWith('/') || targetHref.startsWith('/') ? (
+                    <Link
+                      key={item.label}
+                      to={targetHref}
+                      className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={item.label}
+                      href={item.path}
+                      className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {item.label}
+                    </a>
+                  );
+                })}
+                
                 <div className="px-4 pt-2 space-y-2">
                   {user ? (
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2 text-slate-gray dark:text-white text-sm">
-                        <User className="w-4 h-4" />
                         <span>
                           {user.email}
                           {userRole && ` (${userRole})`}
                         </span>
                       </div>
                       <Link to="/profile">
-                        <Button variant="outline" className="w-full border-sage hover:bg-sage/20 mb-2">
-                          <User className="w-4 h-4 mr-2" />
+                        <Button 
+                          variant="outline" 
+                          className="w-full border-sage hover:bg-sage/20 mb-2"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
                           Profile
                         </Button>
                       </Link>
                       <Button
-                        onClick={handleSignOut}
+                        onClick={() => {
+                          handleSignOut();
+                          setIsMobileMenuOpen(false);
+                        }}
                         variant="outline"
                         className="w-full border-sage hover:bg-sage/20"
                       >
-                        <LogOut className="w-4 h-4 mr-2" />
                         Sign Out
                       </Button>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <Link to="/auth">
-                        <Button variant="outline" className="w-full border-sage hover:bg-sage/20 dark:text-white">
+                        <Button 
+                          variant="outline" 
+                          className="w-full border-sage hover:bg-sage/20 dark:text-white"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                        >
                           Sign In
                         </Button>
                       </Link>
