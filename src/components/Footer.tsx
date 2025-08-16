@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import UpdateStatusDialog from '@/components/UpdateStatusDialog';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
-import { useAuth } from '@/hooks/useAuthSecure';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { RefreshCw, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

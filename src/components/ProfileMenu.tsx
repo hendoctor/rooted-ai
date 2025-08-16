@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/hooks/useAuthSecure';
+import { useAuth } from '@/hooks/useAuthReliable';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,7 @@ interface ProfileMenuProps {
 }
 
 const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
-  const { user, userRole, clientName } = useAuth();
+  const { user, userRole, companies } = useAuth();
 
   if (!user) return null;
 
@@ -25,8 +25,8 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
     return email.charAt(0).toUpperCase();
   };
 
-  const getCompanySlug = (clientName: string) => {
-    return clientName.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const getCompanySlug = (companyName: string) => {
+    return companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
   };
 
   return (
@@ -48,9 +48,9 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
               {userRole}
             </p>
           )}
-          {clientName && (
+          {companies && companies.length > 0 && (
             <p className="text-xs leading-none text-muted-foreground">
-              {clientName}
+              {companies.map(c => c.name).join(', ')}
             </p>
           )}
         </div>
@@ -61,9 +61,9 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
             <span>Profile</span>
           </Link>
         </DropdownMenuItem>
-        {clientName && (
+        {companies && companies.length > 0 && (
           <DropdownMenuItem asChild>
-            <Link to={`/${getCompanySlug(clientName)}`} className="cursor-pointer">
+            <Link to={`/${companies[0].slug}`} className="cursor-pointer">
               <Building className="mr-2 h-4 w-4" />
               <span>Company Portal</span>
             </Link>

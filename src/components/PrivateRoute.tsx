@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuthSecure';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 

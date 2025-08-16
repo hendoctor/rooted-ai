@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/hooks/useAuthSecure';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { RefreshCw, Shield, User, AlertTriangle, CheckCircle } from 'lucide-reac
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const AuthMonitor: React.FC = () => {
-  const { user, session, userRole, clientName, loading, error, refreshAuth } = useAuth();
+  const { user, session, userRole, companies, loading, error, refreshAuth } = useAuth();
 
   const getStatusIcon = () => {
     if (loading) return <RefreshCw className="h-4 w-4 animate-spin" />;
@@ -90,8 +90,8 @@ export const AuthMonitor: React.FC = () => {
                 </Badge>
               </div>
               <div>
-                <span className="text-muted-foreground">Client: </span>
-                <span>{clientName || 'None'}</span>
+                <span className="text-muted-foreground">Companies: </span>
+                <span>{companies?.length > 0 ? companies.map(c => c.name).join(', ') : 'None'}</span>
               </div>
             </div>
           </div>

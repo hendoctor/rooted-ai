@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuthSecure';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,24 +12,44 @@ import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 
 const Profile = () => {
-  const { user, profile, userRole, clientName } = useAuth();
+  const { user, userRole, companies } = useAuth();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
     display_name: '',
     email: '',
   });
+  const [profile, setProfile] = useState<{ display_name?: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Fetch profile on mount
   useEffect(() => {
-    if (profile && user) {
-      setFormData({
-        display_name: profile.display_name || '',
-        email: user.email || '',
-      });
-    }
-  }, [profile, user]);
+    const fetchProfile = async () => {
+      if (user?.email) {
+        const { data } = await supabase
+          .from('users')
+          .select('display_name')
+          .eq('email', user.email)
+          .maybeSingle();
+        
+        if (data) {
+          setProfile(data);
+          setFormData({
+            display_name: data.display_name || '',
+            email: user.email || '',
+          });
+        } else {
+          setFormData({
+            display_name: '',
+            email: user.email || '',
+          });
+        }
+      }
+    };
+    
+    fetchProfile();
+  }, [user]);
 
   useEffect(() => {
     if (profile && user) {
@@ -148,14 +168,14 @@ const Profile = () => {
                   </div>
                 </div>
 
-                {clientName && (
+                {companies && companies.length > 0 && (
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                       <Building className="h-4 w-4" />
-                      Company
+                      Companies
                     </Label>
                     <div className="px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-md text-sm">
-                      {clientName}
+                      {companies.map(c => c.name).join(', ')}
                     </div>
                   </div>
                 )}

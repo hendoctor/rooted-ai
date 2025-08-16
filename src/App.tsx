@@ -77,16 +77,16 @@ const App = () => {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <SessionSecurity />
-          <TooltipProvider>
+        <TooltipProvider>
+          <AuthProvider>
+            <SessionSecurity />
             <Toaster />
             <Sonner />
             <BrowserRouter>
               <AppContent />
             </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
+          </AuthProvider>
+        </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
