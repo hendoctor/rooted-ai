@@ -27,29 +27,32 @@ const ClientPortal = () => {
   };
 
   useEffect(() => {
-    const checkAccessAndFetchData = async () => {
+  const checkAccessAndFetchData = async () => {
       if (authLoading || !user) return;
 
       // Get current user's role
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('role')
+        .select('role, client_name')
         .eq('auth_user_id', user.id)
         .single();
 
       if (userError || !userData) {
+        console.error('Error fetching user data:', userError);
         setHasAccess(false);
         setLoading(false);
         return;
       }
 
       const userRole = userData.role;
+      const userClientName = userData.client_name;
 
       // Admin has access to all company portals
       if (userRole === 'Admin') {
         // Find company by slug for admin access
         const targetCompany = companies.find(c => c.slug === companySlug);
         if (!targetCompany) {
+          console.error('Company not found for slug:', companySlug);
           setHasAccess(false);
           setLoading(false);
           return;
@@ -60,19 +63,25 @@ const ClientPortal = () => {
         try {
           const { data, error } = await supabase
             .from('users')
-            .select('id, email, role, created_at, client_name')
+            .select('id, email, role, created_at, client_name, display_name')
             .eq('client_name', targetCompany.name);
 
           if (!error && data) {
             setCompanyUsers(data);
+          } else {
+            console.error('Error fetching company users for admin:', error);
           }
         } catch (error) {
           console.error('Error fetching company users:', error);
         }
-      } else {
+      } else if (userRole === 'Client') {
         // Client can only access their own company portal
-        const userCompany = companies.find(c => c.slug === companySlug);
+        const userCompany = companies.find(c => 
+          c.slug === companySlug && c.name === userClientName
+        );
+        
         if (!userCompany) {
+          console.error('Client does not have access to company:', companySlug);
           setHasAccess(false);
           setLoading(false);
           return;
@@ -84,15 +93,20 @@ const ClientPortal = () => {
         try {
           const { data, error } = await supabase
             .from('users')
-            .select('id, email, role, created_at, client_name')
-            .eq('client_name', userCompany.name);
+            .select('id, email, role, created_at, client_name, display_name')
+            .eq('client_name', userClientName);
 
           if (!error && data) {
             setCompanyUsers(data);
+          } else {
+            console.error('Error fetching company users for client:', error);
           }
         } catch (error) {
           console.error('Error fetching company users:', error);
         }
+      } else {
+        // Public or other roles don't have access
+        setHasAccess(false);
       }
 
       setLoading(false);
