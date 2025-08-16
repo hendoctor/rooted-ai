@@ -52,7 +52,27 @@ const Auth = () => {
         
         // Only redirect after successful login and a short delay to allow main auth system to catch up
         if (event === 'SIGNED_IN' && session?.user && type !== 'recovery') {
-          navigate('/');
+          // Check if user has a company and route accordingly
+          setTimeout(async () => {
+            try {
+              const { data: userCompanies } = await supabase
+                .from('company_memberships')
+                .select('company_id, companies(slug)')
+                .eq('user_id', session.user.id)
+                .limit(1);
+                
+              if (userCompanies && userCompanies.length > 0) {
+                const companySlug = (userCompanies[0].companies as any)?.slug;
+                if (companySlug) {
+                  navigate(`/company/${companySlug}`);
+                  return;
+                }
+              }
+            } catch (error) {
+              console.error('Error checking user companies:', error);
+            }
+            navigate('/');
+          }, 1000);
         }
       }
     );
@@ -279,17 +299,33 @@ const Auth = () => {
 
             toast({
               title: "Welcome to the team!",
-              description: `Your account has been created successfully with ${invitation.role} access. You can now sign in.`,
+              description: `Your account has been created successfully with ${invitation.role} access.`,
             });
 
-            // Reset form and redirect to login
-            setPassword('');
-            setConfirmPassword('');
-            setInvitation(null);
-            setIsLogin(true);
-            
-            // Remove invite parameter from URL
-            navigate('/auth', { replace: true });
+            // Check if user has a company to route to
+            if (invitation.company_id) {
+              try {
+                const { data: company } = await supabase
+                  .from('companies')
+                  .select('slug')
+                  .eq('id', invitation.company_id)
+                  .single();
+                  
+                if (company?.slug) {
+                  setTimeout(() => {
+                    navigate(`/company/${company.slug}`);
+                  }, 1500);
+                  return;
+                }
+              } catch (error) {
+                console.error('Error fetching company:', error);
+              }
+            }
+
+            // Default redirect after successful signup
+            setTimeout(() => {
+              navigate('/');
+            }, 1500);
             
           } catch (processError) {
             console.error('Failed to process invitation after signup:', processError);
