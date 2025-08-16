@@ -116,7 +116,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (inviteError) {
       console.error("Failed to create invitation:", inviteError);
-      throw new Error("Failed to create invitation");
+      const msg = inviteError.message || inviteError.details || inviteError.hint || "Failed to create invitation";
+      throw new Error(msg);
     }
 
     console.log("Created invitation:", invitation);
@@ -150,8 +151,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
     
-    // Ensure token is properly formatted (lowercase for consistency)
-    const inviteUrl = `${baseUrl}/auth?invite=${invitation.invitation_token.toLowerCase()}`;
+    // Use the exact token as generated (case-sensitive)
+    const inviteUrl = `${baseUrl}/auth?invite=${invitation.invitation_token}`;
     
     console.log("Generated invitation URL:", inviteUrl);
     console.log("Base URL:", baseUrl);
@@ -279,7 +280,7 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             
             <p class="expires">
-              <strong>Important:</strong> This invitation will expire in 7 days.
+              <strong>Important:</strong> This invitation will expire in 24 hours.
             </p>
             
             <p>

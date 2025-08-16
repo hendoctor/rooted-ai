@@ -216,6 +216,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_invitation_rate_limit: {
+        Args: {
+          admin_id: string
+          max_per_15_minutes?: number
+          max_per_day?: number
+        }
+        Returns: boolean
+      }
       cleanup_expired_invitations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
