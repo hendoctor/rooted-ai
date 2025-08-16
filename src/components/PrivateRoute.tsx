@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuthOptimized';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface PrivateRouteProps {
@@ -9,7 +9,7 @@ interface PrivateRouteProps {
 }
 
 const PrivateRoute = ({ children, requiredRoles }: PrivateRouteProps) => {
-  const { user, role: userRole, loading: authLoading } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
 
   // Simplified access control
   if (authLoading) {

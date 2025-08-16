@@ -3,10 +3,9 @@ import App from './App.tsx'
 import './index.css'
 import { ThemeProvider } from 'next-themes'
 import './utils/securityEnhancer'
-import { applySecurityHeaders, setupSecurityMonitoring } from './utils/securityHeaders'
+import { setupSecurityMonitoring } from './utils/securityHeaders'
 
-// Apply security hardening
-applySecurityHeaders();
+// Apply security monitoring only (headers should be set at HTTP level)
 setupSecurityMonitoring();
 
 const root = createRoot(document.getElementById('root')!);

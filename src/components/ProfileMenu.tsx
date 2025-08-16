@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/hooks/useAuthOptimized';
+import { useAuth } from '@/hooks/useAuthReliable';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +17,7 @@ interface ProfileMenuProps {
 }
 
 const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
-  const { user, role, signOut, companies } = useAuth();
+  const { user, userRole, signOut, companies } = useAuth();
 
   if (!user) return null;
 
@@ -40,9 +40,9 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <div className="flex flex-col space-y-1 p-2">
           <p className="text-sm font-medium leading-none">{user.email}</p>
-          {role && (
+          {userRole && (
             <p className="text-xs leading-none text-muted-foreground">
-              {role}
+              {userRole}
             </p>
           )}
           {companies && companies.length > 0 && (
@@ -52,7 +52,7 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
           )}
         </div>
         <DropdownMenuSeparator />
-        {role === 'Client' && (
+        {userRole === 'Client' && (
           <>
             {/* Rule 2: Clients see only company portal and profile in dropdown */}
             {companies && companies.length > 0 && (

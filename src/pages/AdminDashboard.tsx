@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuthOptimized';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +53,8 @@ interface NewsletterSubscription {
 }
 
 const AdminDashboard: React.FC = () => {
-  const { user, loading, role, isAdmin } = useAuth();
+  const { user, loading, userRole } = useAuth();
+  const isAdmin = userRole === 'Admin';
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRole[]>([]);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [allCompanies, setAllCompanies] = useState<CompanyWithCount[]>([]);
@@ -438,7 +439,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   if (!user || !isAdmin) {
-    console.log('AdminDashboard: Access denied - user:', !!user, 'role:', role, 'isAdmin:', isAdmin);
+    console.log('AdminDashboard: Access denied - user:', !!user, 'role:', userRole, 'isAdmin:', isAdmin);
     return <AccessDenied />;
   }
 

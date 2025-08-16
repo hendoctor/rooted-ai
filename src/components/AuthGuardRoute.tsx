@@ -1,7 +1,7 @@
 // Server-side style auth guard for client-side routing
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuthOptimized';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { AuthGuard } from '@/utils/authGuard';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 

@@ -30,50 +30,111 @@ export const SECURITY_HEADERS = {
   ].join(', ')
 };
 
-// Apply security headers to document (but avoid meta tags for frame-related headers)
+// DEPRECATED: Client-side security headers are not effective
+// Use this function for reference only - implement at HTTP server level
 export const applySecurityHeaders = () => {
-  // CSP via meta tag for client-side applications
-  const cspMeta = document.createElement('meta');
-  cspMeta.setAttribute('http-equiv', 'Content-Security-Policy');
-  cspMeta.setAttribute('content', SECURITY_HEADERS['Content-Security-Policy']);
-  document.head.appendChild(cspMeta);
-
-  // Add referrer policy
-  const referrerMeta = document.createElement('meta');
-  referrerMeta.setAttribute('name', 'referrer');
-  referrerMeta.setAttribute('content', 'strict-origin-when-cross-origin');
-  document.head.appendChild(referrerMeta);
-
-  // Note: X-Frame-Options and frame-ancestors should be set via HTTP headers in production
+  console.warn('Security headers should be configured at HTTP server level, not client-side');
+  // This function is deprecated and should not be used in production
 };
 
-// Enhanced security monitoring
+// Enhanced security monitoring with better tracking
 export const setupSecurityMonitoring = () => {
-  // Monitor for CSP violations
+  // Monitor for CSP violations with enhanced logging
   document.addEventListener('securitypolicyviolation', (event) => {
     console.warn('CSP Violation:', {
       blockedURI: event.blockedURI,
       violatedDirective: event.violatedDirective,
       sourceFile: event.sourceFile,
-      lineNumber: event.lineNumber
+      lineNumber: event.lineNumber,
+      timestamp: new Date().toISOString()
     });
+    
+    // Log to security audit if available
+    try {
+      import('./securityMiddleware').then(({ SecurityMiddleware }) => {
+        SecurityMiddleware.logSecurityEvent({
+          event_type: 'csp_violation_client',
+          event_details: {
+            blocked_uri: event.blockedURI,
+            violated_directive: event.violatedDirective,
+            source_file: event.sourceFile,
+            line_number: event.lineNumber
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Failed to log CSP violation:', error);
+    }
   });
 
-  // Monitor for suspicious activities
+  // Enhanced click-bombing detection
   let clickCount = 0;
   let lastClickTime = 0;
+  const clickThreshold = 15; // Increased threshold for better accuracy
   
-  document.addEventListener('click', () => {
+  document.addEventListener('click', (event) => {
     const now = Date.now();
-    if (now - lastClickTime < 100) {
+    const timeDiff = now - lastClickTime;
+    
+    if (timeDiff < 50) { // Very rapid clicks
       clickCount++;
-      if (clickCount > 10) {
-        console.warn('Possible click-bombing detected');
+      if (clickCount > clickThreshold) {
+        console.warn('Possible click-bombing detected', {
+          count: clickCount,
+          timeWindow: timeDiff,
+          element: event.target
+        });
+        
+        // Log suspicious activity
+        try {
+          import('./enhancedSecurityMonitor').then(({ EnhancedSecurityMonitor }) => {
+            EnhancedSecurityMonitor.logSuspiciousActivity('click_bombing', {
+              click_count: clickCount,
+              time_window: timeDiff,
+              element_type: (event.target as Element)?.tagName
+            });
+          });
+        } catch (error) {
+          console.error('Failed to log click-bombing:', error);
+        }
+        
         clickCount = 0;
       }
-    } else {
+    } else if (timeDiff > 1000) { // Reset after 1 second of normal behavior
       clickCount = 1;
     }
     lastClickTime = now;
   });
+  
+  // Monitor for unusual navigation patterns
+  let navigationCount = 0;
+  let navigationStartTime = Date.now();
+  
+  const originalPushState = history.pushState;
+  history.pushState = function(...args) {
+    navigationCount++;
+    const timeSinceStart = Date.now() - navigationStartTime;
+    
+    // More than 20 navigations in 10 seconds
+    if (navigationCount > 20 && timeSinceStart < 10000) {
+      try {
+        import('./enhancedSecurityMonitor').then(({ EnhancedSecurityMonitor }) => {
+          EnhancedSecurityMonitor.logSuspiciousActivity('rapid_navigation', {
+            navigation_count: navigationCount,
+            time_window: timeSinceStart
+          });
+        });
+      } catch (error) {
+        console.error('Failed to log rapid navigation:', error);
+      }
+    }
+    
+    // Reset counter every 10 seconds
+    if (timeSinceStart > 10000) {
+      navigationCount = 1;
+      navigationStartTime = Date.now();
+    }
+    
+    return originalPushState.apply(this, args);
+  };
 };

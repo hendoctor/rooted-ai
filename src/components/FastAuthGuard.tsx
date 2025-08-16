@@ -1,7 +1,7 @@
 // Ultra-fast AuthGuard without permission checking delays
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuthOptimized';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { AuthGuard } from '@/utils/authGuard';
 
 interface FastAuthGuardProps {
@@ -21,7 +21,7 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
   const [shouldRender, setShouldRender] = useState(false);
 
   // Destructure with safety checks
-  const { user, session, loading, requireRole, hasPermission } = auth || {};
+  const { user, session, loading, requireRole } = auth || {};
 
   useEffect(() => {
     if (loading || !auth) return;
@@ -39,8 +39,7 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
 
     // Instant role check using cached permissions
     if (user && requiredRoles.length > 0) {
-      const hasAccess = requireRole(requiredRoles, companyId) || 
-                        hasPermission(location.pathname);
+      const hasAccess = requireRole?.(requiredRoles, companyId);
       
       if (!hasAccess) {
         navigate('/access-denied', { replace: true });
@@ -49,7 +48,7 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
     }
 
     setShouldRender(true);
-  }, [auth, user, session, loading, location.pathname, location.search, navigate, requireRole, hasPermission, requiredRoles, companyId]);
+  }, [auth, user, session, loading, location.pathname, location.search, navigate, requireRole, requiredRoles, companyId]);
 
   // Zero-flicker loading state with error boundary
   if (!auth || loading || !shouldRender) {

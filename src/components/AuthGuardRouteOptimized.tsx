@@ -1,7 +1,7 @@
 // Optimized AuthGuard with instant routing and zero flicker
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuthOptimized';
+import { useAuth } from '@/hooks/useAuthReliable';
 import { AuthGuard } from '@/utils/authGuard';
 
 interface AuthGuardRouteProps {
@@ -15,7 +15,7 @@ const AuthGuardRoute: React.FC<AuthGuardRouteProps> = ({
   requiredRoles = [],
   companyId 
 }) => {
-  const { user, session, loading, requireRole, hasPermission } = useAuth();
+  const { user, session, loading, requireRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [resolved, setResolved] = useState(false);
@@ -39,9 +39,8 @@ const AuthGuardRoute: React.FC<AuthGuardRouteProps> = ({
     // For authenticated users, check permissions instantly (no async calls)
     if (user && requiredRoles.length > 0) {
       const hasRoleAccess = requireRole(requiredRoles, companyId);
-      const hasRoutePermission = hasPermission(location.pathname);
       
-      if (!hasRoleAccess && !hasRoutePermission) {
+      if (!hasRoleAccess) {
         console.log('🚫 Access denied for:', location.pathname);
         navigate('/access-denied', { replace: true });
         return;
@@ -49,7 +48,7 @@ const AuthGuardRoute: React.FC<AuthGuardRouteProps> = ({
     }
 
     setResolved(true);
-  }, [user, session, loading, location.pathname, location.search, navigate, requireRole, hasPermission, requiredRoles, companyId]);
+  }, [user, session, loading, location.pathname, location.search, navigate, requireRole, requiredRoles, companyId]);
 
   // Show minimal loading only when auth is initializing
   if (loading || !resolved) {
