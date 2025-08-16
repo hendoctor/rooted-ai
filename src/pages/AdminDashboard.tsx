@@ -111,27 +111,35 @@ const AdminDashboard = () => {
   };
 
   const fetchAllCompanies = async () => {
-    // Get companies with user counts using company_memberships
+    // Get all companies
     const { data: companiesData, error: companiesError } = await supabase
       .from('companies')
-      .select(`
-        id, 
-        name, 
-        slug,
-        company_memberships(user_id)
-      `)
+      .select('id, name, slug')
       .order('name', { ascending: true });
     
-    if (!companiesError && companiesData) {
-      // Transform data to include user counts
-      const companiesWithCounts = companiesData.map(company => ({
-        id: company.id,
-        name: company.name,
-        slug: company.slug,
-        userCount: company.company_memberships?.length || 0
-      }));
-      setAllCompanies(companiesWithCounts);
+    if (companiesError || !companiesData) {
+      console.error('Error fetching companies:', companiesError);
+      return;
     }
+
+    // Get user counts for each company
+    const companiesWithCounts = await Promise.all(
+      companiesData.map(async (company) => {
+        const { count, error } = await supabase
+          .from('company_memberships')
+          .select('*', { count: 'exact', head: true })
+          .eq('company_id', company.id);
+        
+        return {
+          id: company.id,
+          name: company.name,
+          slug: company.slug,
+          userCount: error ? 0 : (count || 0)
+        };
+      })
+    );
+    
+    setAllCompanies(companiesWithCounts);
   };
 
   const fetchRolePermissions = async () => {
