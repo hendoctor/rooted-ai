@@ -105,9 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       session: null,
       role: null,
       companies: [],
-        isAdmin: false,
-        accessibleRoutes: new Set(['/']),
-        permissions: new Map()
+      isAdmin: false,
+      accessibleRoutes: new Set(['/']),
+      permissions: new Map()
     };
   });
   
@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshTimeoutRef = useRef<NodeJS.Timeout>();
   const { toast } = useToast();
 
-  // Optimized context builder - server-verified, single query
+  // Optimized context builder - server-verified, minimal queries
   const buildUserContext = useCallback(async (session: Session | null): Promise<UserContext> => {
     if (!session?.user) {
       return {
@@ -132,14 +132,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      // Use existing functions instead of the new one for now
+      // Parallel fetch of user data
       const [roleResult, companiesResult] = await Promise.all([
         supabase.rpc('get_user_role_by_auth_id', { auth_user_id: session.user.id }),
         supabase.rpc('get_user_companies')
       ]);
 
       const role = (roleResult.data as any)?.role || 'Client';
-      const companies: Company[] = (companiesResult.data || []).map((c: any) => ({
+      const companiesData = companiesResult.data || [];
+      
+      const companies: Company[] = companiesData.map((c: any) => ({
         id: c.company_id,
         name: c.company_name,
         slug: c.company_slug,
@@ -160,22 +162,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         accessibleRoutes.add(`/${company.slug}`);
       });
 
-      // Get permissions for the user's role
-      const { data: permissionsData } = await supabase
-        .from('role_permissions')
-        .select('page, access')
-        .eq('role', role)
-        .eq('access', true);
-
-      // Build permissions map for instant lookup
-      (permissionsData || []).forEach((perm: any) => {
-        permissions.set(perm.page, true);
-      });
+      // Build permissions map for instant lookup - fetch separately for now
+      try {
+        const { data: permissionsData } = await supabase
+          .from('role_permissions')
+          .select('page, access')
+          .eq('role', role)
+          .eq('access', true);
+        
+        (permissionsData || []).forEach((perm: any) => {
+          permissions.set(perm.page, true);
+        });
+      } catch (error) {
+        console.warn('Failed to fetch permissions:', error);
+      }
 
       return {
         user: session.user,
         session,
-        role,
+        role: role,
         companies,
         isAdmin,
         accessibleRoutes,

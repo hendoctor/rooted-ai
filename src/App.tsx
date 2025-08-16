@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuthOptimized";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SessionSecurity from "@/components/SessionSecurity";
-import AuthGuardRoute from "@/components/AuthGuardRouteOptimized";
+import FastAuthGuard from "@/components/FastAuthGuard";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -20,21 +20,21 @@ import NotFound from "./pages/NotFound";
 const AppContent = () => {
   return (
     <Routes>
-      {/* Public routes with auth guard */}
+      {/* Public routes with fast auth guard */}
       <Route 
         path="/" 
         element={
-          <AuthGuardRoute>
+          <FastAuthGuard>
             <Index />
-          </AuthGuardRoute>
+          </FastAuthGuard>
         } 
       />
       <Route 
         path="/auth" 
         element={
-          <AuthGuardRoute>
+          <FastAuthGuard>
             <Auth />
-          </AuthGuardRoute>
+          </FastAuthGuard>
         } 
       />
       
@@ -42,25 +42,25 @@ const AppContent = () => {
       <Route
         path="/admin"
         element={
-          <AuthGuardRoute requiredRoles={["Admin"]}>
+          <FastAuthGuard requiredRoles={["Admin"]}>
             <AdminDashboard />
-          </AuthGuardRoute>
+          </FastAuthGuard>
         }
       />
       <Route
         path="/profile"
         element={
-          <AuthGuardRoute requiredRoles={["Admin", "Client"]}>
+          <FastAuthGuard requiredRoles={["Admin", "Client"]}>
             <Profile />
-          </AuthGuardRoute>
+          </FastAuthGuard>
         }
       />
       <Route
         path="/:clientSlug"
         element={
-          <AuthGuardRoute requiredRoles={["Admin", "Client"]}>
+          <FastAuthGuard requiredRoles={["Admin", "Client"]}>
             <ClientPortal />
-          </AuthGuardRoute>
+          </FastAuthGuard>
         }
       />
       
