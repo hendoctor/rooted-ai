@@ -52,8 +52,7 @@ interface NewsletterSubscription {
 }
 
 const AdminDashboard: React.FC = () => {
-  const { user, loading } = useAuth();
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const { user, loading, role, isAdmin } = useAuth();
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRole[]>([]);
   const [rolePermissions, setRolePermissions] = useState<any[]>([]);
   const [invitations, setInvitations] = useState<any[]>([]);
@@ -70,34 +69,30 @@ const AdminDashboard: React.FC = () => {
   });
   const { toast } = useToast();
 
-  // Check user role and fetch data
+  // Fetch data when user is authenticated and is admin
   useEffect(() => {
-    const checkUserRole = async () => {
-      if (loading || !user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('role')
-          .eq('auth_user_id', user.id)
-          .single();
-        
-        if (!error && data) {
-          setUserRole(data.role);
-          if (data.role === 'Admin') {
-            fetchAllData();
-            const cleanup = setupRealtimeSubscriptions();
-            return cleanup;
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user role:', error);
-      }
+    console.log('AdminDashboard: Loading state - loading:', loading, 'loadingData:', loadingData);
+    console.log('AdminDashboard: User state - user:', !!user, 'role:', role, 'isAdmin:', isAdmin);
+    
+    if (loading) return;
+    
+    if (!user) {
+      console.log('AdminDashboard: No user, redirecting');
       setLoadingData(false);
-    };
-
-    checkUserRole();
-  }, [user, loading]);
+      return;
+    }
+    
+    if (!isAdmin) {
+      console.log('AdminDashboard: User is not admin');
+      setLoadingData(false);
+      return;
+    }
+    
+    console.log('AdminDashboard: User is admin, fetching data');
+    fetchAllData();
+    const cleanup = setupRealtimeSubscriptions();
+    return cleanup;
+  }, [user, loading, isAdmin]);
 
   const fetchAllData = async () => {
     console.log('AdminDashboard: Fetching data as Admin');
@@ -439,8 +434,8 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
-  if (!user || userRole !== 'Admin') {
-    console.log('AdminDashboard: Access denied - user:', !!user, 'userRole:', userRole);
+  if (!user || !isAdmin) {
+    console.log('AdminDashboard: Access denied - user:', !!user, 'role:', role, 'isAdmin:', isAdmin);
     return <AccessDenied />;
   }
 
