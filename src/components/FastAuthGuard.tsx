@@ -15,13 +15,16 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
   requiredRoles = [],
   companyId 
 }) => {
-  const { user, session, loading, requireRole, hasPermission } = useAuth();
+  const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [shouldRender, setShouldRender] = useState(false);
 
+  // Destructure with safety checks
+  const { user, session, loading, requireRole, hasPermission } = auth || {};
+
   useEffect(() => {
-    if (loading) return;
+    if (loading || !auth) return;
 
     const authState = { user, session, loading };
     const searchParams = new URLSearchParams(location.search);
@@ -46,10 +49,10 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
     }
 
     setShouldRender(true);
-  }, [user, session, loading, location.pathname, location.search, navigate, requireRole, hasPermission, requiredRoles, companyId]);
+  }, [auth, user, session, loading, location.pathname, location.search, navigate, requireRole, hasPermission, requiredRoles, companyId]);
 
-  // Zero-flicker loading state
-  if (loading || !shouldRender) {
+  // Zero-flicker loading state with error boundary
+  if (!auth || loading || !shouldRender) {
     return (
       <div className="min-h-screen bg-background">
         {/* Minimal spinner to prevent layout shift */}

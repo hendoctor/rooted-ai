@@ -46,14 +46,19 @@ export const useSecureSession = () => {
 
   // Validate session and check for expiration
   const validateSession = useCallback(async () => {
-    const isValid = await SecurityMiddleware.validateSession();
-    
-    if (!isValid) {
-      toast({
-        title: "Session Invalid",
-        description: "Your session has expired. Please sign in again.",
-        variant: "destructive",
-      });
+    try {
+      const isValid = await SecurityMiddleware.validateSession();
+      
+      if (!isValid) {
+        toast({
+          title: "Session Invalid",
+          description: "Your session has expired. Please sign in again.",
+          variant: "destructive",
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error('Session validation error:', error);
       return false;
     }
 

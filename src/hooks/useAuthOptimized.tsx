@@ -318,15 +318,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearError = useCallback(() => setError(null), []);
 
-  // Initialize auth with cache-first approach
+  // Initialize auth with cache-first approach and improved error handling
   useEffect(() => {
     if (initializingRef.current) return;
     initializingRef.current = true;
+    
+    let subscription: any = null;
 
     const initAuth = async () => {
       try {
-        // Set up auth listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+        // Set up auth listener with error handling
+        const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+          try {
+            await handleAuthStateChange(event, session);
+          } catch (authError) {
+            console.error('Auth state change error:', authError);
+            // Don't set error state here to prevent error loops
+          }
+        });
+        
+        subscription = data.subscription;
 
         // Check current session
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -348,8 +359,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setLoading(false);
         }
-
-        return () => subscription.unsubscribe();
       } catch (error) {
         console.error('Auth initialization failed:', error);
         setError('Failed to initialize authentication');
@@ -360,6 +369,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
 
     return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }
@@ -384,7 +396,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    // Return a safe default context instead of throwing during initialization
+    console.warn('useAuth called outside AuthProvider, returning default context');
+    return {
+      user: null,
+      session: null,
+      loading: true,
+      error: null,
+      role: null,
+      companies: [],
+      isAdmin: false,
+      accessibleRoutes: new Set([]),
+      permissions: new Map(),
+      signOut: async () => {},
+      refreshContext: async () => {},
+      requireRole: () => false,
+      hasPermission: () => false,
+      clearError: () => {}
+    };
   }
   return context;
 };
