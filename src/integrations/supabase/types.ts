@@ -323,6 +323,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: Json
       }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       log_invitation_access: {
         Args: { access_result: string; token_used: string; user_ip?: unknown }
         Returns: undefined
@@ -338,6 +342,10 @@ export type Database = {
       resync_user_roles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      shares_company_with_user: {
+        Args: { target_auth_id: string }
+        Returns: boolean
       }
       validate_invitation_secure: {
         Args: { token_input: string }
