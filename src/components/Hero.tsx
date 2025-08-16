@@ -1,11 +1,26 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import heroPlantLight from '@/assets/hero-plants-light.jpg';
+import heroPlantDark from '@/assets/hero-plants-dark.jpg';
 
 const Hero = () => {
   return (
-    <section id="home" className="relative isolate min-h-[80vh] overflow-hidden
-      bg-[url('/images/forest.webp')] bg-cover bg-center">
+    <section id="home" className="relative isolate min-h-screen overflow-hidden">
+      
+      {/* Your Original Lush Forest Background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-300"
+        style={{
+          backgroundImage: `url(${heroPlantLight})`,
+        }}
+      />
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-0 dark:opacity-100 transition-all duration-300"
+        style={{
+          backgroundImage: `url(${heroPlantDark})`,
+        }}
+      />
       
       {/* A) Enhanced readability gradient - more prominent */}
       <div className="absolute inset-0
@@ -23,7 +38,7 @@ const Hero = () => {
         bg-[linear-gradient(115deg,transparent_0%,rgba(16,185,129,.22)_35%,transparent_70%)]
         dark:bg-[linear-gradient(115deg,transparent_0%,rgba(34,197,94,.28)_35%,transparent_70%)]" />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 min-h-[80vh] flex items-center justify-center">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 min-h-screen flex items-center justify-center">
         <div className="max-w-4xl mx-auto">
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-forest-green dark:text-white mb-6 animate-fade-in-up [text-shadow:_0_2px_8px_rgb(255_255_255_/_0.8)] dark:[text-shadow:_0_2px_8px_rgb(0_0_0_/_0.6)]">
