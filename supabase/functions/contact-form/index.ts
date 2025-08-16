@@ -84,24 +84,54 @@ serve(async (req) => {
   try {
     const clientIP = getClientIP(req);
     const userAgent = req.headers.get('user-agent') || '';
-    
-    // Server-side rate limiting check
-    const { data: rateLimitCheck, error: rateLimitError } = await supabase
-      .rpc('check_rate_limit', {
-        identifier: clientIP,
-        max_requests: 5,
-        window_seconds: 300 // 5 minutes
-      });
 
-    if (rateLimitError || !rateLimitCheck) {
-      console.log('Rate limit exceeded for IP:', clientIP);
-      
-      // Log security event
+    // Parse body first to validate CSRF token
+    const body = await req.json();
+    const headerCsrf = req.headers.get('x-csrf-token') || '';
+    const bodyCsrf = (body?.csrf_token as string) || '';
+    const csrfRegex = /^[a-f0-9]{64}$/i;
+
+    if (!headerCsrf || !bodyCsrf || headerCsrf !== bodyCsrf || !csrfRegex.test(headerCsrf)) {
+      // Log CSRF validation failure
+      try {
+        const supabaseLog = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+        await supabaseLog.from('security_audit_log').insert({
+          event_type: 'csrf_validation_failed',
+          ip_address: clientIP,
+          user_agent: userAgent,
+          event_details: { endpoint: 'contact-form' }
+        });
+      } catch (_) {}
+
+      return new Response(JSON.stringify({ error: 'Invalid security token' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Server-side rate limiting: max 3 per 10 minutes per IP
+    const windowStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { count: recentCount } = await supabase
+      .from('contact_submissions')
+      .select('id', { count: 'exact', head: true })
+      .eq('ip_address', clientIP)
+      .gte('created_at', windowStart);
+
+    if ((recentCount ?? 0) >= 3) {
+      // Log rate limit exceeded
       await supabase.from('security_audit_log').insert({
         event_type: 'rate_limit_exceeded',
         ip_address: clientIP,
         user_agent: userAgent,
-        event_details: { endpoint: 'contact-form' }
+        event_details: { endpoint: 'contact-form', window_minutes: 10 }
       });
 
       return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
@@ -110,7 +140,9 @@ serve(async (req) => {
       });
     }
 
-    const { name, email, message, service_type } = await req.json();
+
+    // Extract payload after CSRF validation
+    const { name, email, message, service_type } = body as { name: string; email: string; message: string; service_type?: string };
 
     // Server-side input validation
     if (!name || !email || !message) {

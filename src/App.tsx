@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuthSecure";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import SessionSecurity from "@/components/SessionSecurity";
 // Removed useRolePersistence - now handled in useAuthSecure
 
 import Index from "./pages/Index";
@@ -62,6 +63,7 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <SessionSecurity />
           <TooltipProvider>
             <Toaster />
             <Sonner />
