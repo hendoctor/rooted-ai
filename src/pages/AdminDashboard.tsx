@@ -47,14 +47,18 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     console.log('AdminDashboard: useEffect triggered, userRole:', userRole);
+    let cleanup: (() => void) | undefined;
     if (userRole === 'Admin') {
       console.log('AdminDashboard: Fetching data as Admin');
       fetchAllData();
-      setupRealtimeSubscriptions();
+      cleanup = setupRealtimeSubscriptions();
     } else {
       console.log('AdminDashboard: Not admin, userRole:', userRole);
       setLoadingData(false);
     }
+    return () => {
+      cleanup?.();
+    };
   }, [userRole]);
 
   const fetchAllData = async () => {
