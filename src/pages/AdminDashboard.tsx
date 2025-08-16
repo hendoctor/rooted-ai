@@ -105,8 +105,8 @@ const AdminDashboard: React.FC = () => {
       fetchUsersWithRoles(),
       fetchRolePermissions(),
       fetchInvitations(),
-      fetchAllCompanies(),
-      fetchNewsletterSubscriptions()
+      fetchAllCompanies()
+      // Removed newsletter subscriptions for now until types are updated
     ]);
     setLoadingData(false);
   };
@@ -123,7 +123,15 @@ const AdminDashboard: React.FC = () => {
         return;
       }
 
-      setUsersWithRoles(usersData || []);
+      // Type-cast the role to ensure it matches our interface
+      const typedUsers: UserWithRole[] = (usersData || []).map(user => ({
+        ...user,
+        role: user.role as 'Client' | 'Admin',
+        client_name: user.client_name || 'N/A',
+        companies: [] // We'll fetch company memberships separately if needed
+      }));
+
+      setUsersWithRoles(typedUsers);
     } catch (error) {
       console.error('Error in fetchUsersWithRoles:', error);
     }
@@ -198,24 +206,8 @@ const AdminDashboard: React.FC = () => {
   };
 
   const fetchNewsletterSubscriptions = async () => {
-    try {
-      // Newsletter subscriptions table might not exist yet, so we'll handle gracefully
-      const { data, error } = await supabase
-        .from('newsletter_subscriptions')
-        .select('*')
-        .order('subscribed_at', { ascending: false });
-      
-      if (error) {
-        console.error('Newsletter subscriptions not available:', error);
-        setNewsletterSubscriptions([]);
-        return;
-      }
-
-      setNewsletterSubscriptions(data || []);
-    } catch (error) {
-      console.error('Error in fetchNewsletterSubscriptions:', error);
-      setNewsletterSubscriptions([]);
-    }
+    // Newsletter subscriptions temporarily disabled until types are updated
+    setNewsletterSubscriptions([]);
   };
 
   const setupRealtimeSubscriptions = () => {
@@ -431,34 +423,11 @@ const AdminDashboard: React.FC = () => {
   };
 
   const toggleNewsletterSubscription = async (subscription: NewsletterSubscription) => {
-    const newStatus = subscription.status === 'active' ? 'unsubscribed' : 'active';
-    const updateData = {
-      status: newStatus,
-      ...(newStatus === 'unsubscribed' ? { unsubscribed_at: new Date().toISOString() } : { unsubscribed_at: null })
-    };
-
-    try {
-      const { error } = await supabase
-        .from('newsletter_subscriptions')
-        .update(updateData)
-        .eq('id', subscription.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: `Newsletter subscription ${newStatus}`
-      });
-      
-      fetchNewsletterSubscriptions();
-    } catch (error) {
-      console.error('Error updating newsletter subscription:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update newsletter subscription",
-        variant: "destructive"
-      });
-    }
+    // Newsletter subscription management temporarily disabled until types are updated
+    toast({
+      title: "Info",
+      description: "Newsletter management will be available once database types are updated",
+    });
   };
 
   if (loading || loadingData) {
@@ -644,7 +613,7 @@ const AdminDashboard: React.FC = () => {
                             ))}
                           </div>
                         ) : (
-                          <span className="text-muted-foreground">No companies</span>
+                          <span className="text-muted-foreground">{user.client_name || 'No company'}</span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -809,7 +778,7 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Newsletter Subscriptions Section */}
+        {/* Newsletter Subscriptions Section - Temporarily Disabled */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -817,52 +786,13 @@ const AdminDashboard: React.FC = () => {
               Newsletter Subscriptions
             </CardTitle>
             <CardDescription>
-              Manage all newsletter subscriptions and their status.
+              Newsletter management will be available once database types are updated.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loadingData ? (
-              <InlineLoader text="Loading newsletter subscriptions..." />
-            ) : newsletterSubscriptions.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No newsletter subscriptions found.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Subscribed</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {newsletterSubscriptions.map((subscription) => (
-                    <TableRow key={subscription.id}>
-                      <TableCell>{subscription.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={subscription.status === 'active' ? 'default' : 'secondary'}>
-                          {subscription.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(subscription.subscribed_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{subscription.source}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleNewsletterSubscription(subscription)}
-                        >
-                          {subscription.status === 'active' ? 'Unsubscribe' : 'Resubscribe'}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <p className="text-muted-foreground text-center py-8">
+              Newsletter subscription management is being set up and will be available soon.
+            </p>
           </CardContent>
         </Card>
 
