@@ -1,4 +1,10 @@
-// Security headers configuration for enhanced protection
+// DEPRECATED: Client-side security headers are not effective
+// Security headers should be configured at the HTTP server level
+// This file is kept for reference but headers should be set via:
+// 1. Supabase Edge Functions for API endpoints
+// 2. Hosting provider configuration for static assets
+// 3. CloudFlare or CDN configuration
+
 export const SECURITY_HEADERS = {
   'Content-Security-Policy': [
     "default-src 'self'",

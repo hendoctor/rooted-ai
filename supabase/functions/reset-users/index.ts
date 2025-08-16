@@ -51,12 +51,22 @@ serve(async (req) => {
       }
     }
 
-    // Step 3: Create the new admin user
+    // Step 3: Create the new admin user with secure random password
     console.log('👑 Creating new admin user: james@hennahane.com');
+    
+    // Generate cryptographically secure random password
+    const generateSecurePassword = () => {
+      const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+      const array = new Uint8Array(16);
+      crypto.getRandomValues(array);
+      return Array.from(array, byte => charset[byte % charset.length]).join('');
+    };
+    
+    const securePassword = generateSecurePassword();
     
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: 'james@hennahane.com',
-      password: 'TempPassword123!', // This will need to be changed on first login
+      password: securePassword,
       email_confirm: true, // Auto-confirm the email
       user_metadata: {
         full_name: 'James Hennahane',
@@ -117,13 +127,17 @@ serve(async (req) => {
 
     console.log('✅ Successfully updated profile for James Hennahane');
 
+    // SECURITY: Never return passwords in API responses
+    // Log password separately for admin access only
+    console.log(`🔐 ADMIN PASSWORD: ${securePassword}`);
+    console.log('⚠️  SECURITY: Password logged to function logs only - check Supabase Functions logs');
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Successfully reset users and created Admin account',
         admin_email: 'james@hennahane.com',
-        temporary_password: 'TempPassword123!',
-        note: 'Please change the password on first login'
+        note: 'Password has been logged to function logs for security. Check Supabase Functions logs to retrieve it.'
       }), 
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
