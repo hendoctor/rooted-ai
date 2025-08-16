@@ -46,7 +46,8 @@ interface NewsletterSubscription {
   id: string;
   email: string;
   status: 'active' | 'unsubscribed';
-  subscribed_at: string;
+  created_at: string;
+  updated_at: string;
   unsubscribed_at?: string;
   source: string;
 }
@@ -86,7 +87,8 @@ const AdminDashboard: React.FC = () => {
     await Promise.all([
       fetchUsersWithRoles(),
       fetchInvitations(),
-      fetchAllCompanies()
+      fetchAllCompanies(),
+      fetchNewsletterSubscriptions()
     ]);
     setLoadingData(false);
   };
@@ -177,8 +179,22 @@ const AdminDashboard: React.FC = () => {
   };
 
   const fetchNewsletterSubscriptions = async () => {
-    // Newsletter subscriptions temporarily disabled until types are updated
-    setNewsletterSubscriptions([]);
+    try {
+      const { data, error } = await supabase
+        .from('newsletter_subscriptions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        const typedSubscriptions: NewsletterSubscription[] = data.map(sub => ({
+          ...sub,
+          status: sub.status as 'active' | 'unsubscribed'
+        }));
+        setNewsletterSubscriptions(typedSubscriptions);
+      }
+    } catch (error) {
+      console.error('Error fetching newsletter subscriptions:', error);
+    }
   };
 
   const setupRealtimeSubscriptions = () => {
@@ -196,6 +212,9 @@ const AdminDashboard: React.FC = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'company_memberships' }, () => {
         fetchUsersWithRoles();
         fetchAllCompanies();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'newsletter_subscriptions' }, () => {
+        fetchNewsletterSubscriptions();
       })
       .subscribe();
 
@@ -372,11 +391,41 @@ const AdminDashboard: React.FC = () => {
   };
 
   const toggleNewsletterSubscription = async (subscription: NewsletterSubscription) => {
-    // Newsletter subscription management temporarily disabled until types are updated
-    toast({
-      title: "Info",
-      description: "Newsletter management will be available once database types are updated",
-    });
+    try {
+      const newStatus = subscription.status === 'active' ? 'unsubscribed' : 'active';
+      const updateData: any = { 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (newStatus === 'unsubscribed') {
+        updateData.unsubscribed_at = new Date().toISOString();
+      } else {
+        updateData.unsubscribed_at = null;
+      }
+
+      const { error } = await supabase
+        .from('newsletter_subscriptions')
+        .update(updateData)
+        .eq('id', subscription.id);
+
+      if (!error) {
+        toast({
+          title: "Success",
+          description: `Subscription ${newStatus === 'active' ? 'activated' : 'deactivated'}`,
+        });
+        fetchNewsletterSubscriptions();
+      } else {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error updating newsletter subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update subscription",
+        variant: "destructive"
+      });
+    }
   };
 
   if (loading || loadingData) {
@@ -702,7 +751,7 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Newsletter Subscriptions Section - Temporarily Disabled */}
+        {/* Newsletter Subscriptions Section */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -710,13 +759,62 @@ const AdminDashboard: React.FC = () => {
               Newsletter Subscriptions
             </CardTitle>
             <CardDescription>
-              Newsletter management will be available once database types are updated.
+              Manage newsletter subscriptions and subscriber status.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground text-center py-8">
-              Newsletter subscription management is being set up and will be available soon.
-            </p>
+            {loadingData ? (
+              <InlineLoader text="Loading subscriptions..." />
+            ) : newsletterSubscriptions.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">
+                No newsletter subscriptions found.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-muted-foreground">
+                    Total subscriptions: {newsletterSubscriptions.length} 
+                    (Active: {newsletterSubscriptions.filter(s => s.status === 'active').length})
+                  </p>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Subscribed</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {newsletterSubscriptions.map((subscription) => (
+                      <TableRow key={subscription.id}>
+                        <TableCell className="font-medium">{subscription.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={subscription.status === 'active' ? 'default' : 'secondary'}>
+                            {subscription.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{subscription.source}</TableCell>
+                        <TableCell>{new Date(subscription.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              checked={subscription.status === 'active'}
+                              onCheckedChange={() => toggleNewsletterSubscription(subscription)}
+                            />
+                            <span className="text-sm">
+                              {subscription.status === 'active' ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
 
