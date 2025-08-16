@@ -55,21 +55,25 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
           )}
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/profile" className="cursor-pointer">
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </Link>
-        </DropdownMenuItem>
-        {companies && companies.length > 0 && (
-          <DropdownMenuItem asChild>
-            <Link to={`/${companies[0].slug}`} className="cursor-pointer">
-              <Building className="mr-2 h-4 w-4" />
-              <span>Company Portal</span>
-            </Link>
-          </DropdownMenuItem>
+        {role !== 'Admin' && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/profile" className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            {companies && companies.length > 0 && (
+              <DropdownMenuItem asChild>
+                <Link to={`/${companies[0].slug}`} className="cursor-pointer">
+                  <Building className="mr-2 h-4 w-4" />
+                  <span>Company Portal</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+          </>
         )}
-        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sign out</span>

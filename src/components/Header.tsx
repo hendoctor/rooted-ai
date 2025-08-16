@@ -39,7 +39,20 @@ const Header = () => {
   useEffect(() => {
     const buildMenu = async () => {
       try {
-        // Base navigation items for home page
+        // For admin users, show only "Admin" menu item
+        if (userRole === 'Admin') {
+          setAccessibleRoutes([
+            {
+              label: 'Admin',
+              path: '/admin',
+              isActive: location.pathname === '/admin',
+              isExternal: false
+            }
+          ]);
+          return;
+        }
+
+        // Base navigation items for home page (non-admin users)
         const baseNavItems = [
           { name: 'About', href: '#about' },
           { name: 'Services', href: '#services' },
@@ -250,13 +263,14 @@ const Header = () => {
                 
                 <div className="px-4 pt-2 space-y-2">
                   {user ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 text-slate-gray dark:text-white text-sm">
-                        <span>
-                          {user.email}
-                          {userRole && ` (${userRole})`}
-                        </span>
-                      </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-slate-gray dark:text-white text-sm">
+                      <span>
+                        {user.email}
+                        {userRole && ` (${userRole})`}
+                      </span>
+                    </div>
+                    {userRole !== 'Admin' && (
                       <Link to="/profile">
                         <Button 
                           variant="outline" 
@@ -266,17 +280,18 @@ const Header = () => {
                           Profile
                         </Button>
                       </Link>
-                      <Button
-                        onClick={() => {
-                          handleSignOut();
-                          setIsMobileMenuOpen(false);
-                        }}
-                        variant="outline"
-                        className="w-full border-sage hover:bg-sage/20"
-                      >
-                        Sign Out
-                      </Button>
-                    </div>
+                    )}
+                    <Button
+                      onClick={() => {
+                        handleSignOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      variant="outline"
+                      className="w-full border-sage hover:bg-sage/20"
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
                   ) : (
                     <div className="space-y-2">
                       <Link to="/auth">

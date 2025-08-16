@@ -8,13 +8,14 @@ import type { Tables } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import InviteUserForm from '@/components/InviteUserForm';
-import { Shield, Users, UserCheck, Building, Edit, Trash2 } from 'lucide-react';
+import { Shield, Users, UserCheck, Building, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Link } from 'react-router-dom';
 
 interface UserWithRole {
   id: string;
@@ -41,6 +42,7 @@ const AdminDashboard = () => {
   const [rolePermissions, setRolePermissions] = useState<Tables<'role_permissions'>[]>([]);
   const [invitations, setInvitations] = useState<Tables<'user_invitations'>[]>([]);
   const [clientCompanies, setClientCompanies] = useState<ClientCompany[]>([]);
+  const [allCompanies, setAllCompanies] = useState<Array<{id: string; name: string; slug: string}>>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [editForm, setEditForm] = useState({ display_name: '', role: '', client_name: '' });
@@ -65,7 +67,8 @@ const AdminDashboard = () => {
     await Promise.all([
       fetchUsersWithRoles(),
       fetchRolePermissions(),
-      fetchInvitations()
+      fetchInvitations(),
+      fetchAllCompanies()
     ]);
     setLoadingData(false);
   };
@@ -110,6 +113,17 @@ const AdminDashboard = () => {
     }, {} as Record<string, ClientCompany>);
     
     setClientCompanies(Object.values(companies));
+  };
+
+  const fetchAllCompanies = async () => {
+    const { data, error } = await supabase
+      .from('companies')
+      .select('id, name, slug')
+      .order('name', { ascending: true });
+    
+    if (!error && data) {
+      setAllCompanies(data);
+    }
   };
 
   const fetchRolePermissions = async () => {
@@ -361,11 +375,53 @@ const AdminDashboard = () => {
       <main className="py-16">
         <div className="container mx-auto px-4 space-y-8">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-forest-green mb-4">Admin Dashboard</h1>
+            <h1 className="text-3xl font-bold text-forest-green mb-4">Admin Center</h1>
             <p className="text-slate-gray mb-6">
-              Welcome, {user.email}! Manage users and permissions.
+              Welcome, {user.email}! Manage the entire platform from here.
             </p>
           </div>
+
+          {/* Company Portals Access */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-forest-green flex items-center gap-2">
+                <Building className="h-5 w-5" />
+                Company Portals
+              </CardTitle>
+              <p className="text-slate-gray text-sm">
+                Access all company portals and admin functions from this central dashboard.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {allCompanies.map((company) => (
+                  <div key={company.id} className="p-4 border border-sage/20 rounded-lg hover:border-sage/40 transition-colors">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-forest-green">{company.name}</h3>
+                      <div className="text-xs text-slate-gray">
+                        {clientCompanies.find(c => c.name === company.name)?.userCount || 0} users
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Link to={`/${company.slug}`}>
+                        <Button variant="outline" size="sm" className="w-full justify-start">
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Company Portal
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+                {allCompanies.length === 0 && (
+                  <div className="col-span-full text-center py-8 text-slate-gray">
+                    <Building className="mx-auto h-12 w-12 text-sage mb-4" />
+                    <p>No company portals found</p>
+                    <p className="text-sm">Companies will appear here as users are assigned to them</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* User Invitations */}
           <Card>
