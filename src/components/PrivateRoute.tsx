@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuthReliable';
+import { useAuth } from '@/hooks/useAuthOptimized';
 import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
@@ -10,7 +10,7 @@ interface PrivateRouteProps {
 }
 
 const PrivateRoute = ({ children, requiredRoles }: PrivateRouteProps) => {
-  const { user, userRole, loading: authLoading } = useAuth();
+  const { user, role: userRole, loading: authLoading } = useAuth();
   const { hasPageAccessSync, hasPageAccess } = useRolePermissions();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(true);

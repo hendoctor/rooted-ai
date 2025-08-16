@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AccessDenied from './AccessDenied';
-import { useAuth } from '@/hooks/useAuthReliable';
+import { useAuth } from '@/hooks/useAuthOptimized';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +35,7 @@ interface ClientCompany {
 }
 
 const AdminDashboard = () => {
-  const { user, userRole, loading } = useAuth();
+  const { user, role: userRole, loading } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [rolePermissions, setRolePermissions] = useState<Tables<'role_permissions'>[]>([]);

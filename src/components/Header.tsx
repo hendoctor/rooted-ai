@@ -4,7 +4,7 @@ import { Download } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
 import ProfileMenu from './ProfileMenu';
-import { useAuth } from '@/hooks/useAuthReliable';
+import { useAuth } from '@/hooks/useAuthOptimized';
 import { RBACManager } from '@/utils/rbacUtils';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link, useLocation } from 'react-router-dom';
@@ -21,7 +21,7 @@ const Header = () => {
     isExternal: boolean;
   }>>([]);
   
-  const { user, userRole, companies, signOut, loading } = useAuth();
+  const { user, role: userRole, companies, signOut, loading } = useAuth();
   const location = useLocation();
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();

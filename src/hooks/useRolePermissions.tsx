@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuthReliable';
+import { useAuth } from './useAuthOptimized';
 import { authCache } from './useAuthCache';
 
 interface MenuPermission {
@@ -13,7 +13,7 @@ interface MenuPermission {
 const PERMISSION_TIMEOUT = 5000; // 5 seconds
 
 export const useRolePermissions = () => {
-  const { userRole, user, loading: authLoading } = useAuth();
+  const { role: userRole, user, loading: authLoading } = useAuth();
   const [menuPermissions, setMenuPermissions] = useState<MenuPermission[]>([]);
   const [loading, setLoading] = useState(true);
 
