@@ -105,9 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       session: null,
       role: null,
       companies: [],
-      isAdmin: false,
-      accessibleRoutes: new Set(['/]),
-      permissions: new Map()
+        isAdmin: false,
+        accessibleRoutes: new Set(['/']),
+        permissions: new Map()
     };
   });
   
