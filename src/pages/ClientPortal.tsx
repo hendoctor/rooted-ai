@@ -30,40 +30,76 @@ const ClientPortal = () => {
     const checkAccessAndFetchData = async () => {
       if (authLoading || !user) return;
 
-      if (!clientName) {
+      // Get current user's role
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (userError || !userData) {
         setHasAccess(false);
         setLoading(false);
         return;
       }
 
-      const userSlug = getCompanySlug(clientName);
-      if (userSlug !== companySlug) {
-        setHasAccess(false);
-        setLoading(false);
-        return;
-      }
+      const userRole = userData.role;
 
-      setHasAccess(true);
-
-      // Fetch company users
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('id, email, role, created_at')
-          .eq('client_name', clientName);
-
-        if (!error && data) {
-          setCompanyUsers(data);
+      // Admin has access to all company portals
+      if (userRole === 'Admin') {
+        // Find company by slug for admin access
+        const targetCompany = companies.find(c => c.slug === companySlug);
+        if (!targetCompany) {
+          setHasAccess(false);
+          setLoading(false);
+          return;
         }
-      } catch (error) {
-        console.error('Error fetching company users:', error);
-      } finally {
-        setLoading(false);
+        setHasAccess(true);
+        
+        // Fetch all users for this company (admin can see all)
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('id, email, role, created_at, client_name')
+            .eq('client_name', targetCompany.name);
+
+          if (!error && data) {
+            setCompanyUsers(data);
+          }
+        } catch (error) {
+          console.error('Error fetching company users:', error);
+        }
+      } else {
+        // Client can only access their own company portal
+        const userCompany = companies.find(c => c.slug === companySlug);
+        if (!userCompany) {
+          setHasAccess(false);
+          setLoading(false);
+          return;
+        }
+
+        setHasAccess(true);
+
+        // Fetch users from the same company (client can only see their company)
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('id, email, role, created_at, client_name')
+            .eq('client_name', userCompany.name);
+
+          if (!error && data) {
+            setCompanyUsers(data);
+          }
+        } catch (error) {
+          console.error('Error fetching company users:', error);
+        }
       }
+
+      setLoading(false);
     };
 
     checkAccessAndFetchData();
-  }, [user, clientName, companySlug, authLoading]);
+  }, [user, companies, companySlug, authLoading]);
 
   if (authLoading || loading) {
     return (
