@@ -217,55 +217,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      try {
-        // Check simple backup first
-        const backup = loadRoleSimple(userEmail);
-        if (backup?.role === 'Admin') {
-          console.log('📋 Using simple role backup');
-          setUserRole(backup.role);
-          setClientName(backup.clientName);
-        }
+      // Check simple backup first
+      const backup = loadRoleSimple(userEmail);
+      if (backup?.role === 'Admin') {
+        console.log('📋 Using simple role backup');
+        setUserRole(backup.role);
+        setClientName(backup.clientName);
+      }
 
-        // For SIGNED_IN events, add a small delay to ensure database is ready
+      try {
+        console.log('🔍 Processing auth for user:', userEmail);
+
+        // Add minimal delay for database sync on login
         if (event === 'SIGNED_IN') {
           console.log('🔄 Login detected, waiting for database sync...');
-          await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+          await new Promise(resolve => setTimeout(resolve, 500)); // Reduced to 0.5 seconds
         }
 
-        // Fetch current role with timeout
-        const rolePromise = fetchUserRole(userEmail, userId);
-        const profilePromise = fetchProfile(userEmail);
+        // Fetch current role and profile in parallel
+        const [roleResult] = await Promise.all([
+          fetchUserRole(userEmail, userId).catch(err => {
+            console.warn('Role fetch failed, using fallback:', err);
+            return { role: backup?.role || 'Client', clientName: backup?.clientName || null };
+          }),
+          fetchProfile(userEmail).catch(err => {
+            console.warn('Profile fetch failed (non-critical):', err);
+          })
+        ]);
+
+        console.log('✅ Setting role and client:', roleResult);
+        setUserRole(roleResult.role);
+        setClientName(roleResult.clientName);
         
-        // Set a maximum wait time for both operations
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Auth operations timed out')), SESSION_TIMEOUT)
-        );
-
-        try {
-          const [roleResult] = await Promise.race([
-            Promise.all([rolePromise, profilePromise]),
-            timeoutPromise
-          ]) as [{ role: string; clientName: string | null }, void];
-
-          console.log('✅ Setting role:', roleResult.role);
-          setUserRole(roleResult.role);
-          setClientName(roleResult.clientName);
-          
-          // Save simple backup for Admin roles
-          if (roleResult.role === 'Admin') {
-            saveRoleSimple(userEmail, roleResult.role, roleResult.clientName);
-          }
-        } catch (timeoutError) {
-          console.warn('Auth operations timed out, using fallback');
-          if (!backup) {
-            setUserRole('Client');
-            setClientName(null);
-          }
+        // Save simple backup for Admin roles
+        if (roleResult.role === 'Admin') {
+          saveRoleSimple(userEmail, roleResult.role, roleResult.clientName);
         }
       } catch (error) {
         console.error('Auth state change error:', error);
-        setUserRole('Client');
-        setClientName(null);
+        // Use fallback role if backup exists, otherwise default
+        const fallbackRole = backup?.role || 'Client';
+        const fallbackClient = backup?.clientName || null;
+        console.log('Using fallback role:', fallbackRole);
+        setUserRole(fallbackRole);
+        setClientName(fallbackClient);
       }
     } else {
       // User logged out
@@ -286,14 +281,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     console.log('🚀 Initializing optimized auth system');
     
-    // Set loading timeout as fallback
-    const initTimeout = setTimeout(() => {
-      console.warn('⏰ Auth initialization timeout');
-      setLoading(false);
-    }, SESSION_TIMEOUT);
-    
     // Set up auth state listener first (synchronous only in callback)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔄 Auth state change:', event, session?.user?.email || 'no user');
+      
       // Only sync updates here
       setError(null);
       setSession(session);
@@ -302,7 +293,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Defer any Supabase calls/heavy work to avoid deadlocks
       setTimeout(() => {
         handleAuthStateChange(event, session);
-      }, 0);
+      }, 100); // Slight delay but not too long
     });
     authSubscriptionRef.current = subscription;
     // Check for existing session with retry logic
@@ -322,7 +313,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         console.log('🔍 Initial session check:', session?.user?.email || 'no session');
-        handleAuthStateChange('INITIAL_SESSION', session);
+        
+        // Force a small delay to ensure auth listener is ready
+        setTimeout(() => {
+          handleAuthStateChange('INITIAL_SESSION', session);
+        }, 200);
       } catch (error) {
         console.error('Session check failed:', error);
         if (retryCount < 2) {
@@ -333,14 +328,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    checkSession();
-    clearTimeout(initTimeout);
+    // Start checking session after a brief delay to let auth system settle
+    setTimeout(() => {
+      checkSession();
+    }, 100);
 
     setInitialized(true);
 
     return () => {
       console.log('🧹 Cleaning up auth subscription');
-      clearTimeout(initTimeout);
       if (authSubscriptionRef.current) {
         authSubscriptionRef.current.unsubscribe();
       }

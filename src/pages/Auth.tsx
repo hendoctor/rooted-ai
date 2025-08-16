@@ -50,11 +50,12 @@ const Auth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Only redirect after successful login and a short delay to allow main auth system to catch up
+        // Only redirect after successful login and allow main auth system to establish session first
         if (event === 'SIGNED_IN' && session?.user && type !== 'recovery') {
           setTimeout(() => {
+            console.log('Auth: Redirecting to home after successful login');
             navigate('/');
-          }, 2000); // 2 second delay to let main auth system establish session
+          }, 1500); // 1.5 second delay to let main auth system establish session
         }
       }
     );

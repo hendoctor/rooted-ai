@@ -16,7 +16,16 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
-  const { user, userRole, profile, signOut } = useAuth();
+  const { user, userRole, profile, signOut, loading, clientName } = useAuth();
+  
+  // Debug auth state
+  console.log('Header auth state:', { 
+    userEmail: user?.email, 
+    userRole, 
+    clientName, 
+    loading,
+    hasProfile: !!profile 
+  });
   const location = useLocation();
   // Auth debugging and recovery now built into useAuthSecure
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
