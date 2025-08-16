@@ -66,9 +66,26 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
 
     } catch (error: any) {
       console.error('Failed to send invitation:', error);
+      let description = "Failed to send invitation";
+      try {
+        const contextResponse = error?.context?.response;
+        if (typeof contextResponse === 'string' && contextResponse.trim().length) {
+          try {
+            const parsed = JSON.parse(contextResponse);
+            description = parsed.error || parsed.message || description;
+          } catch {
+            description = contextResponse;
+          }
+        } else if (error?.message) {
+          description = error.message;
+        }
+        if (/rate limit/i.test(description)) {
+          description = "Rate limit exceeded. Please wait a few minutes before sending more invitations.";
+        }
+      } catch {}
       toast({
         title: "Error",
-        description: error.message || "Failed to send invitation",
+        description,
         variant: "destructive",
       });
     } finally {
