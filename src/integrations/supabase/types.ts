@@ -307,6 +307,14 @@ export type Database = {
           user_role: string
         }[]
       }
+      get_user_context_optimized: {
+        Args: { user_id: string }
+        Returns: {
+          companies: Json
+          permissions: Json
+          role: string
+        }[]
+      }
       get_user_role_by_auth_id: {
         Args: { auth_user_id: string }
         Returns: Json

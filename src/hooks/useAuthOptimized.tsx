@@ -132,27 +132,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      // Single query to get complete user context
-      const { data: contextData, error } = await supabase.rpc('get_user_context_optimized', {
-        user_id: session.user.id
-      });
+      // Use existing functions instead of the new one for now
+      const [roleResult, companiesResult] = await Promise.all([
+        supabase.rpc('get_user_role_by_auth_id', { auth_user_id: session.user.id }),
+        supabase.rpc('get_user_companies')
+      ]);
 
-      if (error) {
-        console.warn('Failed to fetch user context:', error);
-        // Return minimal safe context
-        return {
-          user: session.user,
-          session,
-          role: 'Client',
-          companies: [],
-          isAdmin: false,
-          accessibleRoutes: new Set(['/', '/profile']),
-          permissions: new Map()
-        };
-      }
-
-      const context = contextData[0] || {};
-      const companies: Company[] = (context.companies || []).map((c: any) => ({
+      const role = (roleResult.data as any)?.role || 'Client';
+      const companies: Company[] = (companiesResult.data || []).map((c: any) => ({
         id: c.company_id,
         name: c.company_name,
         slug: c.company_slug,
@@ -160,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdmin: c.is_admin
       }));
 
-      const isAdmin = context.role === 'Admin';
+      const isAdmin = role === 'Admin';
       const accessibleRoutes = new Set<string>(['/', '/profile']);
       const permissions = new Map<string, boolean>();
       
@@ -173,17 +160,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         accessibleRoutes.add(`/${company.slug}`);
       });
 
+      // Get permissions for the user's role
+      const { data: permissionsData } = await supabase
+        .from('role_permissions')
+        .select('page, access')
+        .eq('role', role)
+        .eq('access', true);
+
       // Build permissions map for instant lookup
-      (context.permissions || []).forEach((perm: any) => {
-        if (perm.access) {
-          permissions.set(perm.page, true);
-        }
+      (permissionsData || []).forEach((perm: any) => {
+        permissions.set(perm.page, true);
       });
 
       return {
         user: session.user,
         session,
-        role: context.role || 'Client',
+        role,
         companies,
         isAdmin,
         accessibleRoutes,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuthReliable';
+import { useAuth } from '@/hooks/useAuthOptimized';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 
 const Profile = () => {
-  const { user, userRole, companies } = useAuth();
+  const { user, role, companies } = useAuth();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -164,7 +164,7 @@ const Profile = () => {
                 <div className="space-y-2">
                   <Label>Role</Label>
                   <div className="px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-md text-sm">
-                    {userRole || 'Client'}
+                    {role || 'Client'}
                   </div>
                 </div>
 
