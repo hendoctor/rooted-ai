@@ -64,7 +64,7 @@ const AdminDashboard: React.FC = () => {
     display_name: '',
     client_name: '',
     role: 'Client' as 'Client' | 'Admin',
-    companyId: '',
+    companyId: 'none',
     companyRole: 'Member' as 'Member' | 'Admin'
   });
   const { toast } = useToast();
@@ -294,7 +294,7 @@ const AdminDashboard: React.FC = () => {
       display_name: user.display_name || '',
       client_name: user.client_name || '',
       role: user.role,
-      companyId: primaryCompany?.id || '',
+      companyId: primaryCompany?.id || 'none',
       companyRole: primaryCompany?.userRole as 'Member' | 'Admin' || 'Member'
     });
   };
