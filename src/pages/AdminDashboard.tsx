@@ -29,10 +29,11 @@ interface UserWithRole {
   user_role?: string; // For compatibility
 }
 
-interface ClientCompany {
+interface CompanyWithCount {
+  id: string;
   name: string;
+  slug: string;
   userCount: number;
-  users: string[];
 }
 
 const AdminDashboard = () => {
@@ -41,8 +42,7 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [rolePermissions, setRolePermissions] = useState<Tables<'role_permissions'>[]>([]);
   const [invitations, setInvitations] = useState<Tables<'user_invitations'>[]>([]);
-  const [clientCompanies, setClientCompanies] = useState<ClientCompany[]>([]);
-  const [allCompanies, setAllCompanies] = useState<Array<{id: string; name: string; slug: string}>>([]);
+  const [allCompanies, setAllCompanies] = useState<CompanyWithCount[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [editForm, setEditForm] = useState({ display_name: '', role: '', client_name: '' });
@@ -74,10 +74,19 @@ const AdminDashboard = () => {
   };
 
   const fetchUsersWithRoles = async () => {
-    // Get all users directly - no need for profiles table anymore
+    // Get all users with company membership information
     const { data: usersData, error: usersError } = await supabase
       .from('users')
-      .select('id, auth_user_id, email, role, client_name, display_name, created_at, updated_at')
+      .select(`
+        id, 
+        auth_user_id, 
+        email, 
+        role, 
+        client_name, 
+        display_name, 
+        created_at, 
+        updated_at
+      `)
       .order('created_at', { ascending: false });
     
     if (usersError || !usersData) {
@@ -99,30 +108,29 @@ const AdminDashboard = () => {
     }));
     
     setUsers(usersWithRoles);
-    
-    // Extract client companies for B2B management
-    const companies = usersData.reduce((acc, user) => {
-      if (user.client_name) {
-        if (!acc[user.client_name]) {
-          acc[user.client_name] = { name: user.client_name, userCount: 0, users: [] };
-        }
-        acc[user.client_name].userCount++;
-        acc[user.client_name].users.push(user.email);
-      }
-      return acc;
-    }, {} as Record<string, ClientCompany>);
-    
-    setClientCompanies(Object.values(companies));
   };
 
   const fetchAllCompanies = async () => {
-    const { data, error } = await supabase
+    // Get companies with user counts using company_memberships
+    const { data: companiesData, error: companiesError } = await supabase
       .from('companies')
-      .select('id, name, slug')
+      .select(`
+        id, 
+        name, 
+        slug,
+        company_memberships(user_id)
+      `)
       .order('name', { ascending: true });
     
-    if (!error && data) {
-      setAllCompanies(data);
+    if (!companiesError && companiesData) {
+      // Transform data to include user counts
+      const companiesWithCounts = companiesData.map(company => ({
+        id: company.id,
+        name: company.name,
+        slug: company.slug,
+        userCount: company.company_memberships?.length || 0
+      }));
+      setAllCompanies(companiesWithCounts);
     }
   };
 
@@ -381,7 +389,7 @@ const AdminDashboard = () => {
             </p>
           </div>
 
-          {/* Company Portals Access */}
+          {/* Company Portals */}
           <Card>
             <CardHeader>
               <CardTitle className="text-forest-green flex items-center gap-2">
@@ -389,7 +397,7 @@ const AdminDashboard = () => {
                 Company Portals
               </CardTitle>
               <p className="text-slate-gray text-sm">
-                Access all company portals and admin functions from this central dashboard.
+                Access all registered companies and view user assignments.
               </p>
             </CardHeader>
             <CardContent>
@@ -398,15 +406,15 @@ const AdminDashboard = () => {
                   <div key={company.id} className="p-4 border border-sage/20 rounded-lg hover:border-sage/40 transition-colors">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-forest-green">{company.name}</h3>
-                      <div className="text-xs text-slate-gray">
-                        {clientCompanies.find(c => c.name === company.name)?.userCount || 0} users
+                      <div className="text-xs text-slate-gray bg-sage/10 px-2 py-1 rounded">
+                        {company.userCount} users
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Link to={`/${company.slug}`}>
                         <Button variant="outline" size="sm" className="w-full justify-start">
                           <ExternalLink className="mr-2 h-4 w-4" />
-                          Company Portal
+                          View Portal
                         </Button>
                       </Link>
                     </div>
@@ -415,8 +423,8 @@ const AdminDashboard = () => {
                 {allCompanies.length === 0 && (
                   <div className="col-span-full text-center py-8 text-slate-gray">
                     <Building className="mx-auto h-12 w-12 text-sage mb-4" />
-                    <p>No company portals found</p>
-                    <p className="text-sm">Companies will appear here as users are assigned to them</p>
+                    <p>No companies registered yet</p>
+                    <p className="text-sm">Companies will appear here when users are assigned to them</p>
                   </div>
                 )}
               </div>
@@ -501,61 +509,6 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* B2B Client Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-forest-green flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                B2B Client Management
-              </CardTitle>
-              <p className="text-slate-gray text-sm">
-                Overview of all client companies and their user counts.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Company Name</TableHead>
-                      <TableHead className="text-center">User Count</TableHead>
-                      <TableHead>Users</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {clientCompanies.length > 0 ? (
-                      clientCompanies.map((company) => (
-                        <TableRow key={company.name}>
-                          <TableCell className="font-medium">{company.name}</TableCell>
-                          <TableCell className="text-center">{company.userCount}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                              {company.users.slice(0, 3).map((email) => (
-                                <span key={email} className="text-xs bg-sage/20 px-2 py-1 rounded">
-                                  {email}
-                                </span>
-                              ))}
-                              {company.users.length > 3 && (
-                                <span className="text-xs text-slate-gray">
-                                  +{company.users.length - 3} more
-                                </span>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center text-slate-gray">
-                          No client companies found
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Enhanced User Management */}
           <Card>
