@@ -21,7 +21,7 @@ const Header = () => {
     isExternal: boolean;
   }>>([]);
   
-  const { user, userRole, companies, signOut } = useAuth();
+  const { user, userRole, companies, signOut, loading } = useAuth();
   const location = useLocation();
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
@@ -48,8 +48,11 @@ const Header = () => {
           { name: 'Contact', href: '#contact' }
         ];
 
-        // Get accessible application routes
-        const appRoutes = await RBACManager.getAccessibleRoutes(userRole, companies);
+        // Only add app routes if auth is loaded
+        let appRoutes: any[] = [];
+        if (!loading) {
+          appRoutes = await RBACManager.getAccessibleRoutes(userRole, companies);
+        }
         
         // Combine base nav with accessible routes
         const allItems = [
@@ -59,18 +62,32 @@ const Header = () => {
             isActive: false,
             isExternal: false
           })),
-          ...RBACManager.buildNavigationMenu(appRoutes, location.pathname)
-            .filter(route => route.path !== '/') // Don't duplicate home
+          ...(loading ? [] : RBACManager.buildNavigationMenu(appRoutes, location.pathname)
+            .filter(route => route.path !== '/')) // Don't duplicate home
         ];
 
         setAccessibleRoutes(allItems);
       } catch (error) {
         console.error('Failed to build navigation menu:', error);
+        // Fallback to base navigation only
+        const baseNavItems = [
+          { name: 'About', href: '#about' },
+          { name: 'Services', href: '#services' },
+          { name: 'Reviews', href: '#reviews' },
+          { name: 'Team', href: '#team' },
+          { name: 'Contact', href: '#contact' }
+        ];
+        setAccessibleRoutes(baseNavItems.map(item => ({
+          label: item.name,
+          path: item.href,
+          isActive: false,
+          isExternal: false
+        })));
       }
     };
 
     buildMenu();
-  }, [userRole, companies, location.pathname]);
+  }, [userRole, companies, location.pathname, loading]);
 
   const handleSignOut = async () => {
     console.log('🔄 Header: Sign out button clicked');
