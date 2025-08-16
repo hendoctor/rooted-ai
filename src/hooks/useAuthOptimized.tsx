@@ -132,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      // Parallel fetch of user data
+      // Parallel fetch of user data from users table only
       const [roleResult, companiesResult] = await Promise.all([
         supabase.rpc('get_user_role_by_auth_id', { auth_user_id: session.user.id }),
         supabase.rpc('get_user_companies')
@@ -153,29 +153,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const accessibleRoutes = new Set<string>(['/', '/profile']);
       const permissions = new Map<string, boolean>();
       
-      // Build accessible routes
+      // Build accessible routes based on role from users table
       if (isAdmin) {
         accessibleRoutes.add('/admin');
+        // Admins have access to all routes
+        permissions.set('/', true);
+        permissions.set('/admin', true);
+        permissions.set('/profile', true);
+      } else {
+        // Clients have access to their profile and company portals
+        permissions.set('/', true);
+        permissions.set('/profile', true);
       }
       
       companies.forEach(company => {
         accessibleRoutes.add(`/${company.slug}`);
+        permissions.set(`/${company.slug}`, true);
       });
-
-      // Build permissions map for instant lookup - fetch separately for now
-      try {
-        const { data: permissionsData } = await supabase
-          .from('role_permissions')
-          .select('page, access')
-          .eq('role', role)
-          .eq('access', true);
-        
-        (permissionsData || []).forEach((perm: any) => {
-          permissions.set(perm.page, true);
-        });
-      } catch (error) {
-        console.warn('Failed to fetch permissions:', error);
-      }
 
       return {
         user: session.user,
