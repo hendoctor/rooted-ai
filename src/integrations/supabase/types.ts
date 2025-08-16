@@ -192,6 +192,7 @@ export type Database = {
         Row: {
           accepted_at: string | null
           client_name: string | null
+          company_id: string | null
           created_at: string
           email: string
           expires_at: string
@@ -205,6 +206,7 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           client_name?: string | null
+          company_id?: string | null
           created_at?: string
           email: string
           expires_at?: string
@@ -218,6 +220,7 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           client_name?: string | null
+          company_id?: string | null
           created_at?: string
           email?: string
           expires_at?: string
@@ -228,7 +231,15 @@ export type Database = {
           role?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_invitations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       users: {
         Row: {

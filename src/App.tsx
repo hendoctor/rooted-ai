@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
 import Profile from "./pages/Profile";
 import ClientPortal from "./pages/ClientPortal";
+import CompanyPage from "./pages/CompanyPage";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 
@@ -56,10 +57,10 @@ const AppContent = () => {
         }
       />
       <Route
-        path="/company/:companySlug"
+        path="/company/:slug"
         element={
           <FastAuthGuard requiredRoles={["Admin", "Client"]}>
-            <ClientPortal />
+            <CompanyPage />
           </FastAuthGuard>
         }
       />
