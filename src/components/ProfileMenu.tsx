@@ -25,9 +25,6 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
     return email.charAt(0).toUpperCase();
   };
 
-  const getCompanySlug = (companyName: string) => {
-    return companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
-  };
 
   return (
     <DropdownMenu>
@@ -60,7 +57,7 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
             {/* Rule 2: Clients see only company portal and profile in dropdown */}
             {companies && companies.length > 0 && (
               <DropdownMenuItem asChild>
-                <Link to={`/${companies[0].slug}`} className="cursor-pointer">
+                <Link to={`/company/${companies[0].slug}`} className="cursor-pointer">
                   <Building className="mr-2 h-4 w-4" />
                   <span>Company Portal</span>
                 </Link>

@@ -167,8 +167,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       companies.forEach(company => {
-        accessibleRoutes.add(`/${company.slug}`);
-        permissions.set(`/${company.slug}`, true);
+        accessibleRoutes.add(`/company/${company.slug}`);
+        permissions.set(`/company/${company.slug}`, true);
       });
 
       return {

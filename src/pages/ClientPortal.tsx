@@ -15,9 +15,9 @@ interface CompanyUser {
 }
 
 const ClientPortal = () => {
-  const { clientSlug } = useParams<{ clientSlug: string }>();
+  const { companySlug } = useParams<{ companySlug: string }>();
   const { user, companies, loading: authLoading } = useAuth();
-  const clientName = companies.find(c => c.slug === clientSlug)?.name;
+  const clientName = companies.find(c => c.slug === companySlug)?.name;
   const [companyUsers, setCompanyUsers] = useState<CompanyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
@@ -37,7 +37,7 @@ const ClientPortal = () => {
       }
 
       const userSlug = getCompanySlug(clientName);
-      if (userSlug !== clientSlug) {
+      if (userSlug !== companySlug) {
         setHasAccess(false);
         setLoading(false);
         return;
@@ -63,7 +63,7 @@ const ClientPortal = () => {
     };
 
     checkAccessAndFetchData();
-  }, [user, clientName, clientSlug, authLoading]);
+  }, [user, clientName, companySlug, authLoading]);
 
   if (authLoading || loading) {
     return (

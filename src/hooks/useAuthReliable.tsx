@@ -124,7 +124,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Add company portals user has access to
     companies.forEach(company => {
-      routes.push(`/${company.slug}`);
+      routes.push(`/company/${company.slug}`);
     });
 
     return routes;

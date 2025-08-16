@@ -56,7 +56,7 @@ const AppContent = () => {
         }
       />
       <Route
-        path="/:clientSlug"
+        path="/company/:companySlug"
         element={
           <FastAuthGuard requiredRoles={["Admin", "Client"]}>
             <ClientPortal />
