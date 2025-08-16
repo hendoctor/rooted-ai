@@ -39,9 +39,24 @@ const Header = () => {
   useEffect(() => {
     const buildMenu = async () => {
       try {
-        // For admin users, show only "Admin" menu item
+        // Base navigation items for home page
+        const baseNavItems = [
+          { name: 'About', href: '#about' },
+          { name: 'Services', href: '#services' },
+          { name: 'Reviews', href: '#reviews' },
+          { name: 'Team', href: '#team' },
+          { name: 'Contact', href: '#contact' }
+        ];
+
+        // For admin users, show base nav items + Admin menu item
         if (userRole === 'Admin') {
           setAccessibleRoutes([
+            ...baseNavItems.map(item => ({
+              label: item.name,
+              path: item.href,
+              isActive: false,
+              isExternal: false
+            })),
             {
               label: 'Admin',
               path: '/admin',
@@ -51,15 +66,6 @@ const Header = () => {
           ]);
           return;
         }
-
-        // Base navigation items for home page (non-admin users)
-        const baseNavItems = [
-          { name: 'About', href: '#about' },
-          { name: 'Services', href: '#services' },
-          { name: 'Reviews', href: '#reviews' },
-          { name: 'Team', href: '#team' },
-          { name: 'Contact', href: '#contact' }
-        ];
 
         // Only add app routes if auth is loaded
         let appRoutes: any[] = [];
