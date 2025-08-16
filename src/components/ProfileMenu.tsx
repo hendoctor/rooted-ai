@@ -55,14 +55,9 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
           )}
         </div>
         <DropdownMenuSeparator />
-        {role !== 'Admin' && (
+        {role === 'Client' && (
           <>
-            <DropdownMenuItem asChild>
-              <Link to="/profile" className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </Link>
-            </DropdownMenuItem>
+            {/* Rule 2: Clients see only company portal and profile in dropdown */}
             {companies && companies.length > 0 && (
               <DropdownMenuItem asChild>
                 <Link to={`/${companies[0].slug}`} className="cursor-pointer">
@@ -71,9 +66,16 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
                 </Link>
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem asChild>
+              <Link to="/profile" className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
+        {/* Rule 3: Admins never see client portals, no profile/company links in dropdown */}
         <DropdownMenuItem onClick={onSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sign out</span>

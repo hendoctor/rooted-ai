@@ -69,26 +69,15 @@ const AdminDashboard: React.FC = () => {
   });
   const { toast } = useToast();
 
-  // Fetch data when user is authenticated and is admin
+  // Simplified: Just fetch data when authenticated admin
   useEffect(() => {
-    console.log('AdminDashboard: Loading state - loading:', loading, 'loadingData:', loadingData);
-    console.log('AdminDashboard: User state - user:', !!user, 'role:', role, 'isAdmin:', isAdmin);
-    
     if (loading) return;
     
-    if (!user) {
-      console.log('AdminDashboard: No user, redirecting');
+    if (!user || !isAdmin) {
       setLoadingData(false);
       return;
     }
     
-    if (!isAdmin) {
-      console.log('AdminDashboard: User is not admin');
-      setLoadingData(false);
-      return;
-    }
-    
-    console.log('AdminDashboard: User is admin, fetching data');
     fetchAllData();
     const cleanup = setupRealtimeSubscriptions();
     return cleanup;

@@ -5,7 +5,7 @@ import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
 import ProfileMenu from './ProfileMenu';
 import { useAuth } from '@/hooks/useAuthOptimized';
-import { RBACManager } from '@/utils/rbacUtils';
+import { SimpleMenuManager } from '@/utils/simpleMenuUtils';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -14,14 +14,14 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
-  const [accessibleRoutes, setAccessibleRoutes] = useState<Array<{
+  const [menuItems, setMenuItems] = useState<Array<{
     label: string;
     path: string;
     isActive: boolean;
     isExternal: boolean;
   }>>([]);
   
-  const { user, role: userRole, companies, signOut, loading } = useAuth();
+  const { user, role: userRole, signOut } = useAuth();
   const location = useLocation();
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
@@ -35,78 +35,10 @@ const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Build accessible navigation menu
+  // Simplified menu based on the 3 rules
   useEffect(() => {
-    const buildMenu = async () => {
-      try {
-        // Base navigation items for home page
-        const baseNavItems = [
-          { name: 'About', href: '#about' },
-          { name: 'Services', href: '#services' },
-          { name: 'Reviews', href: '#reviews' },
-          { name: 'Team', href: '#team' },
-          { name: 'Contact', href: '#contact' }
-        ];
-
-        // For admin users, show base nav items + Admin menu item
-        if (userRole === 'Admin') {
-          setAccessibleRoutes([
-            ...baseNavItems.map(item => ({
-              label: item.name,
-              path: item.href,
-              isActive: false,
-              isExternal: false
-            })),
-            {
-              label: 'Admin',
-              path: '/admin',
-              isActive: location.pathname === '/admin',
-              isExternal: false
-            }
-          ]);
-          return;
-        }
-
-        // Only add app routes if auth is loaded
-        let appRoutes: any[] = [];
-        if (!loading) {
-          appRoutes = await RBACManager.getAccessibleRoutes(userRole, companies);
-        }
-        
-        // Combine base nav with accessible routes
-        const allItems = [
-          ...baseNavItems.map(item => ({
-            label: item.name,
-            path: item.href,
-            isActive: false,
-            isExternal: false
-          })),
-          ...(loading ? [] : RBACManager.buildNavigationMenu(appRoutes, location.pathname)
-            .filter(route => route.path !== '/')) // Don't duplicate home
-        ];
-
-        setAccessibleRoutes(allItems);
-      } catch (error) {
-        console.error('Failed to build navigation menu:', error);
-        // Fallback to base navigation only
-        const baseNavItems = [
-          { name: 'About', href: '#about' },
-          { name: 'Services', href: '#services' },
-          { name: 'Reviews', href: '#reviews' },
-          { name: 'Team', href: '#team' },
-          { name: 'Contact', href: '#contact' }
-        ];
-        setAccessibleRoutes(baseNavItems.map(item => ({
-          label: item.name,
-          path: item.href,
-          isActive: false,
-          isExternal: false
-        })));
-      }
-    };
-
-    buildMenu();
-  }, [userRole, companies, location.pathname, loading]);
+    setMenuItems(SimpleMenuManager.getMenuItems(userRole, location.pathname));
+  }, [user, userRole, location.pathname]);
 
   const handleSignOut = async () => {
     console.log('🔄 Header: Sign out button clicked');
@@ -157,7 +89,7 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              {accessibleRoutes.map((item) => {
+              {menuItems.map((item) => {
                 const targetHref = handleNavClick(item.path);
                 return item.path.startsWith('/') || targetHref.startsWith('/') ? (
                   <Link
@@ -244,7 +176,7 @@ const Header = () => {
           {isMobileMenuOpen && (
             <div className="md:hidden bg-white dark:bg-slate-900 border-t border-sage/20 dark:border-sage/50 py-4 animate-fade-in">
               <nav className="flex flex-col space-y-4">
-                {accessibleRoutes.map((item) => {
+                {menuItems.map((item) => {
                   const targetHref = handleNavClick(item.path);
                   return item.path.startsWith('/') || targetHref.startsWith('/') ? (
                     <Link
@@ -276,17 +208,17 @@ const Header = () => {
                         {userRole && ` (${userRole})`}
                       </span>
                     </div>
-                    {userRole !== 'Admin' && (
-                      <Link to="/profile">
-                        <Button 
-                          variant="outline" 
-                          className="w-full border-sage hover:bg-sage/20 mb-2"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          Profile
-                        </Button>
-                      </Link>
-                    )}
+                     {userRole === 'Client' && (
+                       <Link to="/profile">
+                         <Button 
+                           variant="outline" 
+                           className="w-full border-sage hover:bg-sage/20 mb-2"
+                           onClick={() => setIsMobileMenuOpen(false)}
+                         >
+                           Profile
+                         </Button>
+                       </Link>
+                     )}
                     <Button
                       onClick={() => {
                         handleSignOut();
