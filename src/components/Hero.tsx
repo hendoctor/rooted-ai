@@ -7,21 +7,21 @@ const Hero = () => {
     <section id="home" className="relative isolate min-h-[80vh] overflow-hidden
       bg-[url('/images/forest.webp')] bg-cover bg-center">
       
-      {/* A) Readability gradient */}
+      {/* A) Enhanced readability gradient - more prominent */}
       <div className="absolute inset-0
-        bg-gradient-to-b from-white/80 via-white/55 to-white/20
-        dark:from-slate-950/85 dark:via-slate-950/65 dark:to-slate-950/35" />
+        bg-gradient-to-b from-white/90 via-white/75 to-white/40
+        dark:from-slate-950/95 dark:via-slate-950/80 dark:to-slate-950/50" />
 
-      {/* B) AI dot-grid (data feel) */}
+      {/* B) AI dot-grid (data feel) - more prominent */}
       <div className="absolute inset-0
-        [background-image:radial-gradient(1px_1px_at_10px_10px,rgba(16,185,129,.25)_1px,transparent_1px)]
-        [background-size:22px_22px]
-        dark:[background-image:radial-gradient(1px_1px_at_10px_10px,rgba(110,231,183,.18)_1px,transparent_1px)]" />
+        [background-image:radial-gradient(1.5px_1.5px_at_12px_12px,rgba(16,185,129,.35)_1px,transparent_1px)]
+        [background-size:24px_24px]
+        dark:[background-image:radial-gradient(1.5px_1.5px_at_12px_12px,rgba(110,231,183,.28)_1px,transparent_1px)]" />
 
-      {/* C) Emerald "signal" glow sweep */}
+      {/* C) Enhanced emerald "signal" glow sweep */}
       <div className="absolute inset-0
-        bg-[linear-gradient(115deg,transparent_0%,rgba(16,185,129,.14)_35%,transparent_70%)]
-        dark:bg-[linear-gradient(115deg,transparent_0%,rgba(34,197,94,.18)_35%,transparent_70%)]" />
+        bg-[linear-gradient(115deg,transparent_0%,rgba(16,185,129,.22)_35%,transparent_70%)]
+        dark:bg-[linear-gradient(115deg,transparent_0%,rgba(34,197,94,.28)_35%,transparent_70%)]" />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 min-h-[80vh] flex items-center justify-center">
         <div className="max-w-4xl mx-auto">
