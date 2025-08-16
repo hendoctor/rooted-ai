@@ -1,39 +1,29 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import heroPlantLight from '@/assets/hero-plants-light.jpg';
-import heroPlantDark from '@/assets/hero-plants-dark.jpg';
 
 const Hero = () => {
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Photorealistic Plant Background */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-300"
-        style={{
-          backgroundImage: `url(${heroPlantLight})`,
-        }}
-      />
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-0 dark:opacity-100 transition-all duration-300"
-        style={{
-          backgroundImage: `url(${heroPlantDark})`,
-        }}
-      />
+    <section id="home" className="relative isolate min-h-[80vh] overflow-hidden
+      bg-[url('/images/forest.webp')] bg-cover bg-center">
       
-      {/* Smart Overlay System - 5% Light Mode, Perfect Dark Mode */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cream/80 via-cream/75 to-sage/65 dark:from-background/75 dark:via-background/65 dark:to-slate/50"></div>
-      <div className="absolute inset-0 bg-gradient-to-t from-cream/70 via-cream/50 to-transparent dark:from-background/60 dark:via-background/30 dark:to-transparent"></div>
-      <div className="absolute inset-0 bg-forest-green/1 dark:bg-forest-green/6"></div>
-      
-      {/* Background Pattern (Enhanced) */}
-      <div className="absolute inset-0 opacity-8 dark:opacity-4">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-forest-green/20 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 right-10 w-24 h-24 bg-earth-brown/20 rounded-full blur-xl"></div>
-        <div className="absolute top-1/2 right-20 w-16 h-16 bg-sage/20 rounded-full blur-xl"></div>
-      </div>
+      {/* A) Readability gradient */}
+      <div className="absolute inset-0
+        bg-gradient-to-b from-white/80 via-white/55 to-white/20
+        dark:from-slate-950/85 dark:via-slate-950/65 dark:to-slate-950/35" />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+      {/* B) AI dot-grid (data feel) */}
+      <div className="absolute inset-0
+        [background-image:radial-gradient(1px_1px_at_10px_10px,rgba(16,185,129,.25)_1px,transparent_1px)]
+        [background-size:22px_22px]
+        dark:[background-image:radial-gradient(1px_1px_at_10px_10px,rgba(110,231,183,.18)_1px,transparent_1px)]" />
+
+      {/* C) Emerald "signal" glow sweep */}
+      <div className="absolute inset-0
+        bg-[linear-gradient(115deg,transparent_0%,rgba(16,185,129,.14)_35%,transparent_70%)]
+        dark:bg-[linear-gradient(115deg,transparent_0%,rgba(34,197,94,.18)_35%,transparent_70%)]" />
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 min-h-[80vh] flex items-center justify-center">
         <div className="max-w-4xl mx-auto">
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-forest-green dark:text-white mb-6 animate-fade-in-up [text-shadow:_0_2px_8px_rgb(255_255_255_/_0.8)] dark:[text-shadow:_0_2px_8px_rgb(0_0_0_/_0.6)]">
