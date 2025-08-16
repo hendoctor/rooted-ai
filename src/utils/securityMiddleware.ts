@@ -1,25 +1,23 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// Security middleware for client-side security checks
+// Security middleware for client-side security checks using users table
 export class SecurityMiddleware {
-  // Check if user has required permissions for an action
+  // Check if user has required permissions for an action based on their role
   static async checkPermission(action: string, userRole?: string): Promise<boolean> {
     if (!userRole) return false;
     
-    try {
-      const { data } = await supabase
-        .from('role_permissions')
-        .select('access')
-        .eq('role', userRole)
-        .eq('page', action)
-        .eq('access', true)
-        .maybeSingle();
-      
-      return !!data;
-    } catch (error) {
-      console.error('Permission check failed:', error);
-      return false;
+    // Simplified permission check based on role from users table
+    if (userRole === 'Admin') {
+      return true; // Admins have access to everything
     }
+    
+    // Clients have access to specific actions
+    const clientAllowedActions = ['/', '/profile'];
+    if (userRole === 'Client') {
+      return clientAllowedActions.includes(action) || action.startsWith('/company/');
+    }
+    
+    return false;
   }
 
   // Log security events on the client side

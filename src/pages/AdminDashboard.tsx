@@ -54,7 +54,6 @@ interface NewsletterSubscription {
 const AdminDashboard: React.FC = () => {
   const { user, loading, role, isAdmin } = useAuth();
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRole[]>([]);
-  const [rolePermissions, setRolePermissions] = useState<any[]>([]);
   const [invitations, setInvitations] = useState<any[]>([]);
   const [allCompanies, setAllCompanies] = useState<CompanyWithCount[]>([]);
   const [newsletterSubscriptions, setNewsletterSubscriptions] = useState<NewsletterSubscription[]>([]);
@@ -84,13 +83,10 @@ const AdminDashboard: React.FC = () => {
   }, [user, loading, isAdmin]);
 
   const fetchAllData = async () => {
-    console.log('AdminDashboard: Fetching data as Admin');
     await Promise.all([
       fetchUsersWithRoles(),
-      fetchRolePermissions(),
       fetchInvitations(),
       fetchAllCompanies()
-      // Removed newsletter subscriptions for now until types are updated
     ]);
     setLoadingData(false);
   };
@@ -121,16 +117,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const fetchRolePermissions = async () => {
-    const { data, error } = await supabase
-      .from('role_permissions')
-      .select('*')
-      .order('role', { ascending: true });
-    
-    if (!error) {
-      setRolePermissions(data ?? []);
-    }
-  };
+  // Role permissions are now managed directly in users table - no separate fetch needed
 
   const fetchInvitations = async () => {
     const { data, error } = await supabase
@@ -200,9 +187,6 @@ const AdminDashboard: React.FC = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
         fetchUsersWithRoles();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'role_permissions' }, () => {
-        fetchRolePermissions();
-      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_invitations' }, () => {
         fetchInvitations();
       })
@@ -241,26 +225,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const updatePermission = async (id: string, field: 'access' | 'visible', value: boolean) => {
-    const { error } = await supabase
-      .from('role_permissions')
-      .update({ [field]: value })
-      .eq('id', id);
-    
-    if (!error) {
-      toast({
-        title: "Success",
-        description: "Permission updated successfully",
-      });
-      fetchRolePermissions();
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to update permission",
-        variant: "destructive"
-      });
-    }
-  };
+  // Permission management is now handled directly through users.role field
 
   const cancelInvitation = async (invitationId: string) => {
     const { error } = await supabase
@@ -623,58 +588,33 @@ const AdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Menu & Access Control Section */}
+        {/* Role-Based Access Control is now simplified */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Crown className="h-5 w-5" />
-              Menu & Access Control
+              Role-Based Access Control
             </CardTitle>
             <CardDescription>
-              Configure role-based permissions for application access.
+              Access control is now managed directly through user roles in the users table. 
+              Admins have full access, Clients have access to their company portals and profiles.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {rolePermissions.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No role permissions found.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Page</TableHead>
-                    <TableHead>Menu Item</TableHead>
-                    <TableHead>Access</TableHead>
-                    <TableHead>Visible</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rolePermissions.map((permission) => (
-                    <TableRow key={permission.id}>
-                      <TableCell>
-                        <Badge variant={permission.role === 'Admin' ? 'default' : 'secondary'}>
-                          {permission.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{permission.page}</TableCell>
-                      <TableCell>{permission.menu_item || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={permission.access}
-                          onCheckedChange={(checked) => updatePermission(permission.id, 'access', checked)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={permission.visible}
-                          onCheckedChange={(checked) => updatePermission(permission.id, 'visible', checked)}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-2">Admin Role</h4>
+                <p className="text-sm text-muted-foreground">
+                  Full access to admin dashboard, public menu items, and all system features.
+                </p>
+              </div>
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-2">Client Role</h4>
+                <p className="text-sm text-muted-foreground">
+                  Access to their company portal and profile. Public menu items are hidden when authenticated.
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

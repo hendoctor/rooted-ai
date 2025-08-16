@@ -128,33 +128,6 @@ export type Database = {
         }
         Relationships: []
       }
-      role_permissions: {
-        Row: {
-          access: boolean
-          id: string
-          menu_item: string | null
-          page: string
-          role: string
-          visible: boolean
-        }
-        Insert: {
-          access?: boolean
-          id?: string
-          menu_item?: string | null
-          page: string
-          role: string
-          visible?: boolean
-        }
-        Update: {
-          access?: boolean
-          id?: string
-          menu_item?: string | null
-          page?: string
-          role?: string
-          visible?: boolean
-        }
-        Relationships: []
-      }
       security_audit_log: {
         Row: {
           created_at: string
