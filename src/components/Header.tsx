@@ -6,7 +6,7 @@ import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
 import ProfileMenu from './ProfileMenu';
 import { useAuth } from '@/hooks/useAuthSecureV2';
-import { useRolePermissions } from '@/hooks/useRolePermissions';
+import { useRolePermissions } from '@/hooks/useRolePermissionsV2';
 // Removed useAuthDebug and useAuthRecovery - functionality now in useAuthSecure
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link, useLocation } from 'react-router-dom';
