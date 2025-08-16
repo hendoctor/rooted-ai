@@ -52,9 +52,7 @@ const Auth = () => {
         
         // Only redirect after successful login and a short delay to allow main auth system to catch up
         if (event === 'SIGNED_IN' && session?.user && type !== 'recovery') {
-          setTimeout(() => {
-            navigate('/');
-          }, 2000); // 2 second delay to let main auth system establish session
+          navigate('/');
         }
       }
     );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuthSecureV2';
+import { useAuth } from './useAuthSecure';
 import { authCache } from './useAuthCache';
 
 interface MenuPermission {

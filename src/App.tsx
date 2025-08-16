@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuthSecureV2";
+import { AuthProvider } from "@/hooks/useAuthSecure";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 // Removed useRolePersistence - now handled in useAuthSecure
 

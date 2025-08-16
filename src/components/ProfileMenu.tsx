@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/hooks/useAuthSecureV2';
+import { useAuth } from '@/hooks/useAuthSecure';
 import {
   DropdownMenu,
   DropdownMenuContent,

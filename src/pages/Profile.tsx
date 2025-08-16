@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuthSecureV2';
-import { useNewsletterSubscription } from '@/hooks/useNewsletterSubscription';
+import { useAuth } from '@/hooks/useAuthSecure';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +13,6 @@ import Header from '@/components/Header';
 
 const Profile = () => {
   const { user, profile, userRole, clientName } = useAuth();
-  const { subscription, subscribe, unsubscribe, isSubscribed, loading: newsletterLoading } = useNewsletterSubscription();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -84,17 +82,6 @@ const Profile = () => {
     }
   };
 
-  const handleNewsletterToggle = async () => {
-    try {
-      if (isSubscribed) {
-        await unsubscribe();
-      } else {
-        await subscribe();
-      }
-    } catch (error) {
-      console.error('Error toggling newsletter:', error);
-    }
-  };
 
   if (!user) {
     return (
@@ -184,30 +171,6 @@ const Profile = () => {
               </CardContent>
             </Card>
 
-            {/* Newsletter Subscription */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-forest-green flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
-                  Newsletter Subscription
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Email Updates</p>
-                    <p className="text-xs text-slate-gray dark:text-slate-400">
-                      Receive the latest news and updates from our platform
-                    </p>
-                  </div>
-                  <Switch
-                    checked={isSubscribed}
-                    onCheckedChange={handleNewsletterToggle}
-                    disabled={newsletterLoading}
-                  />
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>

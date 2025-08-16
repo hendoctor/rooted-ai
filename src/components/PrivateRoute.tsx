@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuthSecureV2';
-import { useRolePermissions } from '@/hooks/useRolePermissionsV2';
+import { useAuth } from '@/hooks/useAuthSecure';
+import { useRolePermissions } from '@/hooks/useRolePermissions';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 interface PrivateRouteProps {

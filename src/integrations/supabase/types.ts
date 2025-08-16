@@ -47,27 +47,6 @@ export type Database = {
         }
         Relationships: []
       }
-      invitation_rate_limit: {
-        Row: {
-          admin_user_id: string
-          created_at: string
-          id: string
-          ip_address: unknown | null
-        }
-        Insert: {
-          admin_user_id: string
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-        }
-        Update: {
-          admin_user_id?: string
-          created_at?: string
-          id?: string
-          ip_address?: unknown | null
-        }
-        Relationships: []
-      }
       invitation_token_attempts: {
         Row: {
           attempt_time: string
@@ -89,36 +68,6 @@ export type Database = {
           ip_address?: unknown
           success?: boolean
           token_prefix?: string
-        }
-        Relationships: []
-      }
-      newsletter_subscriptions_auth: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          preferences: Json | null
-          subscribed: boolean
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          preferences?: Json | null
-          subscribed?: boolean
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          preferences?: Json | null
-          subscribed?: boolean
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -267,18 +216,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      check_invitation_rate_limit: {
-        Args: { admin_id: string; max_invites?: number; window_hours?: number }
-        Returns: boolean
-      }
-      check_rate_limit: {
-        Args: {
-          identifier: string
-          max_requests?: number
-          window_seconds?: number
-        }
-        Returns: boolean
-      }
       cleanup_expired_invitations: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -286,13 +223,6 @@ export type Database = {
       delete_user_completely: {
         Args: { user_email: string }
         Returns: undefined
-      }
-      generate_vapid_keys: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          private_key: string
-          public_key: string
-        }[]
       }
       get_current_user_client_name: {
         Args: Record<PropertyKey, never>
