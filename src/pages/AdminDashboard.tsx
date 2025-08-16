@@ -442,7 +442,7 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto px-4 py-8 space-y-8 mt-16">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
           <p className="text-muted-foreground">
