@@ -74,11 +74,19 @@ export default {
 				'cream': 'hsl(var(--cream))',
 				'slate-gray': 'hsl(var(--slate-gray))'
 			},
-			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
-			},
+                        borderRadius: {
+                                lg: 'var(--radius)',
+                                md: 'calc(var(--radius) - 2px)',
+                                sm: 'calc(var(--radius) - 4px)'
+                        },
+                        transitionTimingFunction: {
+                                'ai-standard': 'cubic-bezier(0.4,0,0.2,1)'
+                        },
+                        transitionDuration: {
+                                'ai-enter': '320ms',
+                                'ai-exit': '240ms',
+                                'ai-fast': '160ms'
+                        },
                         keyframes: {
                                 'accordion-down': {
                                         from: {
@@ -110,20 +118,63 @@ export default {
 						transform: 'translateY(0)'
 					}
 				},
-				'fade-in': {
-					'0%': {
-						opacity: '0'
-					},
-					'100%': {
-						opacity: '1'
-					}
-				}
-			},
+                                'fade-in': {
+                                        '0%': {
+                                                opacity: '0'
+                                        },
+                                        '100%': {
+                                                opacity: '1'
+                                        }
+                                },
+                                'section-reveal': {
+                                        '0%': {
+                                                opacity: '0',
+                                                transform: 'translateY(10px) scale(0.995)'
+                                        },
+                                        '100%': {
+                                                opacity: '1',
+                                                transform: 'translateY(0) scale(1)'
+                                        }
+                                },
+                                'card-enter': {
+                                        '0%': {
+                                                opacity: '0',
+                                                transform: 'translateY(8px)'
+                                        },
+                                        '100%': {
+                                                opacity: '1',
+                                                transform: 'translateY(0)'
+                                        }
+                                },
+                                'button-hover': {
+                                        '0%': { transform: 'scale(1)' },
+                                        '60%': { transform: 'scale(1.015)' },
+                                        '100%': { transform: 'scale(1.01)' }
+                                },
+                                'button-active': {
+                                        '0%': { transform: 'scale(1.01)' },
+                                        '100%': { transform: 'scale(0.99)' }
+                                },
+                                'icon-nudge': {
+                                        '0%': { opacity: '0.9', transform: 'translateY(0)' },
+                                        '100%': { opacity: '1', transform: 'translateY(-2px)' }
+                                },
+                                'gradient-shift': {
+                                        '0%': { backgroundPosition: '0% 50%' },
+                                        '100%': { backgroundPosition: '100% 50%' }
+                                }
+                        },
                         animation: {
                                 'accordion-down': 'accordion-down 0.3s ease-in-out',
                                 'accordion-up': 'accordion-up 0.3s ease-in-out',
                                 'fade-in-up': 'fade-in-up 0.6s ease-out forwards',
-                                'fade-in': 'fade-in 0.8s ease-out forwards'
+                                'fade-in': 'fade-in 0.8s ease-out forwards',
+                                'section-reveal': 'section-reveal var(--anim-duration-enter) var(--anim-ease) forwards',
+                                'card-enter': 'card-enter var(--anim-duration-enter) var(--anim-ease) forwards',
+                                'button-hover': 'button-hover 100ms var(--anim-ease) forwards',
+                                'button-active': 'button-active 80ms var(--anim-ease) forwards',
+                                'icon-nudge': 'icon-nudge 90ms var(--anim-ease) forwards',
+                                'gradient-shift': 'gradient-shift 2.5s ease-in-out'
                         }
                 }
         },

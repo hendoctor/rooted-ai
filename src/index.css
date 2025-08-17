@@ -44,6 +44,13 @@
     --sage: 88 19% 69%; /* #A8BCA1 */
     --cream: 48 29% 94%; /* #F5F3EA */
     --slate-gray: 0 0% 36%; /* #5C5C5C */
+
+    /* Animation tokens */
+    --anim-ease: cubic-bezier(0.4,0,0.2,1);
+    --anim-duration-enter: 320ms;
+    --anim-duration-exit: 240ms;
+    --anim-duration-fast: 160ms;
+    --anim-stagger: 60ms;
   }
 
   .dark {
@@ -156,6 +163,91 @@
 
   .backface-hidden {
     backface-visibility: hidden;
+  }
+
+  /* Section reveal utility */
+  .animate-section {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+    animation: section-reveal var(--anim-duration-enter) var(--anim-ease) forwards;
+    will-change: transform, opacity;
+  }
+
+  /* Card/list/item enter */
+  .animate-card {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: card-enter var(--anim-duration-enter) var(--anim-ease) forwards;
+    will-change: transform, opacity;
+  }
+
+  /* Card hover + focus */
+  .card-interactive {
+    transition: transform var(--anim-duration-enter) var(--anim-ease),
+      box-shadow var(--anim-duration-enter) var(--anim-ease),
+      outline-color 120ms var(--anim-ease);
+    will-change: transform, box-shadow;
+  }
+  .card-interactive:hover {
+    transform: scale(1.01);
+    @apply shadow-lg;
+    outline: 2px solid hsl(var(--accent)/0.2);
+  }
+  .card-interactive:focus-visible {
+    outline: 2px solid hsl(var(--accent));
+    transition: outline-offset 180ms var(--anim-ease);
+  }
+
+  /* Buttons */
+  .ai-btn {
+    transition: transform 100ms var(--anim-ease),
+      box-shadow 100ms var(--anim-ease);
+    will-change: transform;
+  }
+  .ai-btn:hover {
+    animation: button-hover 100ms var(--anim-ease) forwards;
+    @apply shadow-md;
+  }
+  .ai-btn:active {
+    animation: button-active 80ms var(--anim-ease) forwards;
+  }
+
+  /* Icons */
+  .icon-hover {
+    opacity: 0.9;
+    transition: transform 90ms var(--anim-ease),
+      opacity 90ms var(--anim-ease);
+  }
+  .icon-hover:hover {
+    animation: icon-nudge 90ms var(--anim-ease) forwards;
+  }
+
+  /* Neural gradient accent */
+  .neural-flow {
+    background-image: linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.03),
+      rgba(0, 0, 0, 0.03)
+    );
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease-in-out infinite;
+    animation-play-state: paused;
+  }
+  .neural-flow[data-active="true"] {
+    animation-play-state: running;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-section,
+  .animate-card,
+  .card-interactive,
+  .ai-btn,
+  .icon-hover,
+  .neural-flow {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+    transform: none !important;
   }
 }
 
