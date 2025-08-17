@@ -82,12 +82,34 @@ export default {
 			keyframes: {
 				// Accordion animations
 				'accordion-down': {
-					from: { height: '0', opacity: '0' },
-					to: { height: 'var(--radix-accordion-content-height)', opacity: '1' }
+					from: { 
+						height: '0', 
+						opacity: '0',
+						transform: 'translateY(-8px)'
+					},
+					to: { 
+						height: 'var(--radix-accordion-content-height)', 
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
 				},
 				'accordion-up': {
-					from: { height: 'var(--radix-accordion-content-height)', opacity: '1' },
-					to: { height: '0', opacity: '0' }
+					from: { 
+						height: 'var(--radix-accordion-content-height)', 
+						opacity: '1',
+						transform: 'translateY(0)'
+					},
+					to: { 
+						height: '0', 
+						opacity: '0',
+						transform: 'translateY(-8px)'
+					}
+				},
+				
+				// Fade in up animation for staggered content
+				'fade-in-up': {
+					'0%': { opacity: '0', transform: 'translateY(12px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
 				},
 
 				// Entry animations (scroll-triggered)
@@ -147,8 +169,11 @@ export default {
 			},
 			animation: {
 				// Accordion
-				'accordion-down': 'accordion-down 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-				'accordion-up': 'accordion-up 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+				'accordion-down': 'accordion-down 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+				'accordion-up': 'accordion-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+				
+				// Staggered content animation
+				'fade-in-up': 'fade-in-up 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
 
 				// Entry animations with spring easing
 				'slide-up': 'slide-up 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',

@@ -169,27 +169,38 @@ const Services = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-2 mb-6">
-                      {service.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-start space-x-2 text-slate-gray">
-                          <div className="w-2 h-2 bg-sage rounded-full mt-2 flex-shrink-0 animate-pulse-scale" style={{animationDelay: `${featureIndex * 100}ms`}}></div>
-                          <div>
-                            <span className="font-medium">{feature.title}</span>
-                            <CollapsibleContent className="text-sm text-slate-gray/90 mt-1 overflow-hidden transition-all duration-300 ease-in-out data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                              {feature.description}
-                            </CollapsibleContent>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
+                    <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                      <ul className="space-y-3 mb-6 pt-2">
+                        {service.features.map((feature, featureIndex) => (
+                          <li 
+                            key={featureIndex} 
+                            className="flex items-start space-x-3 text-slate-gray opacity-0 animate-fade-in-up"
+                            style={{animationDelay: `${featureIndex * 80}ms`, animationFillMode: 'forwards'}}
+                          >
+                            <div className="w-2 h-2 bg-sage rounded-full mt-2 flex-shrink-0 animate-pulse-scale" style={{animationDelay: `${featureIndex * 100 + 200}ms`}}></div>
+                            <div className="flex-1">
+                              <div className="font-medium text-forest-green mb-1">{feature.title}</div>
+                              <div className="text-sm text-slate-gray/90 leading-relaxed">
+                                {feature.description}
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </CollapsibleContent>
                     <div className="flex items-center justify-between">
                       <span className="text-lg font-semibold text-earth-brown interactive-scale">{service.pricing}</span>
                       <CollapsibleTrigger asChild>
                         <Button
                           variant="outline"
-                          className="border-forest-green text-forest-green hover:bg-forest-green dark:hover:bg-[hsl(139_28%_25%)] hover:text-white button-energy"
+                          className="border-forest-green text-forest-green hover:bg-forest-green dark:hover:bg-[hsl(139_28%_25%)] hover:text-white button-energy transition-all duration-300"
                         >
-                          {openStates[index] ? 'Show Less' : 'Learn More'}
+                          <span className="flex items-center gap-2">
+                            {openStates[index] ? 'Show Less' : 'Learn More'}
+                            <span className={`transform transition-transform duration-300 ${openStates[index] ? 'rotate-180' : ''}`}>
+                              ↓
+                            </span>
+                          </span>
                         </Button>
                       </CollapsibleTrigger>
                     </div>
