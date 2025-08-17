@@ -157,26 +157,6 @@
   .backface-hidden {
     backface-visibility: hidden;
   }
-
-  /* Unified animation utilities */
-  .anim-section {
-    @apply motion-safe:opacity-0 motion-safe:translate-y-6 motion-safe:transition-all motion-safe:duration-700;
-    transition-delay: var(--anim-delay, 0ms);
-  }
-
-  .anim-card {
-    @apply motion-safe:opacity-0 motion-safe:translate-y-4 motion-safe:transition-all motion-safe:duration-500 motion-safe:ease-[cubic-bezier(0.34,1.56,0.64,1)];
-    transition-delay: var(--anim-delay, 0ms);
-  }
-
-  .anim-section.is-visible,
-  .anim-card.is-visible {
-    @apply motion-safe:opacity-100 motion-safe:translate-y-0;
-  }
-
-  .interactive {
-    @apply motion-safe:transition-all motion-safe:duration-200 hover:-translate-y-1 hover:shadow-lg hover:ring-2 hover:ring-forest-green/40 focus-visible:-translate-y-1 focus-visible:shadow-lg focus-visible:ring-2 focus-visible:ring-forest-green/40;
-  }
 }
 
 @keyframes fadeInUp {
@@ -219,14 +199,4 @@
 #splash-screen img {
   @apply w-32 h-32;
   animation: splashIn 1.5s ease-in-out forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .anim-section,
-  .anim-card,
-  .interactive {
-    transition: none !important;
-    animation: none !important;
-    transform: none !important;
-  }
 }

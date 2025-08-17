@@ -8,7 +8,6 @@ import { AuthProvider } from "@/hooks/useAuthReliable";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SessionSecurity from "@/components/SessionSecurity";
 import FastAuthGuard from "@/components/FastAuthGuard";
-import { useRevealAnimation } from "@/hooks/useRevealAnimation";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -20,7 +19,6 @@ import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 
 const AppContent = () => {
-  useRevealAnimation();
   return (
     <Routes>
       {/* Public routes with fast auth guard */}

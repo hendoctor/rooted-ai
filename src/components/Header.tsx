@@ -174,7 +174,7 @@ const Header = () => {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="md:hidden bg-white dark:bg-slate-900 border-t border-sage/20 dark:border-sage/50 py-4 anim-card" style={{ ['--anim-delay' as any]: '0ms' }}>
+            <div className="md:hidden bg-white dark:bg-slate-900 border-t border-sage/20 dark:border-sage/50 py-4 animate-fade-in">
               <nav className="flex flex-col space-y-4">
                 {menuItems.map((item) => {
                   const targetHref = handleNavClick(item.path);

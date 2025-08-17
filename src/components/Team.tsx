@@ -254,7 +254,7 @@ const Team = () => {
   ];
 
   return (
-    <section id="team" className="py-20 bg-white dark:bg-slate-800 anim-section" style={{ '--anim-delay': '400ms' } as React.CSSProperties}>
+    <section id="team" className="py-20 bg-white dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">

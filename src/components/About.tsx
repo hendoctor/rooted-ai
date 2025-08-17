@@ -27,7 +27,7 @@ const About = () => {
   ];
 
   return (
-    <section id="about" className="py-20 bg-sage/5 dark:bg-slate-800 anim-section" style={{ '--anim-delay': '100ms' } as React.CSSProperties}>
+    <section id="about" className="py-20 bg-sage/5 dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
