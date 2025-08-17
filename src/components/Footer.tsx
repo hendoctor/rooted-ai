@@ -25,7 +25,7 @@ const Footer = () => {
 
 
   return (
-    <footer className="bg-slate-gray dark:bg-slate-900 text-cream py-12">
+    <footer className="bg-slate-gray dark:bg-slate-900 text-cream py-12 anim-section" style={{ '--anim-delay': '600ms' } as React.CSSProperties}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8">
           {/* Brand Section */}
