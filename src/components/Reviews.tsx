@@ -40,10 +40,10 @@ const Reviews = () => {
   };
 
   return (
-    <section id="reviews" className="py-20 bg-cream dark:bg-slate-800">
+    <section id="reviews" className="py-20 bg-cream dark:bg-slate-800 anim-section" style={{ '--anim-delay': '300ms' } as React.CSSProperties}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16 animate-fade-in-up">
+        <div className="text-center mb-16 anim-card" style={{ ['--anim-delay' as any]: '0ms' }}>
           <h2 className="text-4xl lg:text-5xl font-bold text-forest-green mb-6">
             What Our Clients Say
           </h2>
@@ -57,8 +57,8 @@ const Reviews = () => {
           {testimonials.map((testimonial, index) => {
             const card = (
               <Card
-                className="bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 border-0 animate-fade-in-up"
-                style={{ animationDelay: `${index * 0.2}s` }}
+                className="bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl border-0"
+                style={{ ['--anim-delay' as any]: `${index * 150}ms` }}
               >
                 <CardContent className="p-8">
                   {/* Quote Icon */}
@@ -103,7 +103,7 @@ const Reviews = () => {
         </div>
 
         {/* Stats Section */}
-        <div className="bg-forest-green dark:bg-[hsl(139_28%_25%)] rounded-2xl p-8 lg:p-12 animate-fade-in-up">
+        <div className="bg-forest-green dark:bg-[hsl(139_28%_25%)] rounded-2xl p-8 lg:p-12 anim-card" style={{ ['--anim-delay' as any]: '100ms' }}>
           <div className="grid md:grid-cols-3 gap-8 text-center">
             {stats.map((stat, index) => (
               <div key={index} className="text-white">

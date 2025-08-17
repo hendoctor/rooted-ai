@@ -127,7 +127,7 @@ const Services = () => {
   ];
 
   return (
-    <section id="services" className="py-20 bg-white dark:bg-slate-800">
+    <section id="services" className="py-20 bg-white dark:bg-slate-800 anim-section" style={{ '--anim-delay': '200ms' } as React.CSSProperties}>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
