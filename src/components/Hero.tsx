@@ -24,7 +24,7 @@ const Hero = () => {
       
       {/* A) Enhanced readability gradient - increased opacity by 5% for better text visibility */}
       <div className="absolute inset-0
-        bg-gradient-to-b from-white/100 via-white/90 to-white/55
+        bg-gradient-to-b from-white/85 via-white/75 to-white/65
         dark:from-slate-950/95 dark:via-slate-950/80 dark:to-slate-950/50" />
 
       {/* B) AI dot-grid (data feel) - more prominent */}
