@@ -57,8 +57,8 @@ const Reviews = () => {
           {testimonials.map((testimonial, index) => {
             const card = (
               <Card
-                className="bg-white dark:bg-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 border-0 animate-fade-in-up"
-                style={{ animationDelay: `${index * 0.2}s` }}
+                className="card-energy bg-white dark:bg-slate-900 shadow-lg border-0 animate-elastic-in"
+                style={{ animationDelay: `${index * 150}ms` }}
               >
                 <CardContent className="p-8">
                   {/* Quote Icon */}

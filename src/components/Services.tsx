@@ -7,6 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { AnimatedSection } from '@/hooks/useScrollAnimation';
 
 const Services = () => {
   const [openStates, setOpenStates] = React.useState<Record<number, boolean>>({});
@@ -130,65 +131,72 @@ const Services = () => {
     <section id="services" className="py-20 bg-white dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-forest-green mb-4">
-            Our Services
-          </h2>
-          <p className="text-lg sm:text-xl text-slate-gray max-w-3xl mx-auto">
-            From initial awareness to full adoption, we guide your AI journey every step of the way
-          </p>
-        </div>
+        <AnimatedSection animation="animate-spring-up">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-forest-green mb-4">
+              Our Services
+            </h2>
+            <p className="text-lg sm:text-xl text-slate-gray max-w-3xl mx-auto">
+              From initial awareness to full adoption, we guide your AI journey every step of the way
+            </p>
+          </div>
+        </AnimatedSection>
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {services.map((service, index) => (
-            <Collapsible
+            <AnimatedSection 
               key={index}
-              open={openStates[index] || false}
-              onOpenChange={(open) => setOpenStates(prev => ({ ...prev, [index]: open }))}
+              animation="animate-slide-up"
+              delay={index * 150}
             >
-              <Card className="border-sage/30 hover:border-forest-green/50 transition-all duration-300 hover:shadow-lg group">
-                <CardHeader>
-                  <div className="flex items-center space-x-4 mb-4">
-                    <div className="text-4xl">{service.icon}</div>
-                    <div>
-                      <CardTitle className="text-xl text-forest-green group-hover:text-earth-brown transition-colors">
-                        {service.title}
-                      </CardTitle>
-                      <CardDescription className="text-slate-gray mt-1">
-                        {service.description}
-                      </CardDescription>
+              <Collapsible
+                open={openStates[index] || false}
+                onOpenChange={(open) => setOpenStates(prev => ({ ...prev, [index]: open }))}
+              >
+                <Card className="card-energy border-sage/30 hover:border-forest-green/50 group h-full">
+                  <CardHeader>
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div className="text-4xl interactive-scale">{service.icon}</div>
+                      <div>
+                        <CardTitle className="text-xl text-forest-green group-hover:text-earth-brown transition-colors">
+                          {service.title}
+                        </CardTitle>
+                        <CardDescription className="text-slate-gray mt-1">
+                          {service.description}
+                        </CardDescription>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-2 mb-6">
-                    {service.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-start space-x-2 text-slate-gray">
-                        <div className="w-2 h-2 bg-sage rounded-full mt-2 flex-shrink-0"></div>
-                        <div>
-                          <span className="font-medium">{feature.title}</span>
-                          <CollapsibleContent className="text-sm text-slate-gray/90 mt-1 overflow-hidden transition-all duration-300 ease-in-out data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                            {feature.description}
-                          </CollapsibleContent>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold text-earth-brown">{service.pricing}</span>
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="border-forest-green text-forest-green hover:bg-forest-green dark:hover:bg-[hsl(139_28%_25%)] hover:text-white transition-all duration-200"
-                      >
-                        {openStates[index] ? 'Show Less' : 'Learn More'}
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
-                </CardContent>
-              </Card>
-            </Collapsible>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2 mb-6">
+                      {service.features.map((feature, featureIndex) => (
+                        <li key={featureIndex} className="flex items-start space-x-2 text-slate-gray">
+                          <div className="w-2 h-2 bg-sage rounded-full mt-2 flex-shrink-0 animate-pulse-scale" style={{animationDelay: `${featureIndex * 100}ms`}}></div>
+                          <div>
+                            <span className="font-medium">{feature.title}</span>
+                            <CollapsibleContent className="text-sm text-slate-gray/90 mt-1 overflow-hidden transition-all duration-300 ease-in-out data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                              {feature.description}
+                            </CollapsibleContent>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-semibold text-earth-brown interactive-scale">{service.pricing}</span>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="border-forest-green text-forest-green hover:bg-forest-green dark:hover:bg-[hsl(139_28%_25%)] hover:text-white button-energy"
+                        >
+                          {openStates[index] ? 'Show Less' : 'Learn More'}
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Collapsible>
+            </AnimatedSection>
           ))}
         </div>
 

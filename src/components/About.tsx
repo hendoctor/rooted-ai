@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { AnimatedSection } from '@/hooks/useScrollAnimation';
 
 const About = () => {
   const values = [
@@ -27,66 +28,78 @@ const About = () => {
   ];
 
   return (
-    <section id="about" className="py-20 bg-sage/5 dark:bg-slate-800">
+    <section id="about" className="py-20 innovation-bg">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-forest-green mb-4">
-            Why RootedAI?
-          </h2>
-          <p className="text-lg sm:text-xl text-slate-gray max-w-3xl mx-auto">
-            We understand that small businesses need AI solutions that are practical, affordable, and aligned with their values.
-          </p>
-        </div>
+        <AnimatedSection animation="animate-spring-up">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-forest-green mb-4">
+              Why RootedAI?
+            </h2>
+            <p className="text-lg sm:text-xl text-slate-gray max-w-3xl mx-auto">
+              We understand that small businesses need AI solutions that are practical, affordable, and aligned with their values.
+            </p>
+          </div>
+        </AnimatedSection>
 
         {/* Mission Statement */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 sm:p-12 mb-16 shadow-lg">
-          <div className="max-w-4xl mx-auto text-center">
-            <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-6">Our Mission</h3>
-            <p className="text-lg text-slate-gray leading-relaxed mb-8">
-              To empower small businesses in Kansas City and beyond with practical AI solutions that drive growth 
-              while preserving the personal touch and community values that make them special. We believe that 
-              technology should enhance human connection, not replace it.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-              <div>
-                <div className="text-3xl font-bold text-earth-brown mb-2">5+</div>
-                <div className="text-slate-gray">Plug-&-Play AI Solutions</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-earth-brown mb-2">25+</div>
-                <div className="text-slate-gray">Years Experience</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-earth-brown mb-2">1 hr</div>
-                <div className="text-slate-gray">Average Response Time</div>
+        <AnimatedSection animation="animate-scale-in" delay={100}>
+          <div className="card-energy bg-white dark:bg-slate-900 rounded-2xl p-8 sm:p-12 mb-16 shadow-lg">
+            <div className="max-w-4xl mx-auto text-center">
+              <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-6">Our Mission</h3>
+              <p className="text-lg text-slate-gray leading-relaxed mb-8">
+                To empower small businesses in Kansas City and beyond with practical AI solutions that drive growth 
+                while preserving the personal touch and community values that make them special. We believe that 
+                technology should enhance human connection, not replace it.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div className="interactive-scale">
+                  <div className="text-3xl font-bold text-earth-brown mb-2 animate-pulse-scale">5+</div>
+                  <div className="text-slate-gray">Plug-&-Play AI Solutions</div>
+                </div>
+                <div className="interactive-scale">
+                  <div className="text-3xl font-bold text-earth-brown mb-2 animate-pulse-scale" style={{animationDelay: '0.2s'}}>25+</div>
+                  <div className="text-slate-gray">Years Experience</div>
+                </div>
+                <div className="interactive-scale">
+                  <div className="text-3xl font-bold text-earth-brown mb-2 animate-pulse-scale" style={{animationDelay: '0.4s'}}>1 hr</div>
+                  <div className="text-slate-gray">Average Response Time</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </AnimatedSection>
 
         {/* Core Values */}
-        <div className="mb-16">
-          <h3 className="text-2xl sm:text-3xl font-bold text-forest-green text-center mb-12">
-            Our Core Values
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {values.map((value, index) => (
-              <Card key={index} className="border-sage/30 hover:border-forest-green/50 transition-all duration-300 hover:shadow-lg text-center group">
-                <CardContent className="p-6">
-                  <div className="text-4xl mb-4">{value.icon}</div>
-                  <h4 className="text-xl font-semibold text-forest-green mb-3 group-hover:text-earth-brown transition-colors">
-                    {value.title}
-                  </h4>
-                  <p className="text-slate-gray text-sm leading-relaxed">
-                    {value.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+        <AnimatedSection animation="animate-slide-up" delay={200}>
+          <div className="mb-16">
+            <h3 className="text-2xl sm:text-3xl font-bold text-forest-green text-center mb-12">
+              Our Core Values
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {values.map((value, index) => (
+                <AnimatedSection 
+                  key={index} 
+                  animation="animate-elastic-in" 
+                  delay={300 + index * 100}
+                >
+                  <Card className="card-energy border-sage/30 hover:border-forest-green/50 text-center group h-full">
+                    <CardContent className="p-6">
+                      <div className="text-4xl mb-4 interactive-scale">{value.icon}</div>
+                      <h4 className="text-xl font-semibold text-forest-green mb-3 group-hover:text-earth-brown transition-colors">
+                        {value.title}
+                      </h4>
+                      <p className="text-slate-gray text-sm leading-relaxed">
+                        {value.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </AnimatedSection>
+              ))}
+            </div>
           </div>
-        </div>
+        </AnimatedSection>
 
         {/* Target Market */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 sm:p-12 shadow-lg">
