@@ -69,26 +69,20 @@ const Header = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-[height,background-color,box-shadow] duration-ai-fast ease-ai-standard ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-            ? 'bg-white/4 dark:bg-slate-900/4 backdrop-blur-sm shadow-lg'
+            ? 'bg-white/95 dark:bg-slate-900/90 backdrop-blur-sm shadow-lg'
             : 'bg-transparent'
         }`}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div
-            className={`flex items-center justify-between transition-[height] duration-ai-fast ease-ai-standard ${
-              isScrolled ? 'h-14 lg:h-[72px]' : 'h-16 lg:h-20'
-            }`}
-          >
+          <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <a href="#home" className="flex items-center space-x-2">
               <img
                 src="/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png"
                 alt="RootedAI Logo"
-                className={`w-8 h-8 transition-transform duration-ai-fast ease-ai-standard ${
-                  isScrolled ? 'scale-[.98]' : 'scale-100'
-                }`}
+                className="w-8 h-8"
               />
               <span className="text-xl lg:text-2xl font-bold text-forest-green">RootedAI</span>
             </a>
@@ -130,7 +124,7 @@ const Header = () => {
                     onClick={() => setShowInstallDialog(true)}
                     className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80"
                   >
-                    <Download className="w-5 h-5 icon-hover" />
+                    <Download className="w-5 h-5" />
                   </Button>
                 )}
               </div>
@@ -159,15 +153,15 @@ const Header = () => {
                   onClick={() => setShowInstallDialog(true)}
                   className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80"
                 >
-                  <Download className="w-5 h-5 icon-hover" />
+                  <Download className="w-5 h-5" />
                 </Button>
               )}
               <ThemeToggle />
               <button
-                className="p-2 text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors ai-btn"
+                className="p-2 text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
-                <svg className="w-6 h-6 icon-hover" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {isMobileMenuOpen ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   ) : (
