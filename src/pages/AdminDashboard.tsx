@@ -96,22 +96,60 @@ const AdminDashboard: React.FC = () => {
 
   const fetchUsersWithRoles = async () => {
     try {
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('id, auth_user_id, email, role, client_name, display_name, created_at, updated_at')
-        .order('created_at', { ascending: false });
-      
+      // Fetch users, memberships, and companies in parallel
+      const [usersRes, membershipsRes, companiesRes] = await Promise.all([
+        supabase
+          .from('users')
+          .select('id, auth_user_id, email, role, client_name, display_name, created_at, updated_at')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('company_memberships')
+          .select('user_id, company_id, role'),
+        supabase
+          .from('companies')
+          .select('id, name, slug')
+      ]);
+
+      const usersError = usersRes.error;
+      const membershipsError = membershipsRes.error;
+      const companiesError = companiesRes.error;
+
       if (usersError) {
         console.error('Error fetching users:', usersError);
         return;
       }
+      if (membershipsError) {
+        console.error('Error fetching company memberships:', membershipsError);
+      }
+      if (companiesError) {
+        console.error('Error fetching companies (for mapping):', companiesError);
+      }
 
-      // Type-cast the role to ensure it matches our interface
-      const typedUsers: UserWithRole[] = (usersData || []).map(user => ({
-        ...user,
-        role: user.role as 'Client' | 'Admin',
-        client_name: user.client_name || 'N/A',
-        companies: [] // We'll fetch company memberships separately if needed
+      const usersData = usersRes.data || [];
+      const membershipsData = membershipsRes.data || [];
+      const companiesData = companiesRes.data || [];
+
+      // Build a quick lookup for companies by id
+      const companyById = new Map(
+        companiesData.map((c: any) => [c.id, { id: c.id, name: c.name, slug: c.slug }])
+      );
+
+      // Group memberships by user_id and attach company details
+      const companiesByUser = new Map<string, Array<{ id: string; name: string; slug: string; userRole: string }>>();
+      for (const m of membershipsData) {
+        const comp = companyById.get(m.company_id);
+        if (!comp) continue;
+        const list = companiesByUser.get(m.user_id) || [];
+        list.push({ ...comp, userRole: m.role });
+        companiesByUser.set(m.user_id, list);
+      }
+
+      // Type-cast the role and attach companies to each user
+      const typedUsers: UserWithRole[] = usersData.map((u: any) => ({
+        ...u,
+        role: u.role as 'Client' | 'Admin',
+        client_name: u.client_name || 'N/A',
+        companies: companiesByUser.get(u.auth_user_id) || []
       }));
 
       setUsersWithRoles(typedUsers);
@@ -119,7 +157,6 @@ const AdminDashboard: React.FC = () => {
       console.error('Error in fetchUsersWithRoles:', error);
     }
   };
-
   // Role permissions are now managed directly in users table - no separate fetch needed
 
   const fetchInvitations = async () => {
