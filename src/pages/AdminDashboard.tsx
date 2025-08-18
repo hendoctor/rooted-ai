@@ -675,36 +675,6 @@ const AdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Role-Based Access Control is now simplified */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5" />
-              Role-Based Access Control
-            </CardTitle>
-            <CardDescription>
-              Access control is now managed directly through user roles in the users table. 
-              Admins have full access, Clients have access to their company portals and profiles.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-semibold mb-2">Admin Role</h4>
-                <p className="text-sm text-muted-foreground">
-                  Full access to admin dashboard, public menu items, and all system features.
-                </p>
-              </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <h4 className="font-semibold mb-2">Client Role</h4>
-                <p className="text-sm text-muted-foreground">
-                  Access to their company portal and profile. Public menu items are hidden when authenticated.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* User Edit Dialog */}
         <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
           <DialogContent>
