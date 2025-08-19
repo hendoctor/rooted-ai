@@ -43,6 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initializingRef = useRef(false);
+  const currentUserIdRef = useRef<string | null>(null);
   const { toast } = useToast();
 
   // Fetch user role from database
@@ -159,40 +160,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       if (newSession?.user) {
-        console.log('👤 User signed in, fetching additional data...');
-        // User signed in
+        const sameUser = currentUserIdRef.current === newSession.user.id;
+        currentUserIdRef.current = newSession.user.id;
+
+        // Update basic session state
         setUser(newSession.user);
         setSession(newSession);
-        
+
         // Cache session
         AuthCache.setSession(newSession);
-        
-        // Fetch additional user data with timeout
-        const dataPromise = Promise.all([
-          fetchUserRole(newSession.user.id),
-          fetchUserCompanies()
-        ]);
-        
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('User data fetch timeout')), 15000)
-        );
 
-        try {
-          const [roleResult, companiesResult] = await Promise.race([
-            dataPromise,
-            timeoutPromise
-          ]) as [string | null, Company[]];
+        const shouldFetchData = !sameUser || ['INITIAL_SESSION', 'SIGNED_IN', 'USER_UPDATED'].includes(event);
 
-          setUserRole(roleResult);
-          setCompanies(companiesResult);
-          setError(null);
-          console.log('✅ Auth state fully loaded');
-        } catch (fetchError) {
-          console.warn('⚠️ User data fetch failed, using defaults:', fetchError);
-          setUserRole('Client'); // Safe default
-          setCompanies([]);
-          // Non-critical fetch errors shouldn't block app access
-          setError(null);
+        if (shouldFetchData) {
+          console.log('👤 User signed in, fetching additional data...');
+
+          const dataPromise = Promise.all([
+            fetchUserRole(newSession.user.id),
+            fetchUserCompanies()
+          ]);
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('User data fetch timeout')), 15000)
+          );
+
+          try {
+            const [roleResult, companiesResult] = await Promise.race([
+              dataPromise,
+              timeoutPromise
+            ]) as [string | null, Company[]];
+
+            setUserRole(roleResult);
+            setCompanies(companiesResult);
+            setError(null);
+            console.log('✅ Auth state fully loaded');
+          } catch (fetchError) {
+            console.warn('⚠️ User data fetch failed, retaining existing data:', fetchError);
+            // Preserve existing role/companies; fallback only if unknown
+            setUserRole(prev => prev ?? 'Client');
+            setError(null);
+          }
         }
       } else {
         console.log('🚪 User signed out, clearing state...');
@@ -201,7 +208,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSession(null);
         setUserRole(null);
         setCompanies([]);
-        
+        currentUserIdRef.current = null;
+
         // Clear caches
         AuthCache.clearAll();
       }
