@@ -259,17 +259,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (timeoutId) clearTimeout(timeoutId);
         };
 
-        // Check for existing session with timeout
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session check timeout')), 20000)
-        );
+        // Check for existing session without racing timeouts to avoid false negatives
+        const {
+          data: { session },
+          error
+        } = await supabase.auth.getSession();
 
-        const { data: { session }, error } = await Promise.race([
-          sessionPromise,
-          timeoutPromise
-        ]) as any;
-        
         if (error) {
           console.warn('Session check error:', error);
           clearTimeout(timeoutId);
