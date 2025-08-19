@@ -11,8 +11,6 @@ RootedAI helps Kansas City small businesses implement AI solutions built on Micr
 
 ## 🚀 Deployment
 
-This project is hosted on [Loveable.dev](https://loveable.dev) with DNS managed by Cloudflare.
-
 **Live Site**: [https://rootedai.tech](https://rootedai.tech)
 
 ### Deployment Process
