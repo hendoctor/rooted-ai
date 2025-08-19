@@ -191,7 +191,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.warn('⚠️ User data fetch failed, using defaults:', fetchError);
           setUserRole('Client'); // Safe default
           setCompanies([]);
-          setError('Some user data failed to load');
+          // Non-critical fetch errors shouldn't block app access
+          setError(null);
         }
       } else {
         console.log('🚪 User signed out, clearing state...');
@@ -275,6 +276,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (session?.user) {
           console.log('✅ Existing session found, loading user data...');
           await handleAuthStateChange('INITIAL_SESSION', session);
+          // Clear initialization timeout once auth state is handled
+          clearTimeout(timeoutId);
         } else {
           console.log('❌ No existing session, user not authenticated');
           clearTimeout(timeoutId);

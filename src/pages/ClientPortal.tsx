@@ -24,26 +24,9 @@ const ClientPortal = () => {
 
   useEffect(() => {
     const checkAccessAndFetchData = async () => {
-      if (authLoading || !user) return;
+      if (authLoading || !userRole) return;
 
-      // Get current user's role and client name
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('role, client_name')
-        .eq('auth_user_id', user.id)
-        .single();
-
-      if (userError || !userData) {
-        console.error('Error fetching user data:', userError);
-        setHasAccess(false);
-        setLoading(false);
-        return;
-      }
-
-      const currentRole = userData.role;
-      const userClientName = userData.client_name;
-
-      if (currentRole === 'Admin') {
+      if (userRole === 'Admin') {
         setHasAccess(true);
         try {
           // Fetch company name by slug
@@ -70,12 +53,10 @@ const ClientPortal = () => {
         } catch (error) {
           console.error('Error fetching company data:', error);
         }
-      } else if (currentRole === 'Client') {
+      } else if (userRole === 'Client') {
         // Client can only access their own company portal
-        const userCompany = companies.find(c =>
-          c.slug === companySlug && c.name === userClientName
-        );
-        
+        const userCompany = companies.find(c => c.slug === companySlug);
+
         if (!userCompany) {
           console.error('Client does not have access to company:', companySlug);
           setHasAccess(false);
@@ -84,14 +65,14 @@ const ClientPortal = () => {
         }
 
         setHasAccess(true);
-        setClientName(userClientName);
+        setClientName(userCompany.name);
 
         // Fetch users from the same company (client can only see their company)
         try {
           const { data, error } = await supabase
             .from('users')
             .select('id, email, role, created_at, client_name, display_name')
-            .eq('client_name', userClientName);
+            .eq('client_name', userCompany.name);
 
           if (!error && data) {
             setCompanyUsers(data);
@@ -110,7 +91,7 @@ const ClientPortal = () => {
     };
 
     checkAccessAndFetchData();
-  }, [user, userRole, companies, companySlug, authLoading]);
+  }, [userRole, companies, companySlug, authLoading]);
 
   if (authLoading || loading) {
     return (
@@ -198,7 +179,7 @@ const ClientPortal = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-slate-gray dark:text-slate-400">Your Role:</span>
-                    <span className="text-sm font-medium">{user.email}</span>
+                    <span className="text-sm font-medium">{userRole}</span>
                   </div>
                 </div>
               </CardContent>
