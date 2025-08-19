@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuthReliable';
 import { AuthGuard } from '@/utils/authGuard';
+import { Button } from '@/components/ui/button';
 
 interface FastAuthGuardProps {
   children: React.ReactNode;
@@ -19,11 +20,32 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [shouldRender, setShouldRender] = useState(false);
+  const [timeoutReached, setTimeoutReached] = useState(false);
 
   // Destructure with safety checks
-  const { user, session, loading, requireRole } = auth || {};
+  const { user, session, loading, requireRole, error } = auth || {};
+
+  // Timeout protection for infinite loading
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (loading && !shouldRender) {
+        console.warn('⚠️ FastAuthGuard timeout after 12 seconds');
+        setTimeoutReached(true);
+      }
+    }, 12000);
+
+    return () => clearTimeout(timeoutId);
+  }, [loading, shouldRender]);
 
   useEffect(() => {
+    console.log('🛡️ FastAuthGuard check:', { 
+      loading, 
+      hasAuth: !!auth, 
+      hasUser: !!user, 
+      path: location.pathname,
+      requiredRoles 
+    });
+
     if (loading || !auth) return;
 
     const authState = { user, session, loading };
@@ -33,6 +55,7 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
     const redirectUrl = AuthGuard.getRedirectUrl(authState, location.pathname, searchParams);
     
     if (redirectUrl) {
+      console.log('↪️ FastAuthGuard redirecting:', location.pathname, '→', redirectUrl);
       navigate(redirectUrl, { replace: true });
       return;
     }
@@ -42,13 +65,34 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
       const hasAccess = requireRole?.(requiredRoles, companyId);
       
       if (!hasAccess) {
+        console.log('🚫 FastAuthGuard: Access denied for roles:', requiredRoles);
         navigate('/access-denied', { replace: true });
         return;
       }
     }
 
+    console.log('✅ FastAuthGuard: Access granted');
     setShouldRender(true);
   }, [auth, user, session, loading, location.pathname, location.search, navigate, requireRole, requiredRoles, companyId]);
+
+  // Show timeout error with retry option
+  if (timeoutReached || error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4 p-8">
+          <div className="text-destructive text-lg font-medium">
+            {error || 'Loading timeout'}
+          </div>
+          <p className="text-muted-foreground">
+            {error ? 'Authentication error occurred' : 'The page is taking too long to load'}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Refresh Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Zero-flicker loading state with error boundary
   if (!auth || loading || !shouldRender) {

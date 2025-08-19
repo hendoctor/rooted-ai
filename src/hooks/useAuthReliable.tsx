@@ -153,12 +153,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user?.id, fetchUserRole, fetchUserCompanies]);
 
-  // Handle auth state changes
+  // Handle auth state changes with timeout protection
   const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
     console.log('🔄 Auth state change:', event, !!newSession?.user);
 
     try {
       if (newSession?.user) {
+        console.log('👤 User signed in, fetching additional data...');
         // User signed in
         setUser(newSession.user);
         setSession(newSession);
@@ -166,16 +167,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Cache session
         AuthCache.setSession(newSession);
         
-        // Fetch additional user data
-        const [roleResult, companiesResult] = await Promise.all([
+        // Fetch additional user data with timeout
+        const dataPromise = Promise.all([
           fetchUserRole(newSession.user.id),
           fetchUserCompanies()
         ]);
+        
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('User data fetch timeout')), 8000)
+        );
 
-        setUserRole(roleResult);
-        setCompanies(companiesResult);
-        setError(null);
+        try {
+          const [roleResult, companiesResult] = await Promise.race([
+            dataPromise,
+            timeoutPromise
+          ]) as [string | null, Company[]];
+
+          setUserRole(roleResult);
+          setCompanies(companiesResult);
+          setError(null);
+          console.log('✅ Auth state fully loaded');
+        } catch (fetchError) {
+          console.warn('⚠️ User data fetch failed, using defaults:', fetchError);
+          setUserRole('Client'); // Safe default
+          setCompanies([]);
+          setError('Some user data failed to load');
+        }
       } else {
+        console.log('🚪 User signed out, clearing state...');
         // User signed out
         setUser(null);
         setSession(null);
@@ -213,43 +232,75 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
   }, []);
 
-  // Initialize auth state
+  // Initialize auth state with timeout protection
   useEffect(() => {
     if (initializingRef.current) return;
     initializingRef.current = true;
 
+    let timeoutId: NodeJS.Timeout;
+    let cleanup: (() => void) | undefined;
+
     const initAuth = async () => {
       try {
+        console.log('🚀 Auth initialization starting...');
+        
+        // Set loading timeout (15 seconds maximum)
+        timeoutId = setTimeout(() => {
+          console.warn('⚠️ Auth initialization timeout after 15 seconds');
+          setError('Authentication timeout - please refresh the page');
+          setLoading(false);
+        }, 15000);
+
         // Set up auth listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
+        
+        cleanup = () => {
+          subscription.unsubscribe();
+          if (timeoutId) clearTimeout(timeoutId);
+        };
 
-        // Check for existing session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Check for existing session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session check timeout')), 10000)
+        );
+
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
         
         if (error) {
           console.warn('Session check error:', error);
+          clearTimeout(timeoutId);
           setLoading(false);
           return;
         }
 
         if (session?.user) {
+          console.log('✅ Existing session found, loading user data...');
           await handleAuthStateChange('INITIAL_SESSION', session);
         } else {
+          console.log('❌ No existing session, user not authenticated');
+          clearTimeout(timeoutId);
           setLoading(false);
         }
 
-        // Clean up subscription on unmount
-        return () => {
-          subscription.unsubscribe();
-        };
       } catch (error) {
         console.error('Auth initialization failed:', error);
         setError('Failed to initialize authentication');
+        clearTimeout(timeoutId);
         setLoading(false);
       }
     };
 
     initAuth();
+
+    // Cleanup function
+    return () => {
+      if (cleanup) cleanup();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [handleAuthStateChange]);
 
   const value: AuthContextType = {

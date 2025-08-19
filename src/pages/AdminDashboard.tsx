@@ -70,28 +70,52 @@ const AdminDashboard: React.FC = () => {
   });
   const { toast } = useToast();
 
-  // Simplified: Just fetch data when authenticated admin
+  // Fetch data with timeout protection
   useEffect(() => {
+    console.log('📊 AdminDashboard effect:', { loading, user: !!user, isAdmin });
+    
     if (loading) return;
     
     if (!user || !isAdmin) {
+      console.log('❌ Not admin or no user, stopping data load');
       setLoadingData(false);
       return;
     }
     
+    console.log('✅ Admin authenticated, fetching data...');
     fetchAllData();
     const cleanup = setupRealtimeSubscriptions();
     return cleanup;
   }, [user, loading, isAdmin]);
 
   const fetchAllData = async () => {
-    await Promise.all([
-      fetchUsersWithRoles(),
-      fetchInvitations(),
-      fetchAllCompanies(),
-      fetchNewsletterSubscriptions()
-    ]);
-    setLoadingData(false);
+    try {
+      console.log('🔄 Fetching all admin data...');
+      
+      // Add timeout protection
+      const dataPromise = Promise.all([
+        fetchUsersWithRoles(),
+        fetchInvitations(), 
+        fetchAllCompanies(),
+        fetchNewsletterSubscriptions()
+      ]);
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Data fetch timeout')), 10000)
+      );
+
+      await Promise.race([dataPromise, timeoutPromise]);
+      console.log('✅ All admin data loaded successfully');
+    } catch (error) {
+      console.error('❌ Failed to fetch admin data:', error);
+      toast({
+        title: "Loading Error",
+        description: "Some data failed to load. Please refresh the page.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingData(false);
+    }
   };
 
   const fetchUsersWithRoles = async () => {
