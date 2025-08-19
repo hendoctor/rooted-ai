@@ -152,9 +152,27 @@ const Services = () => {
             >
               <Collapsible
                 open={openStates[index] || false}
-                onOpenChange={(open) => setOpenStates(prev => ({ ...prev, [index]: open }))}
+                onOpenChange={(open) =>
+                  setOpenStates((prev) => ({ ...prev, [index]: open }))
+                }
               >
-                <Card className="card-energy border-sage/30 hover:border-forest-green/50 group h-full">
+                <Card
+                  className="card-energy border-sage/30 hover:border-forest-green/50 group h-full cursor-pointer"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() =>
+                    setOpenStates((prev) => ({ ...prev, [index]: !prev[index] }))
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setOpenStates((prev) => ({
+                        ...prev,
+                        [index]: !prev[index],
+                      }));
+                    }
+                  }}
+                >
                   <CardHeader>
                     <div className="flex items-center space-x-4 mb-4">
                       <div className="text-4xl interactive-scale">{service.icon}</div>
@@ -189,15 +207,20 @@ const Services = () => {
                       </ul>
                     </CollapsibleContent>
                     <div className="flex items-center justify-between">
-                      <span className="text-lg font-semibold text-earth-brown interactive-scale">{service.pricing}</span>
+                      <span className="text-lg font-semibold text-earth-brown interactive-scale">
+                        {service.pricing}
+                      </span>
                       <CollapsibleTrigger asChild>
                         <Button
                           variant="outline"
                           className="border-forest-green text-forest-green hover:bg-forest-green dark:hover:bg-[hsl(139_28%_25%)] hover:text-white button-energy transition-all duration-300"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <span className="flex items-center gap-2">
                             {openStates[index] ? 'Show Less' : 'Learn More'}
-                            <span className={`transform transition-transform duration-300 ${openStates[index] ? 'rotate-180' : ''}`}>
+                            <span
+                              className={`transform transition-transform duration-300 ${openStates[index] ? 'rotate-180' : ''}`}
+                            >
                               ↓
                             </span>
                           </span>
