@@ -44,10 +44,10 @@ export default function CompanyPage() {
   });
 
   useEffect(() => {
-    if (!authLoading && user && slug) {
+    if (!authLoading && user && slug && userRole) {
       fetchCompany();
     }
-  }, [user, authLoading, slug]);
+  }, [user, authLoading, slug, userRole, companies]);
 
   const fetchCompany = async () => {
     try {
