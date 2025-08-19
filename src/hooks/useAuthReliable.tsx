@@ -123,16 +123,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check if user has required role
   const requireRole = useCallback((roles: string[], companyId?: string): boolean => {
-    if (!userRole) return false;
+    if (!userRole && !session) return false;
+
+    // Determine admin status from cached role or session metadata
+    const isAdmin =
+      userRole === 'Admin' ||
+      ((session?.user as any)?.app_metadata?.role === 'Admin') ||
+      ((session?.user as any)?.user_metadata?.role === 'Admin');
 
     // Admin always has access to everything
-    if (userRole === 'Admin') return true;
+    if (isAdmin) return true;
 
     // Check global role
-    if (roles.includes(userRole)) {
+    if (userRole && roles.includes(userRole)) {
       // If company-specific check needed, verify user has access to that company
       if (companyId) {
-        return companies.some(c => 
+        return companies.some(c =>
           c.id === companyId && roles.includes(c.userRole)
         );
       }
@@ -140,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     return false;
-  }, [userRole, companies]);
+  }, [userRole, session, companies]);
 
   // Get accessible routes based on user's roles
   const getAccessibleRoutes = useCallback((): string[] => {
@@ -228,8 +234,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.log('✅ Auth state fully loaded');
           } catch (fetchError) {
             console.warn('⚠️ User data fetch failed, retaining existing data:', fetchError);
-            // Preserve existing role/companies; fallback only if unknown
-            setUserRole(prev => prev ?? 'Client');
+            // Preserve existing role/companies; attempt to derive role from session
+            setUserRole(prev => prev ?? (
+              ((newSession?.user as any)?.app_metadata?.role as string) ||
+              ((newSession?.user as any)?.user_metadata?.role as string) ||
+              'Client'
+            ));
             setError(null);
           }
         }
