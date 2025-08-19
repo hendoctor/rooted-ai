@@ -55,14 +55,13 @@ const Auth = () => {
           // Check if user has a company and route accordingly
           setTimeout(async () => {
             try {
-              const { data: userCompanies } = await supabase
-                .from('company_memberships')
-                .select('company_id, companies(slug)')
-                .eq('user_id', session.user.id)
-                .limit(1);
-                
-              if (userCompanies && userCompanies.length > 0) {
-                const companySlug = (userCompanies[0].companies as any)?.slug;
+              // Use RPC to fetch companies to avoid missing FK relationships
+              const { data: userCompanies, error } = await supabase.rpc('get_user_companies');
+
+              if (error) {
+                console.error('Error checking user companies:', error);
+              } else if (userCompanies && userCompanies.length > 0) {
+                const companySlug = (userCompanies[0] as any)?.company_slug;
                 if (companySlug) {
                   navigate(`/company/${companySlug}`);
                   return;
