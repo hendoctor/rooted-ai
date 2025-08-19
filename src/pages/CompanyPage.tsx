@@ -32,7 +32,7 @@ export default function CompanyPage() {
   const { user, userRole, companies, loading: authLoading } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
+  const [accessChecked, setAccessChecked] = useState(false);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -70,19 +70,22 @@ export default function CompanyPage() {
       
       // Check access permissions
       const canAccess = checkCompanyAccess(companyData.id);
-      setHasAccess(canAccess);
       
-      if (canAccess) {
-        setCompany(companyData);
-        setFormData({
-          name: companyData.name || '',
-          description: companyData.settings.description || '',
-          website: companyData.settings.website || '',
-          industry: companyData.settings.industry || '',
-          phone: companyData.settings.phone || '',
-          address: companyData.settings.address || ''
-        });
+      if (!canAccess) {
+        setAccessChecked(true);
+        return;
       }
+      
+      setCompany(companyData);
+      setFormData({
+        name: companyData.name || '',
+        description: companyData.settings.description || '',
+        website: companyData.settings.website || '',
+        industry: companyData.settings.industry || '',
+        phone: companyData.settings.phone || '',
+        address: companyData.settings.address || ''
+      });
+      setAccessChecked(true);
     } catch (error) {
       console.error('Error fetching company:', error);
       toast.error('Failed to load company details');
@@ -137,7 +140,20 @@ export default function CompanyPage() {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!hasAccess) {
+  // Show loading while auth data is loading
+  if (authLoading || !userRole || (userRole !== 'Admin' && companies.length === 0)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground">Loading company portal...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if access was checked and denied
+  if (accessChecked && !company) {
     return <Navigate to="/access-denied" replace />;
   }
 

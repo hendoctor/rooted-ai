@@ -174,7 +174,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ]);
         
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('User data fetch timeout')), 8000)
+          setTimeout(() => reject(new Error('User data fetch timeout')), 15000)
         );
 
         try {
@@ -244,12 +244,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         console.log('🚀 Auth initialization starting...');
         
-        // Set loading timeout (15 seconds maximum)
+        // Set loading timeout (30 seconds maximum)
         timeoutId = setTimeout(() => {
-          console.warn('⚠️ Auth initialization timeout after 15 seconds');
+          console.warn('⚠️ Auth initialization timeout after 30 seconds');
           setError('Authentication timeout - please refresh the page');
           setLoading(false);
-        }, 15000);
+        }, 30000);
 
         // Set up auth listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
@@ -262,7 +262,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Check for existing session with timeout
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Session check timeout')), 10000)
+          setTimeout(() => reject(new Error('Session check timeout')), 20000)
         );
 
         const { data: { session }, error } = await Promise.race([
