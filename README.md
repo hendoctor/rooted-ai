@@ -20,7 +20,7 @@ Our production site lives at [rootedai.tech](https://rootedai.tech).
 - **Styling**: Tailwind CSS with custom RootedAI colors
 - **UI Components**: shadcn/ui
 - **Backend**: Supabase
-- **Build & Deploy**: Vite on Loveable.dev
+- **Build & Deploy**: Vite
 
 ## 🌈 Brand Palette
 - **Forest Green** `#2E4F3E` – Trust & growth
@@ -31,27 +31,11 @@ Our production site lives at [rootedai.tech](https://rootedai.tech).
 
 ## 🌱 Features That Help You Flourish
 - Responsive design for every screen size
-- Smooth animations and transitions
-- SEO‑friendly meta tags
+- B2B client experience
 - Contact form with service selection
 - Team member spotlights
 - Service packages with transparent pricing
-- Consistent, professional branding
-
-## 💻 Local Development
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-```
+- Professional branding as your partner
 
 ## 📄 License
 © 2024 RootedAI. All rights reserved.
