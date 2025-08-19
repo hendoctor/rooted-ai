@@ -1,270 +1,144 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuthReliable';
-import { supabase } from '@/integrations/supabase/client';
-import Header from '@/components/Header';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, Users, FileText, Settings, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuthReliable';
+import AccessDenied from './AccessDenied';
+import TopNav from '@/components/client-portal/TopNav';
+import AnnouncementCard from '@/components/client-portal/AnnouncementCard';
+import ResourceCard from '@/components/client-portal/ResourceCard';
+import InsightCard from '@/components/client-portal/InsightCard';
+import CoachingCard from '@/components/client-portal/CoachingCard';
+import KPITile from '@/components/client-portal/KPITile';
+import EmptyState from '@/components/client-portal/EmptyState';
 
-interface CompanyUser {
-  id: string;
-  email: string;
-  role: string;
-  created_at: string;
-}
+const ClientPortal: React.FC = () => {
+  const { user, userRole, companies, loading } = useAuth();
+  const companyName = companies[0]?.name || 'Your Company';
 
-const ClientPortal = () => {
-  const { companySlug } = useParams<{ companySlug: string }>();
-  const { user, userRole, companies, loading: authLoading } = useAuth();
-  const [clientName, setClientName] = useState('');
-  const [companyUsers, setCompanyUsers] = useState<CompanyUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
-
-  useEffect(() => {
-    const checkAccessAndFetchData = async () => {
-      if (authLoading || !userRole) return;
-
-      if (userRole === 'Admin') {
-        setHasAccess(true);
-        try {
-          // Fetch company name by slug
-          const { data: companyData, error: companyError } = await supabase
-            .from('companies')
-            .select('name')
-            .eq('slug', companySlug)
-            .single();
-
-          const name = !companyError && companyData ? companyData.name : companySlug || '';
-          setClientName(name);
-
-          // Fetch all users for this company
-          const { data, error } = await supabase
-            .from('users')
-            .select('id, email, role, created_at, client_name, display_name')
-            .eq('client_name', name);
-
-          if (!error && data) {
-            setCompanyUsers(data);
-          } else {
-            console.error('Error fetching company users for admin:', error);
-          }
-        } catch (error) {
-          console.error('Error fetching company data:', error);
-        }
-      } else if (userRole === 'Client') {
-        // Client can only access their own company portal
-        const userCompany = companies.find(c => c.slug === companySlug);
-
-        if (!userCompany) {
-          console.error('Client does not have access to company:', companySlug);
-          setHasAccess(false);
-          setLoading(false);
-          return;
-        }
-
-        setHasAccess(true);
-        setClientName(userCompany.name);
-
-        // Fetch users from the same company (client can only see their company)
-        try {
-          const { data, error } = await supabase
-            .from('users')
-            .select('id, email, role, created_at, client_name, display_name')
-            .eq('client_name', userCompany.name);
-
-          if (!error && data) {
-            setCompanyUsers(data);
-          } else {
-            console.error('Error fetching company users for client:', error);
-          }
-        } catch (error) {
-          console.error('Error fetching company users:', error);
-        }
-      } else {
-        // Public or other roles don't have access
-        setHasAccess(false);
-      }
-
-      setLoading(false);
-    };
-
-    checkAccessAndFetchData();
-  }, [userRole, companies, companySlug, authLoading]);
-
-  if (authLoading || loading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-warm-beige dark:bg-slate-900">
-        <Header />
-        <div className="pt-20 px-4">
-          <div className="max-w-6xl mx-auto text-center">
-            <p className="text-slate-gray dark:text-white">Loading...</p>
-          </div>
-        </div>
-      </div>
+      <div className="min-h-screen flex items-center justify-center">Loading...</div>
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
+  if (!user || userRole !== 'Client') {
+    return <AccessDenied />;
   }
 
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen bg-warm-beige dark:bg-slate-900">
-        <Header />
-        <div className="pt-20 px-4">
-          <div className="max-w-6xl mx-auto text-center">
-            <h1 className="text-2xl font-bold text-forest-green mb-4">Access Denied</h1>
-            <p className="text-slate-gray dark:text-white mb-6">
-              You don't have access to this company portal.
-            </p>
-            <Link 
-              to="/" 
-              className="inline-flex items-center text-forest-green hover:underline"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const announcements: Array<{ id: number; title: string; date: string; status?: 'New' | 'Important'; }> = [];
+  const resources: Array<{ id: number; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string; }> = [];
+  const insights: Array<{ id: number; summary: string; timestamp: string; }> = [];
+  const nextSession: string | undefined = undefined;
 
   return (
-    <div className="min-h-screen bg-warm-beige dark:bg-slate-900">
-      <Header />
-      <div className="pt-20 px-4 pb-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Back button */}
-          <Link 
-            to="/" 
-            className="inline-flex items-center text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-sage mb-6"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
+    <div className="min-h-screen flex flex-col bg-warm-beige">
+      <TopNav company={companyName} />
 
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <Building className="h-8 w-8 text-forest-green" />
-              <h1 className="text-3xl font-bold text-forest-green">{clientName}</h1>
+      <section className="bg-sage/10 text-center py-8">
+        <h1 className="text-xl font-semibold text-forest-green">Your AI journey with RootedAI</h1>
+        <p className="text-sm text-slate-gray mt-1">On track • Week 3 of Ability Building</p>
+      </section>
+
+      <main className="flex-1 container mx-auto px-4 py-10 space-y-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {/* Announcements */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-forest-green">Announcements</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1">
+              {announcements.length ? (
+                announcements.map(a => (
+                  <AnnouncementCard key={a.id} title={a.title} date={a.date} status={a.status} />
+                ))
+              ) : (
+                <EmptyState message="No announcements yet." />
+              )}
+            </CardContent>
+            <div className="px-6 pb-4">
+              <Button variant="outline" className="w-full text-forest-green">View all</Button>
             </div>
-            <p className="text-slate-gray dark:text-slate-400">
-              Welcome to your company portal. Manage your team and access company resources.
-            </p>
-          </div>
+          </Card>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Company Overview */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-forest-green flex items-center gap-2">
-                  <Building className="h-5 w-5" />
-                  Company Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-slate-gray dark:text-slate-400">Company Name:</span>
-                    <span className="text-sm font-medium">{clientName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-slate-gray dark:text-slate-400">Team Members:</span>
-                    <span className="text-sm font-medium">{companyUsers.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-slate-gray dark:text-slate-400">Your Role:</span>
-                    <span className="text-sm font-medium">{userRole}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Training & Resources */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-forest-green">Training & Resources</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 space-y-3">
+              {resources.length ? (
+                resources.map(r => (
+                  <ResourceCard key={r.id} title={r.title} type={r.type} href={r.href} />
+                ))
+              ) : (
+                <EmptyState message="Your first training pack arrives after kickoff." />
+              )}
+            </CardContent>
+            <div className="px-6 pb-4">
+              <Button variant="outline" className="w-full text-forest-green">Start training</Button>
+            </div>
+          </Card>
 
-            {/* Team Members */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-forest-green flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Team Members
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-48 overflow-y-auto">
-                  {companyUsers.map((member) => (
-                    <div key={member.id} className="flex justify-between items-center">
-                      <div>
-                        <p className="text-sm font-medium">{member.email}</p>
-                        <p className="text-xs text-slate-gray dark:text-slate-400">{member.role}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Agent Insights */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-forest-green">Agent Insights</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 space-y-3">
+              {insights.length ? (
+                insights.map(i => (
+                  <InsightCard key={i.id} summary={i.summary} timestamp={i.timestamp} />
+                ))
+              ) : (
+                <EmptyState message="Agent summaries appear once your agent is live." />
+              )}
+            </CardContent>
+            <div className="px-6 pb-4">
+              <Button variant="outline" className="w-full text-forest-green">View details</Button>
+            </div>
+          </Card>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-forest-green flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Link 
-                    to="/profile" 
-                    className="block p-3 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span className="text-sm font-medium">Manage Profile</span>
-                    </div>
-                  </Link>
-                  <div className="p-3 rounded-md bg-slate-100 dark:bg-slate-800">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span className="text-sm font-medium">Company Documents</span>
-                    </div>
-                    <p className="text-xs text-slate-gray dark:text-slate-400 mt-1">Coming soon</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Company Resources Section */}
-          <div className="mt-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-forest-green flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Company Resources
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-gray dark:text-white mb-2">
-                    Company-Specific Content
-                  </h3>
-                  <p className="text-slate-gray dark:text-slate-400 mb-4">
-                    This section will contain resources and content specific to {clientName}.
-                  </p>
-                  <p className="text-sm text-slate-gray dark:text-slate-400">
-                    Content management features coming soon...
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Adoption Coaching */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-forest-green">Adoption Coaching</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 flex items-center">
+              <CoachingCard nextSession={nextSession} />
+            </CardContent>
+          </Card>
         </div>
-      </div>
+
+        {/* Secondary Row */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-forest-green">Reports & KPIs</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <KPITile label="Hours saved" value="0h" />
+              <KPITile label="Completion" value="0%" />
+            </CardContent>
+          </Card>
+
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-forest-green">FAQ</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <EmptyState message="Short answers coming soon." />
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+
+      <footer className="bg-slate-gray text-cream text-center py-6 mt-10">
+        <p>Local Kansas City Experts • Microsoft-built solutions</p>
+        <div className="mt-2 flex justify-center gap-4">
+          <a href="mailto:support@rootedai.com" className="underline">Email Support</a>
+          <a href="#" className="underline">Schedule Discovery</a>
+        </div>
+      </footer>
     </div>
   );
 };
