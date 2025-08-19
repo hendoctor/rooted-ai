@@ -269,7 +269,10 @@ const Team = () => {
         {/* Team Members */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
           {teamMembers.map((member, index) => (
-            <Card key={index} className="border-sage/30 hover:border-forest-green/50 transition-all duration-300 hover:shadow-xl overflow-hidden">
+            <Card
+              key={index}
+              className="card-energy border-sage/30 hover:border-forest-green/50 hover:shadow-xl overflow-hidden"
+            >
               <div className="p-8">
                 {/* Profile Section */}
                 <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6 mb-6">
