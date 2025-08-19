@@ -120,8 +120,8 @@ const About = () => {
             <h3 className="text-2xl sm:text-3xl font-bold text-forest-green text-center mb-8">
               Who We Serve
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
+            <div className="flex flex-col md:flex-row gap-8">
+              <div className="flex-1 text-left">
                 <h4 className="text-xl font-semibold text-earth-brown mb-4">Perfect Fit Businesses:</h4>
                 <ul className="space-y-3 text-slate-gray">
                   <li className="flex items-start space-x-2">
@@ -146,7 +146,7 @@ const About = () => {
                   </li>
                 </ul>
               </div>
-              <div>
+              <div className="flex-1 text-left">
                 <h4 className="text-xl font-semibold text-earth-brown mb-4">Business Characteristics:</h4>
                 <ul className="space-y-3 text-slate-gray">
                   <li className="flex items-start space-x-2">
