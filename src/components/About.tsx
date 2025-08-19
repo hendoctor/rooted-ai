@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { AnimatedSection } from '@/hooks/useScrollAnimation';
+import { CountUp } from '@/components/ui/count-up';
 
 const About = () => {
   const values = [
@@ -55,15 +56,27 @@ const About = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div className="interactive-scale">
-                  <div className="text-3xl font-bold text-earth-brown mb-2 animate-pulse-scale">5+</div>
+                  <div className="text-3xl font-bold text-earth-brown mb-2 animate-pulse-scale">
+                    <CountUp end={5} suffix="+" />
+                  </div>
                   <div className="text-slate-gray">Plug-&-Play AI Solutions</div>
                 </div>
                 <div className="interactive-scale">
-                  <div className="text-3xl font-bold text-earth-brown mb-2 animate-pulse-scale" style={{animationDelay: '0.2s'}}>25+</div>
+                  <div
+                    className="text-3xl font-bold text-earth-brown mb-2 animate-pulse-scale"
+                    style={{ animationDelay: '0.2s' }}
+                  >
+                    <CountUp end={25} suffix="+" />
+                  </div>
                   <div className="text-slate-gray">Years Experience</div>
                 </div>
                 <div className="interactive-scale">
-                  <div className="text-3xl font-bold text-earth-brown mb-2 animate-pulse-scale" style={{animationDelay: '0.4s'}}>1 hr</div>
+                  <div
+                    className="text-3xl font-bold text-earth-brown mb-2 animate-pulse-scale"
+                    style={{ animationDelay: '0.4s' }}
+                  >
+                    <CountUp end={1} suffix=" hr" />
+                  </div>
                   <div className="text-slate-gray">Average Response Time</div>
                 </div>
               </div>

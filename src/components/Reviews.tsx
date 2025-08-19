@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { CountUp } from '@/components/ui/count-up';
 
 const Reviews = () => {
   const testimonials = [
@@ -14,17 +15,20 @@ const Reviews = () => {
   ];
   const stats = [
     {
-      number: "100%",
-      label: "Ready to Deliver"
+      end: 100,
+      suffix: '%',
+      label: 'Ready to Deliver',
     },
     {
-      number: "200+",
-      label: "Hours Saved Weekly"
+      end: 200,
+      suffix: '+',
+      label: 'Hours Saved Weekly',
     },
     {
-      number: "40%",
-      label: "Average Productivity Increase"
-    }
+      end: 40,
+      suffix: '%',
+      label: 'Average Productivity Increase',
+    },
   ];
   const renderStars = (rating) => {
     return [...Array(5)].map((_, i) => (
@@ -107,9 +111,11 @@ const Reviews = () => {
           <div className="grid md:grid-cols-3 gap-8 text-center">
             {stats.map((stat, index) => (
               <div key={index} className="text-white">
-                <div className="text-4xl lg:text-5xl font-bold mb-2 text-sage">
-                  {stat.number}
-                </div>
+                <CountUp
+                  end={stat.end}
+                  suffix={stat.suffix}
+                  className="text-4xl lg:text-5xl font-bold mb-2 text-sage"
+                />
                 <div className="text-lg font-medium opacity-90">
                   {stat.label}
                 </div>
