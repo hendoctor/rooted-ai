@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Fetch user's accessible companies
-  const fetchUserCompanies = useCallback(async (): Promise<Company[]> => {
+  const fetchUserCompanies = useCallback(async (role?: string): Promise<Company[]> => {
     try {
       type RawCompany = {
         company_id: string;
@@ -77,22 +77,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         user_role: string;
         is_admin: boolean;
       };
-      const { data, error } = await supabase.rpc<RawCompany[]>(
-        'get_user_companies'
-      );
+      const { data, error } = await supabase.rpc<RawCompany[]>('get_user_companies');
+
+      if (!error && data) {
+        return data.map((company) => ({
+          id: company.company_id,
+          name: company.company_name,
+          slug: company.company_slug,
+          userRole: company.user_role,
+          isAdmin: company.is_admin
+        }));
+      }
+
+      // Fallback for admin users to ensure access to all companies
+      if (role === 'Admin') {
+        type BasicCompany = { id: string; name: string; slug: string };
+        const { data: allCompanies, error: allError } = await supabase
+          .from<BasicCompany>('companies')
+          .select('id, name, slug');
+
+        if (allError) {
+          console.warn('Failed to fetch all companies for admin:', allError);
+          return [];
+        }
+
+        return (allCompanies || []).map((company) => ({
+          id: company.id,
+          name: company.name,
+          slug: company.slug,
+          userRole: 'Admin',
+          isAdmin: true
+        }));
+      }
 
       if (error) {
         console.warn('Failed to fetch user companies:', error);
-        return [];
       }
 
-      return (data || []).map((company) => ({
-        id: company.company_id,
-        name: company.company_name,
-        slug: company.company_slug,
-        userRole: company.user_role,
-        isAdmin: company.is_admin
-      }));
+      return [];
     } catch (error) {
       console.warn('Error fetching user companies:', error);
       return [];
@@ -148,11 +170,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       setLoading(true);
-      
-      const [roleResult, companiesResult] = await Promise.all([
-        fetchUserRole(user.id),
-        fetchUserCompanies()
-      ]);
+
+      const roleResult = await fetchUserRole(user.id);
+      const companiesResult = await fetchUserCompanies(roleResult);
 
       setUserRole(roleResult);
       setCompanies(companiesResult);
@@ -186,10 +206,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (shouldFetchData) {
           console.log('👤 User signed in, fetching additional data...');
 
-          const dataPromise = Promise.all([
-            fetchUserRole(newSession.user.id),
-            fetchUserCompanies()
-          ]);
+          const dataPromise = (async () => {
+            const roleResult = await fetchUserRole(newSession.user.id);
+            const companiesResult = await fetchUserCompanies(roleResult);
+            return [roleResult, companiesResult] as [string | null, Company[]];
+          })();
 
           const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('User data fetch timeout')), 15000)
