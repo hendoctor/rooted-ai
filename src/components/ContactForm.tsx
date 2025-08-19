@@ -126,79 +126,80 @@ const ContactForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 flex flex-col h-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleSubmit} className="flex flex-col h-full">
+      <div className="flex flex-col flex-1 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              Name *
+            </label>
+            <Input
+              id="name"
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              required
+              className="w-full"
+              maxLength={100}
+            />
+          </div>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email *
+            </label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              required
+              className="w-full"
+              maxLength={254}
+            />
+          </div>
+        </div>
+
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Name *
+          <label htmlFor="service_type" className="block text-sm font-medium text-gray-700 mb-2">
+            Service Interest
           </label>
-          <Input
-            id="name"
-            type="text"
-            value={formData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            required
-            className="w-full"
-            maxLength={100}
-          />
+          <Select value={formData.service_type} onValueChange={(value) => handleInputChange('service_type', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a service (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ai-consultation">AI Consultation</SelectItem>
+              <SelectItem value="automation">Process Automation</SelectItem>
+              <SelectItem value="analytics">Data Analytics</SelectItem>
+              <SelectItem value="training">AI Training</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-            Email *
+
+        <div className="flex-1 flex flex-col">
+          <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+            Message *
           </label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleInputChange('email', e.target.value)}
+          <Textarea
+            id="message"
+            value={formData.message}
+            onChange={(e) => handleInputChange('message', e.target.value)}
             required
-            className="w-full"
-            maxLength={254}
+            className="w-full flex-1 min-h-[150px] resize-none"
+            placeholder="Tell us about your project or how we can help..."
+            maxLength={5000}
           />
+          <div className="text-sm text-gray-500 mt-1">
+            {formData.message.length}/5000 characters
+          </div>
         </div>
       </div>
-      
-      <div>
-        <label htmlFor="service_type" className="block text-sm font-medium text-gray-700 mb-2">
-          Service Interest
-        </label>
-        <Select value={formData.service_type} onValueChange={(value) => handleInputChange('service_type', value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select a service (optional)" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ai-consultation">AI Consultation</SelectItem>
-            <SelectItem value="automation">Process Automation</SelectItem>
-            <SelectItem value="analytics">Data Analytics</SelectItem>
-            <SelectItem value="training">AI Training</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div>
-        <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-          Message *
-        </label>
-        <Textarea
-          id="message"
-          value={formData.message}
-          onChange={(e) => handleInputChange('message', e.target.value)}
-          required
-          rows={8}
-          className="w-full min-h-[150px] resize-y"
-          placeholder="Tell us about your project or how we can help..."
-          maxLength={5000}
-        />
-        <div className="text-sm text-gray-500 mt-1">
-          {formData.message.length}/5000 characters
-        </div>
-      </div>
-      
+
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-forest-green hover:bg-forest-green/90 mt-auto"
+        className="w-full bg-forest-green hover:bg-forest-green/90 mt-6"
       >
         {isSubmitting ? 'Sending...' : 'Send Message'}
       </Button>
