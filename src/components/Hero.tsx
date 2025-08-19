@@ -2,7 +2,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import heroPlantLight from '@/assets/hero-plants-light.jpg';
-import heroPlantDark from '@/assets/hero-plants-dark.jpg';
 
 const Hero = () => {
   return (
@@ -13,12 +12,6 @@ const Hero = () => {
         className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-300"
         style={{
           backgroundImage: `url(${heroPlantLight})`,
-        }}
-      />
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-0 dark:opacity-100 transition-all duration-300"
-        style={{
-          backgroundImage: `url(${heroPlantDark})`,
         }}
       />
       
