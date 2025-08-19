@@ -120,10 +120,10 @@ const About = () => {
             <h3 className="text-2xl sm:text-3xl font-bold text-forest-green text-center mb-8">
               Who We Serve
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+              <div className="p-4">
                 <h4 className="text-xl font-semibold text-earth-brown mb-4">Perfect Fit Businesses:</h4>
-                <ul className="space-y-3 text-slate-gray">
+                <ul className="space-y-3 text-slate-gray text-left">
                   <li className="flex items-start space-x-2">
                     <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
                     <span>Professional services (law, accounting, consulting)</span>
@@ -146,9 +146,9 @@ const About = () => {
                   </li>
                 </ul>
               </div>
-              <div>
+              <div className="p-4">
                 <h4 className="text-xl font-semibold text-earth-brown mb-4">Business Characteristics:</h4>
-                <ul className="space-y-3 text-slate-gray">
+                <ul className="space-y-3 text-slate-gray text-left">
                   <li className="flex items-start space-x-2">
                     <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
                     <span>10-250 employees</span>
