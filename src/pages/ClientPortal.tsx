@@ -16,21 +16,17 @@ interface CompanyUser {
 
 const ClientPortal = () => {
   const { companySlug } = useParams<{ companySlug: string }>();
-  const { user, companies, loading: authLoading } = useAuth();
-  const clientName = companies.find(c => c.slug === companySlug)?.name;
+  const { user, userRole, companies, loading: authLoading } = useAuth();
+  const [clientName, setClientName] = useState('');
   const [companyUsers, setCompanyUsers] = useState<CompanyUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
 
-  const getCompanySlug = (name: string) => {
-    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
-  };
-
   useEffect(() => {
-  const checkAccessAndFetchData = async () => {
+    const checkAccessAndFetchData = async () => {
       if (authLoading || !user) return;
 
-      // Get current user's role
+      // Get current user's role and client name
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('role, client_name')
@@ -44,27 +40,27 @@ const ClientPortal = () => {
         return;
       }
 
-      const userRole = userData.role;
+      const currentRole = userData.role;
       const userClientName = userData.client_name;
 
-      // Admin has access to all company portals
-      if (userRole === 'Admin') {
-        // Find company by slug for admin access
-        const targetCompany = companies.find(c => c.slug === companySlug);
-        if (!targetCompany) {
-          console.error('Company not found for slug:', companySlug);
-          setHasAccess(false);
-          setLoading(false);
-          return;
-        }
+      if (currentRole === 'Admin') {
         setHasAccess(true);
-        
-        // Fetch all users for this company (admin can see all)
         try {
+          // Fetch company name by slug
+          const { data: companyData, error: companyError } = await supabase
+            .from('companies')
+            .select('name')
+            .eq('slug', companySlug)
+            .single();
+
+          const name = !companyError && companyData ? companyData.name : companySlug || '';
+          setClientName(name);
+
+          // Fetch all users for this company
           const { data, error } = await supabase
             .from('users')
             .select('id, email, role, created_at, client_name, display_name')
-            .eq('client_name', targetCompany.name);
+            .eq('client_name', name);
 
           if (!error && data) {
             setCompanyUsers(data);
@@ -72,11 +68,11 @@ const ClientPortal = () => {
             console.error('Error fetching company users for admin:', error);
           }
         } catch (error) {
-          console.error('Error fetching company users:', error);
+          console.error('Error fetching company data:', error);
         }
-      } else if (userRole === 'Client') {
+      } else if (currentRole === 'Client') {
         // Client can only access their own company portal
-        const userCompany = companies.find(c => 
+        const userCompany = companies.find(c =>
           c.slug === companySlug && c.name === userClientName
         );
         
@@ -88,6 +84,7 @@ const ClientPortal = () => {
         }
 
         setHasAccess(true);
+        setClientName(userClientName);
 
         // Fetch users from the same company (client can only see their company)
         try {
@@ -113,7 +110,7 @@ const ClientPortal = () => {
     };
 
     checkAccessAndFetchData();
-  }, [user, companies, companySlug, authLoading]);
+  }, [user, userRole, companies, companySlug, authLoading]);
 
   if (authLoading || loading) {
     return (

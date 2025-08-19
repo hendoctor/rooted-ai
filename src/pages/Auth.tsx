@@ -52,23 +52,31 @@ const Auth = () => {
         
         // Only redirect after successful login and a short delay to allow main auth system to catch up
         if (event === 'SIGNED_IN' && session?.user && type !== 'recovery') {
-          // Check if user has a company and route accordingly
+          // Check role and redirect accordingly
           setTimeout(async () => {
             try {
-              // Use RPC to fetch companies to avoid missing FK relationships
-              const { data: userCompanies, error } = await supabase.rpc('get_user_companies');
+              const [roleResult, companiesResult] = await Promise.all([
+                supabase.rpc('get_user_role_by_auth_id', { auth_user_id: session.user.id }),
+                supabase.rpc('get_user_companies')
+              ]);
 
-              if (error) {
-                console.error('Error checking user companies:', error);
-              } else if (userCompanies && userCompanies.length > 0) {
-                const companySlug = (userCompanies[0] as any)?.company_slug;
+              const userRole = (roleResult.data as any)?.role || 'Client';
+
+              if (userRole === 'Admin') {
+                navigate('/admin');
+                return;
+              }
+
+              const userCompanies = companiesResult.data as any[] | null;
+              if (userCompanies && userCompanies.length > 0) {
+                const companySlug = userCompanies[0]?.company_slug;
                 if (companySlug) {
                   navigate(`/company/${companySlug}`);
                   return;
                 }
               }
             } catch (error) {
-              console.error('Error checking user companies:', error);
+              console.error('Error checking user role or companies:', error);
             }
             navigate('/');
           }, 1000);
