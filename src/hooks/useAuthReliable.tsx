@@ -91,12 +91,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const requireRole = useCallback((roles: string[], companyId?: string): boolean => {
     if (!userRole) return false;
 
-    // Admin always has access
+    // Admin always has access to everything
     if (userRole === 'Admin') return true;
 
     // Check global role
     if (roles.includes(userRole)) {
-      // If company-specific check needed
+      // If company-specific check needed, verify user has access to that company
       if (companyId) {
         return companies.some(c => 
           c.id === companyId && roles.includes(c.userRole)

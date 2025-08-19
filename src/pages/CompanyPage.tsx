@@ -29,9 +29,10 @@ interface Company {
 
 export default function CompanyPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { user, loading: authLoading } = useAuth();
+  const { user, userRole, companies, loading: authLoading } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -67,21 +68,35 @@ export default function CompanyPage() {
         settings: (company.settings as CompanySettings) || {}
       };
       
-      setCompany(companyData);
-      setFormData({
-        name: companyData.name || '',
-        description: companyData.settings.description || '',
-        website: companyData.settings.website || '',
-        industry: companyData.settings.industry || '',
-        phone: companyData.settings.phone || '',
-        address: companyData.settings.address || ''
-      });
+      // Check access permissions
+      const canAccess = checkCompanyAccess(companyData.id);
+      setHasAccess(canAccess);
+      
+      if (canAccess) {
+        setCompany(companyData);
+        setFormData({
+          name: companyData.name || '',
+          description: companyData.settings.description || '',
+          website: companyData.settings.website || '',
+          industry: companyData.settings.industry || '',
+          phone: companyData.settings.phone || '',
+          address: companyData.settings.address || ''
+        });
+      }
     } catch (error) {
       console.error('Error fetching company:', error);
       toast.error('Failed to load company details');
     } finally {
       setLoading(false);
     }
+  };
+
+  const checkCompanyAccess = (companyId: string): boolean => {
+    // Admin has access to all companies
+    if (userRole === 'Admin') return true;
+    
+    // Check if user is a member of this company
+    return companies.some(c => c.id === companyId);
   };
 
   const handleSave = async () => {
@@ -120,6 +135,10 @@ export default function CompanyPage() {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (!hasAccess) {
+    return <Navigate to="/access-denied" replace />;
   }
 
   if (!company) {
