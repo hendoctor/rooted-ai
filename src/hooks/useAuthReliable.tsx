@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AuthGuard, AuthCache } from '@/utils/authGuard';
 import type { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+import { clearAllCaches } from '@/lib/cacheClient';
 
 interface Company {
   id: string;
@@ -44,12 +45,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const initializingRef = useRef(false);
   const currentUserIdRef = useRef<string | null>(null);
+  const prevRole = useRef<string | null>(null);
   const { toast } = useToast();
 
   // Fetch user role from database
   const fetchUserRole = useCallback(async (userId: string): Promise<string | null> => {
     try {
-      const { data, error } = await supabase.rpc('get_user_role_by_auth_id', {
+      const { data, error } = await supabase.rpc<{ role: string | null }>('get_user_role_by_auth_id', {
         auth_user_id: userId
       });
 
@@ -58,7 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return 'Client'; // Default fallback
       }
 
-      return (data as any)?.role || 'Client';
+      return data?.role || 'Client';
     } catch (error) {
       console.warn('Error fetching user role:', error);
       return 'Client';
@@ -68,14 +70,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch user's accessible companies
   const fetchUserCompanies = useCallback(async (): Promise<Company[]> => {
     try {
-      const { data, error } = await supabase.rpc('get_user_companies');
+      type RawCompany = {
+        company_id: string;
+        company_name: string;
+        company_slug: string;
+        user_role: string;
+        is_admin: boolean;
+      };
+      const { data, error } = await supabase.rpc<RawCompany[]>(
+        'get_user_companies'
+      );
 
       if (error) {
         console.warn('Failed to fetch user companies:', error);
         return [];
       }
 
-      return (data || []).map((company: any) => ({
+      return (data || []).map((company) => ({
         id: company.company_id,
         name: company.company_name,
         slug: company.company_slug,
@@ -226,6 +237,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       await AuthGuard.signOut();
+      clearAllCaches();
     } catch (error) {
       console.error('Sign out failed:', error);
       toast({
@@ -240,6 +252,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const clearError = useCallback(() => {
     setError(null);
   }, []);
+
+  // Clear caches when role changes
+  useEffect(() => {
+    if (prevRole.current && prevRole.current !== userRole) {
+      clearAllCaches();
+    }
+    prevRole.current = userRole;
+  }, [userRole]);
 
   // Initialize auth state with timeout protection
   useEffect(() => {
