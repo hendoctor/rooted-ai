@@ -54,7 +54,7 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
         <DropdownMenuSeparator />
         {userRole === 'Client' && (
           <>
-            {/* Rule 2: Clients see only company portal and profile in dropdown */}
+            {/* Clients see only their company portal and profile */}
             {companies && companies.length > 0 && (
               <DropdownMenuItem asChild>
                 <Link to={`/company/${companies[0].slug}`} className="cursor-pointer">
@@ -72,7 +72,24 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
             <DropdownMenuSeparator />
           </>
         )}
-        {/* Rule 3: Admins never see client portals, no profile/company links in dropdown */}
+        {userRole === 'Admin' && (
+          <>
+            {/* Admins see Rooted AI company portal and their profile */}
+            <DropdownMenuItem asChild>
+              <Link to="/company/rooted-ai" className="cursor-pointer">
+                <Building className="mr-2 h-4 w-4" />
+                <span>Rooted AI Portal</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/profile" className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem onClick={onSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sign out</span>
