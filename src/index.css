@@ -332,3 +332,9 @@
   @apply w-32 h-32;
   animation: splashIn 1.5s ease-in-out forwards;
 }
+
+@media (min-width: 768px) {
+  #splash-screen {
+    display: none;
+  }
+}

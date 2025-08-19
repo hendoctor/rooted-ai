@@ -18,6 +18,11 @@ root.render(
 
 const splash = document.getElementById('splash-screen');
 if (splash) {
-  // Allow the splash animation to play before removing
-  setTimeout(() => splash.remove(), 1500);
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  if (isMobile) {
+    // Allow the splash animation to play before removing
+    setTimeout(() => splash.remove(), 1500);
+  } else {
+    splash.remove();
+  }
 }
