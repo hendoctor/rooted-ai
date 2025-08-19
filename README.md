@@ -12,9 +12,8 @@ RootedAI is the friendly AI consultancy helping Kansas City’s small businesses
 ## 🌐 Live Site & Deployment
 Our production site lives at [rootedai.tech](https://rootedai.tech).
 
-1. Push to the `main` branch
-2. Loveable.dev builds and deploys your changes
-3. Cloudflare keeps everything fast and secure
+- All changes must have a Pull Request to merge with `main` branch
+- Cloudflare keeps everything fast and secure
 
 ## 🔧 Our Tech Grove
 - **Frontend**: React 18 + TypeScript
