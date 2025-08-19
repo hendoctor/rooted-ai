@@ -17,6 +17,8 @@ import ClientPortal from "./pages/ClientPortal";
 import CompanyPage from "./pages/CompanyPage";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
+import RBACDemo from "./pages/RBACDemo";
+import RBACGuard from "@/components/RBACGuard";
 
 const AppContent = () => {
   return (
@@ -61,6 +63,16 @@ const AppContent = () => {
         element={
           <FastAuthGuard requiredRoles={["Admin", "Client"]}>
             <CompanyPage />
+          </FastAuthGuard>
+        }
+      />
+      <Route
+        path="/rbac-demo"
+        element={
+          <FastAuthGuard requiredRoles={["Admin", "Client"]}>
+            <RBACGuard page="rbac-demo">
+              <RBACDemo />
+            </RBACGuard>
           </FastAuthGuard>
         }
       />
