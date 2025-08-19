@@ -85,18 +85,21 @@ const About = () => {
         </AnimatedSection>
 
         {/* Core Values */}
-        <AnimatedSection animation="animate-slide-up" delay={200}>
-          <div className="mb-16">
+        <div className="mb-16">
+          <AnimatedSection animation="animate-slide-up" delay={200}>
             <h3 className="text-2xl sm:text-3xl font-bold text-forest-green text-center mb-12">
               Our Core Values
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {values.map((value, index) => (
-                <AnimatedSection 
-                  key={index} 
-                  animation="animate-elastic-in" 
-                  delay={300 + index * 100}
-                >
+          </AnimatedSection>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {values.map((value, index) => {
+              const isLeft = index < 2;
+              const animation = isLeft ? 'animate-slide-right' : 'animate-slide-left';
+              const delay = isLeft
+                ? index * 100
+                : 200 + (values.length - index - 1) * 100;
+              return (
+                <AnimatedSection key={index} animation={animation} delay={delay}>
                   <Card className="card-energy border-sage/30 hover:border-forest-green/50 text-center group h-full">
                     <CardContent className="p-6">
                       <div className="text-4xl mb-4 interactive-scale">{value.icon}</div>
@@ -109,10 +112,10 @@ const About = () => {
                     </CardContent>
                   </Card>
                 </AnimatedSection>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        </AnimatedSection>
+        </div>
 
         {/* Target Market */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 sm:p-12 shadow-lg">
