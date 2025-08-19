@@ -142,11 +142,11 @@ const Contact = () => {
                      required
                      className="border-sage/50 focus:border-forest-green"
                    />
-                   <Button 
-                     type="submit"
-                     disabled={newsletterLoading}
-                     className="bg-sage hover:bg-sage/80 text-slate-gray disabled:opacity-50"
-                   >
+                  <Button
+                    type="submit"
+                    disabled={newsletterLoading}
+                    className="bg-forest-green hover:bg-forest-green/90"
+                  >
                      {newsletterLoading ? 'Subscribing...' : 'Subscribe'}
                    </Button>
                  </form>
