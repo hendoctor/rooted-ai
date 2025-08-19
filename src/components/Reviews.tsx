@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import CountUp from '@/components/CountUp';
 
 const Reviews = () => {
   const testimonials = [
@@ -108,7 +109,7 @@ const Reviews = () => {
             {stats.map((stat, index) => (
               <div key={index} className="text-white">
                 <div className="text-4xl lg:text-5xl font-bold mb-2 text-sage">
-                  {stat.number}
+                  <CountUp value={stat.number} />
                 </div>
                 <div className="text-lg font-medium opacity-90">
                   {stat.label}
