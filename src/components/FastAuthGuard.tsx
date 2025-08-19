@@ -29,12 +29,19 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (loading && !shouldRender) {
-        console.warn('⚠️ FastAuthGuard timeout after 12 seconds');
+        console.warn('⚠️ FastAuthGuard timeout after 30 seconds');
         setTimeoutReached(true);
       }
-    }, 12000);
+    }, 30000);
 
     return () => clearTimeout(timeoutId);
+  }, [loading, shouldRender]);
+
+  // Reset timeout flag once loading completes
+  useEffect(() => {
+    if (!loading && shouldRender) {
+      setTimeoutReached(false);
+    }
   }, [loading, shouldRender]);
 
   useEffect(() => {
