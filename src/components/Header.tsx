@@ -78,14 +78,14 @@ const Header = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
+            <a href="#home" className="flex items-center space-x-2">
               <img
                 src="/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png"
                 alt="RootedAI Logo"
                 className="w-8 h-8"
               />
               <span className="text-xl lg:text-2xl font-bold text-forest-green">RootedAI</span>
-            </Link>
+            </a>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">

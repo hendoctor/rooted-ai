@@ -19,8 +19,7 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  // Public routes should render immediately
-  const [shouldRender, setShouldRender] = useState(requiredRoles.length === 0);
+  const [shouldRender, setShouldRender] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
 
   // Destructure with safety checks
@@ -54,32 +53,14 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
       requiredRoles 
     });
 
-    if (!auth) return;
-
-    // For public routes, render immediately and handle redirects when auth is ready
-    if (requiredRoles.length === 0) {
-      if (!loading) {
-        const authState = { user, session, loading };
-        const searchParams = new URLSearchParams(location.search);
-        const redirectUrl = AuthGuard.getRedirectUrl(authState, location.pathname, searchParams);
-        if (redirectUrl) {
-          console.log('↪️ FastAuthGuard redirecting:', location.pathname, '→', redirectUrl);
-          navigate(redirectUrl, { replace: true });
-          return;
-        }
-      }
-      setShouldRender(true);
-      return;
-    }
-
-    if (loading) return;
+    if (loading || !auth) return;
 
     const authState = { user, session, loading };
     const searchParams = new URLSearchParams(location.search);
-
+    
     // Fast redirect check
     const redirectUrl = AuthGuard.getRedirectUrl(authState, location.pathname, searchParams);
-
+    
     if (redirectUrl) {
       console.log('↪️ FastAuthGuard redirecting:', location.pathname, '→', redirectUrl);
       navigate(redirectUrl, { replace: true });
@@ -89,7 +70,7 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
     // Instant role check using cached permissions
     if (user && requiredRoles.length > 0) {
       const hasAccess = requireRole?.(requiredRoles, companyId);
-
+      
       if (!hasAccess) {
         console.log('🚫 FastAuthGuard: Access denied for roles:', requiredRoles);
         navigate('/access-denied', { replace: true });
@@ -121,7 +102,7 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
   }
 
   // Zero-flicker loading state with error boundary
-  if (requiredRoles.length > 0 && (!auth || loading || !shouldRender)) {
+  if (!auth || loading || !shouldRender) {
     return (
       <div className="min-h-screen bg-background">
         {/* Minimal spinner to prevent layout shift */}
