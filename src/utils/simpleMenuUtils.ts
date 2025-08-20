@@ -41,12 +41,12 @@ export class SimpleMenuManager {
     if (!userRole) {
       return this.getPublicMenuItems();
     }
-    
+
     if (userRole === 'Admin') {
       return this.getAdminMenuItems(currentPath);
     }
-    
+
     // Client role
-    return this.getClientMenuItems();
+    return currentPath === '/' ? this.getPublicMenuItems() : this.getClientMenuItems();
   }
 }
