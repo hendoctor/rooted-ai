@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Building, LogOut } from 'lucide-react';
+import { User, Building, LogOut, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface ProfileMenuProps {
@@ -54,12 +54,17 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
         <DropdownMenuSeparator />
         {userRole === 'Client' && (
           <>
-            {/* Clients see only their company portal and profile */}
+            <DropdownMenuItem asChild>
+              <Link to="/client-portal" className="cursor-pointer">
+                <Building className="mr-2 h-4 w-4" />
+                <span>Client Portal</span>
+              </Link>
+            </DropdownMenuItem>
             {companies && companies.length > 0 && (
               <DropdownMenuItem asChild>
                 <Link to={`/${companies[0].slug}`} className="cursor-pointer">
-                  <Building className="mr-2 h-4 w-4" />
-                  <span>Company Portal</span>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Company Settings</span>
                 </Link>
               </DropdownMenuItem>
             )}

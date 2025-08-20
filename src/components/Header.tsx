@@ -209,15 +209,26 @@ const Header = () => {
                       </span>
                     </div>
                      {userRole === 'Client' && (
-                       <Link to="/profile">
-                         <Button 
-                           variant="outline" 
-                           className="w-full border-sage hover:bg-sage/20 mb-2"
-                           onClick={() => setIsMobileMenuOpen(false)}
-                         >
-                           Profile
-                         </Button>
-                       </Link>
+                       <>
+                         <Link to="/client-portal">
+                           <Button 
+                             variant="outline" 
+                             className="w-full border-sage hover:bg-sage/20 mb-2"
+                             onClick={() => setIsMobileMenuOpen(false)}
+                           >
+                             Client Portal
+                           </Button>
+                         </Link>
+                         <Link to="/profile">
+                           <Button 
+                             variant="outline" 
+                             className="w-full border-sage hover:bg-sage/20 mb-2"
+                             onClick={() => setIsMobileMenuOpen(false)}
+                           >
+                             Profile
+                           </Button>
+                         </Link>
+                       </>
                      )}
                     <Button
                       onClick={() => {
