@@ -17,7 +17,7 @@ class CacheClient {
     if (strategy === 'cache-first') {
       if (entry && !isExpired) {
         console.info(`[cache] hit ${key}`);
-        return entry.data;
+        return entry.data as T;
       }
       return this.networkFetch<T>(key, url, options, ttl);
     }
@@ -28,7 +28,7 @@ class CacheClient {
       } catch (err) {
         if (entry && !isExpired) {
           console.warn(`[cache] network error, using cache for ${key}`);
-          return entry.data;
+          return entry.data as T;
         }
         throw err;
       }
@@ -40,7 +40,7 @@ class CacheClient {
         /* background refresh failure */
       });
       console.info(`[cache] stale hit ${key}`);
-      return entry.data;
+      return entry.data as T;
     }
 
     return this.networkFetch<T>(key, url, options, ttl);
@@ -56,7 +56,7 @@ class CacheClient {
       console.info(`[cache] revalidated ${key}`);
       entry.expiry = Date.now() + ttl;
       this.store.set(key, entry);
-      return entry.data;
+      return entry.data as T;
     }
     if (!res.ok) throw new Error(res.statusText);
 

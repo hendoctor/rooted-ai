@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch user role from database
   const fetchUserRole = useCallback(async (userId: string): Promise<string | null> => {
     try {
-      const { data, error } = await supabase.rpc<{ role: string | null }>('get_user_role_by_auth_id', {
+      const { data, error } = await supabase.rpc('get_user_role_by_auth_id', {
         auth_user_id: userId
       });
 
@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return 'Client'; // Default fallback
       }
 
-      return data?.role || 'Client';
+      return (data as any)?.role || 'Client';
     } catch (error) {
       console.warn('Error fetching user role:', error);
       return 'Client';
@@ -70,17 +70,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch user's accessible companies
   const fetchUserCompanies = useCallback(async (role?: string): Promise<Company[]> => {
     try {
-      type RawCompany = {
-        company_id: string;
-        company_name: string;
-        company_slug: string;
-        user_role: string;
-        is_admin: boolean;
-      };
-      const { data, error } = await supabase.rpc<RawCompany[]>('get_user_companies');
+      const { data, error } = await supabase.rpc('get_user_companies');
 
-      if (!error && data) {
-        return data.map((company) => ({
+      if (!error && data && Array.isArray(data)) {
+        return (data as any[]).map((company) => ({
           id: company.company_id,
           name: company.company_name,
           slug: company.company_slug,
@@ -91,9 +84,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Fallback for admin users to ensure access to all companies
       if (role === 'Admin') {
-        type BasicCompany = { id: string; name: string; slug: string };
         const { data: allCompanies, error: allError } = await supabase
-          .from<BasicCompany>('companies')
+          .from('companies')
           .select('id, name, slug');
 
         if (allError) {
@@ -101,13 +93,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return [];
         }
 
-        return (allCompanies || []).map((company) => ({
-          id: company.id,
-          name: company.name,
-          slug: company.slug,
-          userRole: 'Admin',
-          isAdmin: true
-        }));
+        if (allCompanies && Array.isArray(allCompanies)) {
+          return allCompanies.map((company) => ({
+            id: company.id,
+            name: company.name,
+            slug: company.slug,
+            userRole: 'Admin',
+            isAdmin: true
+          }));
+        }
       }
 
       if (error) {
