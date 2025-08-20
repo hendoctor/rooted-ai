@@ -14,8 +14,10 @@ interface SortableTableProps<T> {
   columns: Column<T>[];
 }
 
-function get(obj: any, path: string) {
-  return path.split('.').reduce((o, p) => (o ? o[p] : ''), '') ?? '';
+function get(obj: unknown, path: string) {
+  return path
+    .split('.')
+    .reduce<unknown>((o, p) => (typeof o === 'object' && o !== null ? (o as Record<string, unknown>)[p] : undefined), obj) ?? '';
 }
 
 export function SortableTable<T extends { id: string }>({ data, columns }: SortableTableProps<T>) {
