@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuthReliable';
 import { Link } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
-import TopNav from '@/components/client-portal/TopNav';
+import Header from '@/components/Header';
 import AnnouncementCard from '@/components/client-portal/AnnouncementCard';
 import ResourceCard from '@/components/client-portal/ResourceCard';
 import InsightCard from '@/components/client-portal/InsightCard';
@@ -14,7 +14,6 @@ import EmptyState from '@/components/client-portal/EmptyState';
 
 const ClientPortal: React.FC = () => {
   const { user, userRole, companies, loading } = useAuth();
-  const companyName = companies[0]?.name || 'Your Company';
   const companySlug = companies[0]?.slug;
 
   if (loading) {
@@ -34,14 +33,14 @@ const ClientPortal: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-warm-beige">
-      <TopNav company={companyName} />
+      <Header />
+      <div className="mt-16 flex-1 flex flex-col">
+        <section className="bg-sage/10 text-center py-8">
+          <h1 className="text-xl font-semibold text-forest-green">Your AI journey with RootedAI</h1>
+          <p className="text-sm text-slate-gray mt-1">On track • Week 3 of Ability Building</p>
+        </section>
 
-      <section className="bg-sage/10 text-center py-8">
-        <h1 className="text-xl font-semibold text-forest-green">Your AI journey with RootedAI</h1>
-        <p className="text-sm text-slate-gray mt-1">On track • Week 3 of Ability Building</p>
-      </section>
-
-      <main className="flex-1 container mx-auto px-4 py-10 space-y-8">
+        <main className="flex-1 container mx-auto px-4 py-10 space-y-8">
         {/* Company Settings Quick Access */}
         {companySlug && (
           <Card className="mb-6">
@@ -151,13 +150,14 @@ const ClientPortal: React.FC = () => {
         </div>
       </main>
 
-      <footer className="bg-slate-gray text-cream text-center py-6 mt-10">
-        <p>Local Kansas City Experts • Microsoft-built solutions</p>
-        <div className="mt-2 flex justify-center gap-4">
-          <a href="mailto:support@rootedai.com" className="underline">Email Support</a>
-          <a href="#" className="underline">Schedule Discovery</a>
-        </div>
-      </footer>
+        <footer className="bg-slate-gray text-cream text-center py-6 mt-10">
+          <p>Local Kansas City Experts • Microsoft-built solutions</p>
+          <div className="mt-2 flex justify-center gap-4">
+            <a href="mailto:support@rootedai.com" className="underline">Email Support</a>
+            <a href="#" className="underline">Schedule Discovery</a>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 };

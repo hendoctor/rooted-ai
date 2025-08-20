@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Building, LogOut, Settings } from 'lucide-react';
+import { User, Building, LogOut, Settings, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface ProfileMenuProps {
@@ -17,7 +17,7 @@ interface ProfileMenuProps {
 }
 
 const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
-  const { user, userRole, signOut, companies } = useAuth();
+  const { user, userRole, companies } = useAuth();
 
   if (!user) return null;
 
@@ -95,6 +95,13 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
             <DropdownMenuSeparator />
           </>
         )}
+        <DropdownMenuItem asChild>
+          <a href="mailto:support@rootedai.com" className="cursor-pointer">
+            <Mail className="mr-2 h-4 w-4" />
+            <span>Support</span>
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sign out</span>
