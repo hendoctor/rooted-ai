@@ -7,7 +7,7 @@ import ProfileMenu from './ProfileMenu';
 import { useAuth } from '@/hooks/useAuthReliable';
 import { SimpleMenuManager } from '@/utils/simpleMenuUtils';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
@@ -23,12 +23,20 @@ const Header = () => {
   
   const { user, userRole, signOut, companies } = useAuth();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
 
-  const companyName = userRole && companies && companies.length > 0
-    ? companies[0].name
-    : null;
+  let companyName: string | null = null;
+  if (userRole && companies && companies.length > 0) {
+    if (userRole === 'Admin') {
+      const companyParam = searchParams.get('company');
+      const matched = companies.find(c => c.slug === companyParam);
+      companyName = matched?.name || null;
+    } else {
+      companyName = companies[0].name;
+    }
+  }
 
   useEffect(() => {
     const handleScroll = () => {
