@@ -9,9 +9,22 @@ import Header from '@/components/Header';
 import AnnouncementCard from '@/components/client-portal/AnnouncementCard';
 import ResourceCard from '@/components/client-portal/ResourceCard';
 import InsightCard from '@/components/client-portal/InsightCard';
-import CoachingCard from '@/components/client-portal/CoachingCard';
 import KPITile from '@/components/client-portal/KPITile';
 import EmptyState from '@/components/client-portal/EmptyState';
+import {
+  AnnouncementForm,
+  ResourceForm,
+  InsightForm,
+  CoachingForm,
+  ReportForm,
+  FAQForm,
+  Announcement,
+  Resource,
+  Insight,
+  Coaching,
+  Report,
+  FAQ,
+} from '@/components/admin/WidgetForms';
 
 const ClientPortal: React.FC = () => {
   const { user, userRole, companies, loading } = useAuth();
@@ -21,6 +34,31 @@ const ClientPortal: React.FC = () => {
     ? companies.find(c => c.slug === companyParam)
     : companies[0];
   const companySlug = company?.slug;
+
+  const [announcements, setAnnouncements] = React.useState<Announcement[]>([]);
+  const [resources, setResources] = React.useState<Resource[]>([]);
+  const [insights, setInsights] = React.useState<Insight[]>([]);
+  const [coachings, setCoachings] = React.useState<Coaching[]>([]);
+  const [reports, setReports] = React.useState<Report[]>([]);
+  const [faqs, setFaqs] = React.useState<FAQ[]>([]);
+
+  const [announcementOpen, setAnnouncementOpen] = React.useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = React.useState<Announcement | undefined>(undefined);
+
+  const [resourceOpen, setResourceOpen] = React.useState(false);
+  const [editingResource, setEditingResource] = React.useState<Resource | undefined>(undefined);
+
+  const [insightOpen, setInsightOpen] = React.useState(false);
+  const [editingInsight, setEditingInsight] = React.useState<Insight | undefined>(undefined);
+
+  const [coachingOpen, setCoachingOpen] = React.useState(false);
+  const [editingCoaching, setEditingCoaching] = React.useState<Coaching | undefined>(undefined);
+
+  const [reportOpen, setReportOpen] = React.useState(false);
+  const [editingReport, setEditingReport] = React.useState<Report | undefined>(undefined);
+
+  const [faqOpen, setFaqOpen] = React.useState(false);
+  const [editingFaq, setEditingFaq] = React.useState<FAQ | undefined>(undefined);
 
   if (loading) {
     return (
@@ -36,10 +74,89 @@ const ClientPortal: React.FC = () => {
     return <AccessDenied />;
   }
 
-  const announcements: Array<{ id: number; title: string; date: string; status?: 'New' | 'Important'; }> = [];
-  const resources: Array<{ id: number; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string; }> = [];
-  const insights: Array<{ id: number; summary: string; timestamp: string; }> = [];
-  const nextSession: string | undefined = undefined;
+  const saveAnnouncement = (data: Announcement) => {
+    setAnnouncements(prev => {
+      if (data.id != null) {
+        return prev.map(a => (a.id === data.id ? data : a));
+      }
+      const id = prev.length ? Math.max(...prev.map(a => a.id || 0)) + 1 : 1;
+      return [...prev, { ...data, id, date: new Date().toLocaleDateString() }];
+    });
+  };
+
+  const deleteAnnouncement = (id: number) => {
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
+  };
+
+  const saveResource = (data: Resource) => {
+    setResources(prev => {
+      if (data.id != null) {
+        return prev.map(r => (r.id === data.id ? data : r));
+      }
+      const id = prev.length ? Math.max(...prev.map(r => r.id || 0)) + 1 : 1;
+      return [...prev, { ...data, id }];
+    });
+  };
+
+  const deleteResource = (id: number) => {
+    setResources(prev => prev.filter(r => r.id !== id));
+  };
+
+  const saveInsight = (data: Insight) => {
+    setInsights(prev => {
+      if (data.id != null) {
+        return prev.map(i => (i.id === data.id ? data : i));
+      }
+      const id = prev.length ? Math.max(...prev.map(i => i.id || 0)) + 1 : 1;
+      return [...prev, { ...data, id }];
+    });
+  };
+
+  const deleteInsight = (id: number) => {
+    setInsights(prev => prev.filter(i => i.id !== id));
+  };
+
+  const saveCoaching = (data: Coaching) => {
+    setCoachings(prev => {
+      if (data.id != null) {
+        return prev.map(c => (c.id === data.id ? data : c));
+      }
+      const id = prev.length ? Math.max(...prev.map(c => c.id || 0)) + 1 : 1;
+      return [...prev, { ...data, id }];
+    });
+  };
+
+  const deleteCoaching = (id: number) => {
+    setCoachings(prev => prev.filter(c => c.id !== id));
+  };
+
+  const saveReport = (data: Report) => {
+    setReports(prev => {
+      if (data.id != null) {
+        return prev.map(r => (r.id === data.id ? data : r));
+      }
+      const id = prev.length ? Math.max(...prev.map(r => r.id || 0)) + 1 : 1;
+      return [...prev, { ...data, id }];
+    });
+  };
+
+  const deleteReport = (id: number) => {
+    setReports(prev => prev.filter(r => r.id !== id));
+  };
+
+  const saveFaq = (data: FAQ) => {
+    setFaqs(prev => {
+      if (data.id != null) {
+        return prev.map(f => (f.id === data.id ? data : f));
+      }
+      const id = prev.length ? Math.max(...prev.map(f => f.id || 0)) + 1 : 1;
+      return [...prev, { ...data, id }];
+    });
+  };
+
+  const deleteFaq = (id: number) => {
+    setFaqs(prev => prev.filter(f => f.id !== id));
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-warm-beige">
@@ -74,23 +191,35 @@ const ClientPortal: React.FC = () => {
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">Announcements</CardTitle>
               {userRole === 'Admin' && (
-                <div className="flex space-x-2">
-                  <Button size="icon" variant="ghost" aria-label="Add announcement">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Edit announcement">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Delete announcement">
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Add announcement"
+                  onClick={() => {
+                    setEditingAnnouncement(undefined);
+                    setAnnouncementOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               )}
             </CardHeader>
             <CardContent className="flex-1">
               {announcements.length ? (
                 announcements.map(a => (
-                  <AnnouncementCard key={a.id} title={a.title} date={a.date} status={a.status} />
+                  <div key={a.id} className="relative group">
+                    <AnnouncementCard title={a.title} date={a.date || ''} />
+                    {userRole === 'Admin' && (
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex space-x-1">
+                        <Button size="icon" variant="ghost" aria-label="Edit" onClick={() => { setEditingAnnouncement(a); setAnnouncementOpen(true); }}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button size="icon" variant="ghost" aria-label="Delete" onClick={() => deleteAnnouncement(a.id!)}>
+                          <Trash className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ))
               ) : (
                 <EmptyState message="No announcements yet." />
@@ -106,23 +235,35 @@ const ClientPortal: React.FC = () => {
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">Training & Resources</CardTitle>
               {userRole === 'Admin' && (
-                <div className="flex space-x-2">
-                  <Button size="icon" variant="ghost" aria-label="Add resource">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Edit resource">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Delete resource">
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Add resource"
+                  onClick={() => {
+                    setEditingResource(undefined);
+                    setResourceOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               )}
             </CardHeader>
             <CardContent className="flex-1 space-y-3">
               {resources.length ? (
                 resources.map(r => (
-                  <ResourceCard key={r.id} title={r.title} type={r.type} href={r.href} />
+                  <div key={r.id} className="relative group">
+                    <ResourceCard title={r.title} type={r.type || 'Guide'} href={r.link} />
+                    {userRole === 'Admin' && (
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex space-x-1">
+                        <Button size="icon" variant="ghost" aria-label="Edit" onClick={() => { setEditingResource(r); setResourceOpen(true); }}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button size="icon" variant="ghost" aria-label="Delete" onClick={() => deleteResource(r.id!)}>
+                          <Trash className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ))
               ) : (
                 <EmptyState message="Your first training pack arrives after kickoff." />
@@ -138,23 +279,35 @@ const ClientPortal: React.FC = () => {
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">Agent Insights</CardTitle>
               {userRole === 'Admin' && (
-                <div className="flex space-x-2">
-                  <Button size="icon" variant="ghost" aria-label="Add insight">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Edit insight">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Delete insight">
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Add insight"
+                  onClick={() => {
+                    setEditingInsight(undefined);
+                    setInsightOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               )}
             </CardHeader>
             <CardContent className="flex-1 space-y-3">
               {insights.length ? (
                 insights.map(i => (
-                  <InsightCard key={i.id} summary={i.summary} timestamp={i.timestamp} />
+                  <div key={i.id} className="relative group">
+                    <InsightCard summary={i.takeaway} timestamp={i.date} />
+                    {userRole === 'Admin' && (
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex space-x-1">
+                        <Button size="icon" variant="ghost" aria-label="Edit" onClick={() => { setEditingInsight(i); setInsightOpen(true); }}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button size="icon" variant="ghost" aria-label="Delete" onClick={() => deleteInsight(i.id!)}>
+                          <Trash className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 ))
               ) : (
                 <EmptyState message="Agent summaries appear once your agent is live." />
@@ -170,21 +323,41 @@ const ClientPortal: React.FC = () => {
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">Adoption Coaching</CardTitle>
               {userRole === 'Admin' && (
-                <div className="flex space-x-2">
-                  <Button size="icon" variant="ghost" aria-label="Add coaching session">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Edit coaching session">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Delete coaching session">
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Add coaching"
+                  onClick={() => {
+                    setEditingCoaching(undefined);
+                    setCoachingOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               )}
             </CardHeader>
-            <CardContent className="flex-1 flex items-center">
-              <CoachingCard nextSession={nextSession} />
+            <CardContent className="flex-1 space-y-3">
+              {coachings.length ? (
+                coachings.map(c => (
+                  <div key={c.id} className="relative group py-2 border-b last:border-b-0">
+                    <p className="text-sm font-medium text-forest-green">{c.topic}</p>
+                    <p className="text-xs text-slate-gray">{c.description}</p>
+                    {c.actions && <p className="text-xs mt-1">{c.actions}</p>}
+                    {userRole === 'Admin' && (
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex space-x-1">
+                        <Button size="icon" variant="ghost" aria-label="Edit" onClick={() => { setEditingCoaching(c); setCoachingOpen(true); }}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button size="icon" variant="ghost" aria-label="Delete" onClick={() => deleteCoaching(c.id!)}>
+                          <Trash className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <EmptyState message="Pick a time to continue your roadmap." />
+              )}
             </CardContent>
           </Card>
         </div>
@@ -195,22 +368,40 @@ const ClientPortal: React.FC = () => {
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">Reports & KPIs</CardTitle>
               {userRole === 'Admin' && (
-                <div className="flex space-x-2">
-                  <Button size="icon" variant="ghost" aria-label="Add KPI">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Edit KPI">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Delete KPI">
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Add report"
+                  onClick={() => {
+                    setEditingReport(undefined);
+                    setReportOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               )}
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <KPITile label="Hours saved" value="0h" />
-              <KPITile label="Completion" value="0%" />
+            <CardContent className="flex-1 space-y-3">
+              {reports.length ? (
+                reports.map(r => (
+                  <div key={r.id} className="relative group">
+                    <p className="text-sm font-medium text-forest-green">{r.name} ({r.period})</p>
+                    <KPITile label={r.kpi.metric} value={`${r.kpi.value}/${r.kpi.target}`} />
+                    {userRole === 'Admin' && (
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex space-x-1">
+                        <Button size="icon" variant="ghost" aria-label="Edit" onClick={() => { setEditingReport(r); setReportOpen(true); }}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button size="icon" variant="ghost" aria-label="Delete" onClick={() => deleteReport(r.id!)}>
+                          <Trash className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <EmptyState message="No reports yet." />
+              )}
             </CardContent>
           </Card>
 
@@ -218,25 +409,99 @@ const ClientPortal: React.FC = () => {
             <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">FAQ</CardTitle>
               {userRole === 'Admin' && (
-                <div className="flex space-x-2">
-                  <Button size="icon" variant="ghost" aria-label="Add FAQ">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Edit FAQ">
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" aria-label="Delete FAQ">
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Add FAQ"
+                  onClick={() => {
+                    setEditingFaq(undefined);
+                    setFaqOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               )}
             </CardHeader>
-            <CardContent>
-              <EmptyState message="Short answers coming soon." />
+            <CardContent className="flex-1 space-y-3">
+              {faqs.length ? (
+                faqs.map(f => (
+                  <div key={f.id} className="relative group py-2 border-b last:border-b-0">
+                    <p className="text-sm font-medium text-forest-green">{f.question}</p>
+                    <p className="text-xs text-slate-gray">{f.answer}</p>
+                    {userRole === 'Admin' && (
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex space-x-1">
+                        <Button size="icon" variant="ghost" aria-label="Edit" onClick={() => { setEditingFaq(f); setFaqOpen(true); }}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button size="icon" variant="ghost" aria-label="Delete" onClick={() => deleteFaq(f.id!)}>
+                          <Trash className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <EmptyState message="Short answers coming soon." />
+              )}
             </CardContent>
           </Card>
         </div>
       </main>
+
+      <AnnouncementForm
+        open={announcementOpen}
+        onOpenChange={(o) => {
+          if (!o) setEditingAnnouncement(undefined);
+          setAnnouncementOpen(o);
+        }}
+        onSave={saveAnnouncement}
+        initialData={editingAnnouncement}
+      />
+      <ResourceForm
+        open={resourceOpen}
+        onOpenChange={(o) => {
+          if (!o) setEditingResource(undefined);
+          setResourceOpen(o);
+        }}
+        onSave={saveResource}
+        initialData={editingResource}
+      />
+      <InsightForm
+        open={insightOpen}
+        onOpenChange={(o) => {
+          if (!o) setEditingInsight(undefined);
+          setInsightOpen(o);
+        }}
+        onSave={saveInsight}
+        initialData={editingInsight}
+      />
+      <CoachingForm
+        open={coachingOpen}
+        onOpenChange={(o) => {
+          if (!o) setEditingCoaching(undefined);
+          setCoachingOpen(o);
+        }}
+        onSave={saveCoaching}
+        initialData={editingCoaching}
+      />
+      <ReportForm
+        open={reportOpen}
+        onOpenChange={(o) => {
+          if (!o) setEditingReport(undefined);
+          setReportOpen(o);
+        }}
+        onSave={saveReport}
+        initialData={editingReport}
+      />
+      <FAQForm
+        open={faqOpen}
+        onOpenChange={(o) => {
+          if (!o) setEditingFaq(undefined);
+          setFaqOpen(o);
+        }}
+        onSave={saveFaq}
+        initialData={editingFaq}
+      />
 
         <footer className="bg-slate-gray text-cream text-center py-6 mt-10">
           <p>Local Kansas City Experts • Microsoft-built solutions</p>
