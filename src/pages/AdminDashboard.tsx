@@ -16,7 +16,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { LoadingSpinner, InlineLoader } from '@/components/LoadingSpinner';
 import InviteUserForm from '@/components/InviteUserForm';
-import AccessDenied from './AccessDenied';
+import PortalContentManager from '@/components/admin/PortalContentManager';
 import { Link } from 'react-router-dom';
 
 interface UserWithRole {
@@ -851,6 +851,7 @@ const AdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
+        <PortalContentManager companies={allCompanies} currentAdmin={user?.email || ""} />
       </div>
       <Footer />
     </div>
