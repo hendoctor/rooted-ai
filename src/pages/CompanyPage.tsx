@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
-import TopNav from '@/components/client-portal/TopNav';
+import Header from '@/components/Header';
 
 interface CompanySettings {
   description?: string;
@@ -175,8 +175,8 @@ export default function CompanyPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-secondary/20">
-      <TopNav company={company.name} />
-      <div className="container mx-auto py-8 px-4 flex-1">
+      <Header />
+      <div className="container mx-auto py-8 px-4 flex-1 mt-16">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <div>

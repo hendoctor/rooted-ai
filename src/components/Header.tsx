@@ -21,10 +21,14 @@ const Header = () => {
     isExternal: boolean;
   }>>([]);
   
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, signOut, companies } = useAuth();
   const location = useLocation();
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
+
+  const companyName = userRole === 'Client' && companies && companies.length > 0
+    ? companies[0].name
+    : null;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -85,6 +89,12 @@ const Header = () => {
                 className="w-8 h-8"
               />
               <span className="text-xl lg:text-2xl font-bold text-forest-green">RootedAI</span>
+              {companyName && (
+                <>
+                  <span className="text-slate-gray">•</span>
+                  <span className="text-slate-gray">{companyName}</span>
+                </>
+              )}
             </a>
 
             {/* Desktop Navigation */}
