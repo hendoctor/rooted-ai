@@ -18,9 +18,10 @@ export class SimpleMenuManager {
     ];
   }
 
-  // Rule 2: Clients (authenticated) - Hide public menu items, show only company portal and profile in dropdown
+  // Rule 2: Clients (authenticated) - Show public menu items at all times
   static getClientMenuItems(): SimpleMenuRoute[] {
-    return []; // No top menu items for clients
+    // Authenticated clients should see the same main navigation as public users
+    return this.getPublicMenuItems();
   }
 
   // Rule 3: Admins - Show public menu items + Admin menu item, never client portals
@@ -46,7 +47,7 @@ export class SimpleMenuManager {
       return this.getAdminMenuItems(currentPath);
     }
 
-    // Client role
-    return currentPath === '/' ? this.getPublicMenuItems() : this.getClientMenuItems();
+    // Client role - always show main navigation
+    return this.getClientMenuItems();
   }
 }
