@@ -83,12 +83,19 @@
     background-color: hsl(var(--cream));
     color: hsl(var(--slate-gray));
   }
-  
+
   html {
     scroll-behavior: smooth;
     /* Reserve space for scrollbar to prevent layout shift when dialogs or menus open */
     overflow-y: scroll;
     scrollbar-gutter: stable;
+  }
+
+  /* Prevent Radix scroll-lock from shifting layout by adding body padding/margin */
+  body[data-scroll-locked] {
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+    --removed-body-scroll-bar-size: 0 !important;
   }
 }
 
