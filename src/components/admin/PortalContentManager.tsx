@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Pencil, Trash2 } from 'lucide-react';
+import SortableTable, { Column } from './SortableTable';
 
 interface CompanyOption {
   id: string;
@@ -214,6 +215,157 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setReportForm({ ...reportForm, kpis: newKpis });
   };
 
+  // Company helpers
+  const companyMap = React.useMemo(() => {
+    const map: Record<string, string> = {};
+    companies.forEach(c => { map[c.id] = c.name; });
+    return map;
+  }, [companies]);
+
+  const CompaniesCell: React.FC<{ ids: string[] }> = ({ ids }) => {
+    const names = ids.map(id => companyMap[id] || id);
+    if (names.length <= 1) return <span>{names[0] || '—'}</span>;
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            View ({names.length})
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clients</DialogTitle>
+          </DialogHeader>
+          <ul className="list-disc pl-4">
+            {names.map(name => (
+              <li key={name}>{name}</li>
+            ))}
+          </ul>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
+  // Column definitions
+  const announcementColumns: Column<Announcement>[] = [
+    { key: 'title', label: 'Post Title' },
+    { key: 'author', label: 'Author' },
+    { key: 'summary', label: 'Summary' },
+    { key: 'content', label: 'Full Content' },
+    { key: 'url', label: 'URL' },
+    { key: 'companies', label: 'Clients', render: a => <CompaniesCell ids={a.companies} /> },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: a => (
+        <div className="space-x-2">
+          <Button size="icon" variant="ghost" onClick={() => { setEditingAnnouncement(a); setAnnouncementForm(a); setAnnouncementOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setAnnouncements(prev => prev.filter(x => x.id !== a.id))}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      ),
+    },
+  ];
+
+  const resourceColumns: Column<Resource>[] = [
+    { key: 'title', label: 'Resource Title' },
+    { key: 'description', label: 'Description' },
+    { key: 'link', label: 'File/Link' },
+    { key: 'category', label: 'Category/Tag' },
+    { key: 'companies', label: 'Clients', render: r => <CompaniesCell ids={r.companies} /> },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: r => (
+        <div className="space-x-2">
+          <Button size="icon" variant="ghost" onClick={() => { setEditingResource(r); setResourceForm(r); setResourceOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setResources(prev => prev.filter(x => x.id !== r.id))}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      ),
+    },
+  ];
+
+  const insightColumns: Column<Insight>[] = [
+    { key: 'title', label: 'Insight Title' },
+    { key: 'takeaway', label: 'Key Takeaway' },
+    { key: 'detail', label: 'Detailed Insight' },
+    { key: 'source', label: 'Source/Author' },
+    { key: 'date', label: 'Date Published' },
+    { key: 'companies', label: 'Clients', render: i => <CompaniesCell ids={i.companies} /> },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: i => (
+        <div className="space-x-2">
+          <Button size="icon" variant="ghost" onClick={() => { setEditingInsight(i); setInsightForm(i); setInsightOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setInsights(prev => prev.filter(x => x.id !== i.id))}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      ),
+    },
+  ];
+
+  const coachingColumns: Column<Coaching>[] = [
+    { key: 'topic', label: 'Coaching Topic' },
+    { key: 'description', label: 'Description' },
+    { key: 'media', label: 'Media' },
+    { key: 'contact', label: 'Contact Person' },
+    { key: 'steps', label: 'Action Steps' },
+    { key: 'companies', label: 'Clients', render: c => <CompaniesCell ids={c.companies} /> },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: c => (
+        <div className="space-x-2">
+          <Button size="icon" variant="ghost" onClick={() => { setEditingCoaching(c); setCoachingForm(c); setCoachingOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setCoachings(prev => prev.filter(x => x.id !== c.id))}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      ),
+    },
+  ];
+
+  const reportColumns: Column<Report>[] = [
+    { key: 'name', label: 'Report Name' },
+    { key: 'kpis', label: 'KPI(s)', render: r => r.kpis.map(k => `${k.name}: ${k.value}/${k.target}`).join(', ') },
+    { key: 'period', label: 'Date Range' },
+    { key: 'link', label: 'File/Link' },
+    { key: 'notes', label: 'Notes / Insights' },
+    { key: 'companies', label: 'Clients', render: r => <CompaniesCell ids={r.companies} /> },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: r => (
+        <div className="space-x-2">
+          <Button size="icon" variant="ghost" onClick={() => { setEditingReport(r); setReportForm(r); setReportOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setReports(prev => prev.filter(x => x.id !== r.id))}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      ),
+    },
+  ];
+
+  const faqColumns: Column<Faq>[] = [
+    { key: 'question', label: 'Question' },
+    { key: 'answer', label: 'Answer' },
+    { key: 'category', label: 'Category/Tag' },
+    { key: 'updatedBy', label: 'Last Updated By' },
+    { key: 'goal', label: 'Goal' },
+    { key: 'companies', label: 'Clients', render: f => <CompaniesCell ids={f.companies} /> },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: f => (
+        <div className="space-x-2">
+          <Button size="icon" variant="ghost" onClick={() => { setEditingFaq(f); setFaqForm(f); setFaqOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setFaqs(prev => prev.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-8">
       {/* Announcements */}
@@ -224,17 +376,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         </CardHeader>
         <CardContent>
           {announcements.length ? (
-            <ul className="space-y-2">
-              {announcements.map(a => (
-                <li key={a.id} className="flex items-center justify-between">
-                  <span>{a.title}</span>
-                  <div className="space-x-2">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditingAnnouncement(a); setAnnouncementForm(a); setAnnouncementOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => setAnnouncements(prev => prev.filter(x => x.id !== a.id))}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <SortableTable data={announcements} columns={announcementColumns} />
           ) : (
             <p className="text-sm text-muted-foreground">No announcements yet.</p>
           )}
@@ -249,17 +391,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         </CardHeader>
         <CardContent>
           {resources.length ? (
-            <ul className="space-y-2">
-              {resources.map(r => (
-                <li key={r.id} className="flex items-center justify-between">
-                  <span>{r.title}</span>
-                  <div className="space-x-2">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditingResource(r); setResourceForm(r); setResourceOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => setResources(prev => prev.filter(x => x.id !== r.id))}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <SortableTable data={resources} columns={resourceColumns} />
           ) : (
             <p className="text-sm text-muted-foreground">No resources yet.</p>
           )}
@@ -274,17 +406,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         </CardHeader>
         <CardContent>
           {insights.length ? (
-            <ul className="space-y-2">
-              {insights.map(i => (
-                <li key={i.id} className="flex items-center justify-between">
-                  <span>{i.title}</span>
-                  <div className="space-x-2">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditingInsight(i); setInsightForm(i); setInsightOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => setInsights(prev => prev.filter(x => x.id !== i.id))}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <SortableTable data={insights} columns={insightColumns} />
           ) : (
             <p className="text-sm text-muted-foreground">No insights yet.</p>
           )}
@@ -299,17 +421,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         </CardHeader>
         <CardContent>
           {coachings.length ? (
-            <ul className="space-y-2">
-              {coachings.map(c => (
-                <li key={c.id} className="flex items-center justify-between">
-                  <span>{c.topic}</span>
-                  <div className="space-x-2">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditingCoaching(c); setCoachingForm(c); setCoachingOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => setCoachings(prev => prev.filter(x => x.id !== c.id))}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <SortableTable data={coachings} columns={coachingColumns} />
           ) : (
             <p className="text-sm text-muted-foreground">No coaching content yet.</p>
           )}
@@ -324,17 +436,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         </CardHeader>
         <CardContent>
           {reports.length ? (
-            <ul className="space-y-2">
-              {reports.map(r => (
-                <li key={r.id} className="flex items-center justify-between">
-                  <span>{r.name}</span>
-                  <div className="space-x-2">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditingReport(r); setReportForm(r); setReportOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => setReports(prev => prev.filter(x => x.id !== r.id))}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <SortableTable data={reports} columns={reportColumns} />
           ) : (
             <p className="text-sm text-muted-foreground">No reports yet.</p>
           )}
@@ -349,17 +451,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         </CardHeader>
         <CardContent>
           {faqs.length ? (
-            <ul className="space-y-2">
-              {faqs.map(f => (
-                <li key={f.id} className="flex items-center justify-between">
-                  <span>{f.question}</span>
-                  <div className="space-x-2">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditingFaq(f); setFaqForm(f); setFaqOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => setFaqs(prev => prev.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <SortableTable data={faqs} columns={faqColumns} />
           ) : (
             <p className="text-sm text-muted-foreground">No FAQs yet.</p>
           )}
