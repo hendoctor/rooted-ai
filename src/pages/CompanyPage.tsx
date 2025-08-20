@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuthReliable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
+import TopNav from '@/components/client-portal/TopNav';
 
 interface CompanySettings {
   description?: string;
@@ -173,20 +174,26 @@ export default function CompanyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
-      <div className="container mx-auto py-8 px-4">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-secondary/20">
+      <TopNav company={company.name} />
+      <div className="container mx-auto py-8 px-4 flex-1">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold">{company.name}</h1>
               <p className="text-muted-foreground">Company Dashboard</p>
             </div>
-            <Button 
-              onClick={() => editing ? handleSave() : setEditing(true)}
-              variant={editing ? "default" : "outline"}
-            >
-              {editing ? 'Save Changes' : 'Edit Details'}
-            </Button>
+            <div className="flex gap-2">
+              <Link to="/client-portal">
+                <Button variant="outline">Back to Client Portal</Button>
+              </Link>
+              <Button
+                onClick={() => (editing ? handleSave() : setEditing(true))}
+                variant={editing ? 'default' : 'outline'}
+              >
+                {editing ? 'Save Changes' : 'Edit Details'}
+              </Button>
+            </div>
           </div>
 
           <div className="grid gap-6">
