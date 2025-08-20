@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
+import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuthReliable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
+import { generateSlug } from '@/lib/utils';
 
 interface CompanySettings {
   description?: string;
@@ -30,7 +31,8 @@ interface Company {
 
 export default function CompanyPage() {
   const { slug } = useParams<{ slug: string }>();
-  const { user, userRole, companies, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const { user, userRole, companies, loading: authLoading, refreshAuth } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [accessChecked, setAccessChecked] = useState(false);
@@ -106,11 +108,27 @@ export default function CompanyPage() {
   const handleSave = async () => {
     if (!company) return;
 
+    const newSlug = generateSlug(formData.name);
+
     try {
+      // Ensure slug is unique
+      const { data: existing, error: slugError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('slug', newSlug)
+        .neq('id', company.id);
+
+      if (slugError) throw slugError;
+      if (existing && existing.length > 0) {
+        toast.error('Company name already in use. Please choose a different name.');
+        return;
+      }
+
       const { error } = await supabase
         .from('companies')
         .update({
           name: formData.name,
+          slug: newSlug,
           settings: {
             description: formData.description,
             website: formData.website,
@@ -125,11 +143,19 @@ export default function CompanyPage() {
       if (error) throw error;
 
       toast.success('Company details updated successfully');
+      await refreshAuth();
       setEditing(false);
-      fetchCompany(); // Refresh data
+
+      if (newSlug !== company.slug) {
+        navigate(`/${newSlug}`, { replace: true });
+      } else {
+        fetchCompany(); // Refresh data
+      }
     } catch (error) {
       console.error('Error updating company:', error);
-      toast.error('Failed to update company details');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to update company details'
+      );
     }
   };
 
