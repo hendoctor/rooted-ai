@@ -67,20 +67,20 @@ const AppContent = () => {
         }
       />
       <Route
-        path="/company/:slug"
-        element={
-          <FastAuthGuard requiredRoles={["Admin", "Client"]}>
-            <CompanyPage />
-          </FastAuthGuard>
-        }
-      />
-      <Route
         path="/rbac-demo"
         element={
           <FastAuthGuard requiredRoles={["Admin", "Client"]}>
             <RBACGuard page="rbac-demo">
               <RBACDemo />
             </RBACGuard>
+          </FastAuthGuard>
+        }
+      />
+      <Route
+        path="/:slug"
+        element={
+          <FastAuthGuard requiredRoles={["Admin", "Client"]}>
+            <CompanyPage />
           </FastAuthGuard>
         }
       />

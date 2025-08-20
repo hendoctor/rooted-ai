@@ -57,7 +57,7 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
             {/* Clients see only their company portal and profile */}
             {companies && companies.length > 0 && (
               <DropdownMenuItem asChild>
-                <Link to={`/company/${companies[0].slug}`} className="cursor-pointer">
+                <Link to={`/${companies[0].slug}`} className="cursor-pointer">
                   <Building className="mr-2 h-4 w-4" />
                   <span>Company Portal</span>
                 </Link>
@@ -76,7 +76,7 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
           <>
             {/* Admins see Rooted AI company portal and their profile */}
             <DropdownMenuItem asChild>
-              <Link to="/company/rooted-ai" className="cursor-pointer">
+              <Link to="/rooted-ai" className="cursor-pointer">
                 <Building className="mr-2 h-4 w-4" />
                 <span>Rooted AI Portal</span>
               </Link>
