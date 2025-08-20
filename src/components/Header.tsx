@@ -26,7 +26,7 @@ const Header = () => {
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { toast } = useToast();
 
-  const companyName = userRole === 'Client' && companies && companies.length > 0
+  const companyName = userRole && companies && companies.length > 0
     ? companies[0].name
     : null;
 
@@ -82,7 +82,7 @@ const Header = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
-            <a href="#home" className="flex items-center space-x-2">
+            <Link to="/" className="flex items-center space-x-2">
               <img
                 src="/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png"
                 alt="RootedAI Logo"
@@ -95,7 +95,7 @@ const Header = () => {
                   <span className="text-slate-gray">{companyName}</span>
                 </>
               )}
-            </a>
+            </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
