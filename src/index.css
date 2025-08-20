@@ -86,6 +86,9 @@
   
   html {
     scroll-behavior: smooth;
+    /* Reserve space for scrollbar to prevent layout shift when dialogs or menus open */
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
   }
 }
 
