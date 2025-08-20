@@ -45,7 +45,7 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
               {userRole}
             </p>
           )}
-          {companies && companies.length > 0 && (
+          {userRole !== 'Admin' && companies && companies.length > 0 && (
             <p className="text-xs leading-none text-muted-foreground">
               {companies.map(c => c.name).join(', ')}
             </p>
@@ -79,11 +79,11 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
         )}
         {userRole === 'Admin' && (
           <>
-            {/* Admins see Rooted AI company portal and their profile */}
+            {/* Admins see RootedAI portal and their profile */}
             <DropdownMenuItem asChild>
               <Link to="/rooted-ai" className="cursor-pointer">
                 <Building className="mr-2 h-4 w-4" />
-                <span>Rooted AI Portal</span>
+                <span>RootedAI Portal</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
