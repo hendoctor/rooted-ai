@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuthReliable';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
 import Header from '@/components/Header';
 import AnnouncementCard from '@/components/client-portal/AnnouncementCard';
@@ -14,7 +14,12 @@ import EmptyState from '@/components/client-portal/EmptyState';
 
 const ClientPortal: React.FC = () => {
   const { user, userRole, companies, loading } = useAuth();
-  const companySlug = companies[0]?.slug;
+  const [searchParams] = useSearchParams();
+  const companyParam = searchParams.get('company');
+  const company = companyParam
+    ? companies.find(c => c.slug === companyParam)
+    : companies[0];
+  const companySlug = company?.slug;
 
   if (loading) {
     return (
@@ -22,7 +27,11 @@ const ClientPortal: React.FC = () => {
     );
   }
 
-  if (!user || userRole !== 'Client') {
+  if (!user || (userRole !== 'Client' && userRole !== 'Admin')) {
+    return <AccessDenied />;
+  }
+
+  if (!company) {
     return <AccessDenied />;
   }
 

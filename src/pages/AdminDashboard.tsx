@@ -17,6 +17,7 @@ import Footer from '@/components/Footer';
 import { LoadingSpinner, InlineLoader } from '@/components/LoadingSpinner';
 import InviteUserForm from '@/components/InviteUserForm';
 import AccessDenied from './AccessDenied';
+import { Link } from 'react-router-dom';
 
 interface UserWithRole {
   id: string;
@@ -549,10 +550,10 @@ const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" asChild>
-                            <a href={`/${company.slug}`} target="_blank" rel="noopener noreferrer">
+                            <Link to={`/client-portal?company=${company.slug}`}>
                               <ExternalLink className="h-3 w-3 mr-1" />
                               View Portal
-                            </a>
+                            </Link>
                           </Button>
                         </div>
                       </div>
