@@ -67,13 +67,10 @@ const Auth = () => {
                 return;
               }
 
-              const userCompanies = companiesResult.data as any[] | null;
-              if (userCompanies && userCompanies.length > 0) {
-                const companySlug = userCompanies[0]?.company_slug;
-                if (companySlug) {
-                  navigate(`/company/${companySlug}`);
-                  return;
-                }
+              // Client users should go to their B2B client portal
+              if (userRole === 'Client') {
+                navigate('/client-portal');
+                return;
               }
             } catch (error) {
               console.error('Error checking user role or companies:', error);
@@ -309,30 +306,11 @@ const Auth = () => {
               description: `Your account has been created successfully with ${invitation.role} access.`,
             });
 
-            // Check if user has a company to route to
-            if (invitation.company_id) {
-              try {
-                const { data: company } = await supabase
-                  .from('companies')
-                  .select('slug')
-                  .eq('id', invitation.company_id)
-                  .single();
-                  
-                if (company?.slug) {
-                  setTimeout(() => {
-                    navigate(`/company/${company.slug}`);
-                  }, 1500);
-                  return;
-                }
-              } catch (error) {
-                console.error('Error fetching company:', error);
-              }
-            }
-
-            // Default redirect after successful signup
+            // Redirect new users to client portal
             setTimeout(() => {
-              navigate('/');
+              navigate('/client-portal');
             }, 1500);
+            return;
             
           } catch (processError) {
             console.error('Failed to process invitation after signup:', processError);
