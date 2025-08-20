@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuthReliable';
+import { Link } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
 import TopNav from '@/components/client-portal/TopNav';
 import AnnouncementCard from '@/components/client-portal/AnnouncementCard';
@@ -14,6 +15,7 @@ import EmptyState from '@/components/client-portal/EmptyState';
 const ClientPortal: React.FC = () => {
   const { user, userRole, companies, loading } = useAuth();
   const companyName = companies[0]?.name || 'Your Company';
+  const companySlug = companies[0]?.slug;
 
   if (loading) {
     return (
@@ -40,6 +42,23 @@ const ClientPortal: React.FC = () => {
       </section>
 
       <main className="flex-1 container mx-auto px-4 py-10 space-y-8">
+        {/* Company Settings Quick Access */}
+        {companySlug && (
+          <Card className="mb-6">
+            <CardContent className="flex items-center justify-between p-6">
+              <div>
+                <h3 className="text-lg font-semibold text-forest-green">Company Settings</h3>
+                <p className="text-sm text-slate-gray">Manage your company details and information</p>
+              </div>
+              <Link to={`/company/${companySlug}`}>
+                <Button className="bg-forest-green hover:bg-forest-green/90 text-cream">
+                  Edit Company Details
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Announcements */}
           <Card className="flex flex-col">

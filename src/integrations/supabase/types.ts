@@ -156,7 +156,15 @@ export type Database = {
           unsubscribed_at?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "newsletter_subscriptions_email_fkey"
+            columns: ["email"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["email"]
+          },
+        ]
       }
       security_audit_log: {
         Row: {
@@ -237,6 +245,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_invitations_company_id_fkey1"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_memberships"
             referencedColumns: ["id"]
           },
         ]
