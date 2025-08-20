@@ -79,11 +79,11 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
         )}
         {userRole === 'Admin' && (
           <>
-            {/* Admins see RootedAI portal and their profile */}
+            {/* Admins see RootedAI admin link and their profile */}
             <DropdownMenuItem asChild>
-              <Link to="/rooted-ai" className="cursor-pointer">
+              <Link to="/admin" className="cursor-pointer">
                 <Building className="mr-2 h-4 w-4" />
-                <span>RootedAI Portal</span>
+                <span>RootedAI Admin</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
