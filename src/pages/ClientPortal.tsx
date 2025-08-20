@@ -50,7 +50,7 @@ const ClientPortal: React.FC = () => {
                 <h3 className="text-lg font-semibold text-forest-green">Company Settings</h3>
                 <p className="text-sm text-slate-gray">Manage your company details and information</p>
               </div>
-              <Link to={`/company/${companySlug}`}>
+              <Link to={`/${companySlug}`}>
                 <Button className="bg-forest-green hover:bg-forest-green/90 text-cream">
                   Edit Company Details
                 </Button>

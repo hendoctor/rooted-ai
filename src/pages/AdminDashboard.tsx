@@ -549,7 +549,7 @@ const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" asChild>
-                            <a href={`/company/${company.slug}`} target="_blank" rel="noopener noreferrer">
+                            <a href={`/${company.slug}`} target="_blank" rel="noopener noreferrer">
                               <ExternalLink className="h-3 w-3 mr-1" />
                               View Portal
                             </a>
