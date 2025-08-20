@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Plus, Pencil, Trash } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuthReliable';
 import { Link, useSearchParams } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
@@ -70,8 +71,21 @@ const ClientPortal: React.FC = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {/* Announcements */}
           <Card className="flex flex-col">
-            <CardHeader>
+            <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">Announcements</CardTitle>
+              {userRole === 'Admin' && (
+                <div className="flex space-x-2">
+                  <Button size="icon" variant="ghost" aria-label="Add announcement">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Edit announcement">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Delete announcement">
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="flex-1">
               {announcements.length ? (
@@ -89,8 +103,21 @@ const ClientPortal: React.FC = () => {
 
           {/* Training & Resources */}
           <Card className="flex flex-col">
-            <CardHeader>
+            <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">Training & Resources</CardTitle>
+              {userRole === 'Admin' && (
+                <div className="flex space-x-2">
+                  <Button size="icon" variant="ghost" aria-label="Add resource">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Edit resource">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Delete resource">
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="flex-1 space-y-3">
               {resources.length ? (
@@ -108,8 +135,21 @@ const ClientPortal: React.FC = () => {
 
           {/* Agent Insights */}
           <Card className="flex flex-col">
-            <CardHeader>
+            <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">Agent Insights</CardTitle>
+              {userRole === 'Admin' && (
+                <div className="flex space-x-2">
+                  <Button size="icon" variant="ghost" aria-label="Add insight">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Edit insight">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Delete insight">
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="flex-1 space-y-3">
               {insights.length ? (
@@ -127,8 +167,21 @@ const ClientPortal: React.FC = () => {
 
           {/* Adoption Coaching */}
           <Card className="flex flex-col">
-            <CardHeader>
+            <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">Adoption Coaching</CardTitle>
+              {userRole === 'Admin' && (
+                <div className="flex space-x-2">
+                  <Button size="icon" variant="ghost" aria-label="Add coaching session">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Edit coaching session">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Delete coaching session">
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="flex-1 flex items-center">
               <CoachingCard nextSession={nextSession} />
@@ -139,8 +192,21 @@ const ClientPortal: React.FC = () => {
         {/* Secondary Row */}
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="flex flex-col">
-            <CardHeader>
+            <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">Reports & KPIs</CardTitle>
+              {userRole === 'Admin' && (
+                <div className="flex space-x-2">
+                  <Button size="icon" variant="ghost" aria-label="Add KPI">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Edit KPI">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Delete KPI">
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
               <KPITile label="Hours saved" value="0h" />
@@ -149,8 +215,21 @@ const ClientPortal: React.FC = () => {
           </Card>
 
           <Card className="flex flex-col">
-            <CardHeader>
+            <CardHeader className="flex items-center justify-between">
               <CardTitle className="text-forest-green">FAQ</CardTitle>
+              {userRole === 'Admin' && (
+                <div className="flex space-x-2">
+                  <Button size="icon" variant="ghost" aria-label="Add FAQ">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Edit FAQ">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Delete FAQ">
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <EmptyState message="Short answers coming soon." />
