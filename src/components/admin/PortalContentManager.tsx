@@ -33,13 +33,11 @@ interface Resource {
   companies: string[];
 }
 
-interface Insight {
+interface UsefulLink {
   id: string;
   title: string;
-  takeaway: string;
-  detail: string;
-  source: string;
-  date: string;
+  url: string;
+  description: string;
   companies: string[];
 }
 
@@ -82,7 +80,7 @@ interface Faq {
 const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?: string }> = ({ companies, currentAdmin }) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
-  const [insights, setInsights] = useState<Insight[]>([]);
+  const [links, setLinks] = useState<UsefulLink[]>([]);
   const [coachings, setCoachings] = useState<Coaching[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [faqs, setFaqs] = useState<Faq[]>([]);
@@ -99,11 +97,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const emptyResource: Resource = { id: '', title: '', description: '', link: '', category: '', companies: [] };
   const [resourceForm, setResourceForm] = useState<Resource>(emptyResource);
 
-  // Insight state
-  const [insightOpen, setInsightOpen] = useState(false);
-  const [editingInsight, setEditingInsight] = useState<Insight | null>(null);
-  const emptyInsight: Insight = { id: '', title: '', takeaway: '', detail: '', source: '', date: '', companies: [] };
-  const [insightForm, setInsightForm] = useState<Insight>(emptyInsight);
+  // Useful link state
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [editingLink, setEditingLink] = useState<UsefulLink | null>(null);
+  const emptyLink: UsefulLink = { id: '', title: '', url: '', description: '', companies: [] };
+  const [linkForm, setLinkForm] = useState<UsefulLink>(emptyLink);
 
   // Coaching state
   const [coachingOpen, setCoachingOpen] = useState(false);
@@ -126,7 +124,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const resetForms = () => {
     setAnnouncementForm(emptyAnnouncement);
     setResourceForm(emptyResource);
-    setInsightForm(emptyInsight);
+    setLinkForm(emptyLink);
     setCoachingForm(emptyCoaching);
     setReportForm(emptyReport);
     setFaqForm(emptyFaq);
@@ -159,15 +157,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setResourceForm(emptyResource);
   };
 
-  const saveInsight = () => {
-    if (editingInsight) {
-      setInsights(prev => prev.map(i => i.id === editingInsight.id ? { ...insightForm, id: editingInsight.id } : i));
+  const saveLink = () => {
+    if (editingLink) {
+      setLinks(prev => prev.map(l => l.id === editingLink.id ? { ...linkForm, id: editingLink.id } : l));
     } else {
-      setInsights(prev => [...prev, { ...insightForm, id: Date.now().toString() }]);
+      setLinks(prev => [...prev, { ...linkForm, id: Date.now().toString() }]);
     }
-    setInsightOpen(false);
-    setEditingInsight(null);
-    setInsightForm(emptyInsight);
+    setLinkOpen(false);
+    setEditingLink(null);
+    setLinkForm(emptyLink);
   };
 
   const saveCoaching = () => {
@@ -286,21 +284,19 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     },
   ];
 
-  const insightColumns: Column<Insight>[] = [
-    { key: 'title', label: 'Insight Title' },
-    { key: 'takeaway', label: 'Key Takeaway' },
-    { key: 'detail', label: 'Detailed Insight' },
-    { key: 'source', label: 'Source/Author' },
-    { key: 'date', label: 'Date Published' },
-    { key: 'companies', label: 'Clients', render: i => <CompaniesCell ids={i.companies} /> },
+  const linkColumns: Column<UsefulLink>[] = [
+    { key: 'title', label: 'Link Title' },
+    { key: 'url', label: 'URL' },
+    { key: 'description', label: 'Description' },
+    { key: 'companies', label: 'Clients', render: l => <CompaniesCell ids={l.companies} /> },
     {
       key: 'actions',
       label: 'Actions',
       sortable: false,
-      render: i => (
+      render: l => (
         <div className="space-x-2">
-          <Button size="icon" variant="ghost" onClick={() => { setEditingInsight(i); setInsightForm(i); setInsightOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" onClick={() => setInsights(prev => prev.filter(x => x.id !== i.id))}><Trash2 className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => { setEditingLink(l); setLinkForm(l); setLinkOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => setLinks(prev => prev.filter(x => x.id !== l.id))}><Trash2 className="h-4 w-4" /></Button>
         </div>
       ),
     },
@@ -398,17 +394,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         </CardContent>
       </Card>
 
-      {/* Insights */}
+      {/* Useful Links */}
       <Card>
         <CardHeader className="flex items-center justify-between">
-          <CardTitle>Agent Insights</CardTitle>
-          <Button size="sm" onClick={() => { resetForms(); setEditingInsight(null); setInsightOpen(true); }}>Add</Button>
+          <CardTitle>Useful Links</CardTitle>
+          <Button size="sm" onClick={() => { resetForms(); setEditingLink(null); setLinkOpen(true); }}>Add</Button>
         </CardHeader>
         <CardContent>
-          {insights.length ? (
-            <SortableTable data={insights} columns={insightColumns} />
+          {links.length ? (
+            <SortableTable data={links} columns={linkColumns} />
           ) : (
-            <p className="text-sm text-muted-foreground">No insights yet.</p>
+            <p className="text-sm text-muted-foreground">No links yet.</p>
           )}
         </CardContent>
       </Card>
@@ -546,48 +542,40 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         </DialogContent>
       </Dialog>
 
-      {/* Insight Dialog */}
-      <Dialog open={insightOpen} onOpenChange={setInsightOpen}>
+      {/* Link Dialog */}
+      <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>{editingInsight ? 'Edit' : 'Add'} Insight</DialogTitle>
+            <DialogTitle>{editingLink ? 'Edit' : 'Add'} Link</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="insight-title">Insight Title</Label>
-              <Input id="insight-title" value={insightForm.title} onChange={e => setInsightForm({ ...insightForm, title: e.target.value })} />
+              <Label htmlFor="link-title">Link Title</Label>
+              <Input id="link-title" value={linkForm.title} onChange={e => setLinkForm({ ...linkForm, title: e.target.value })} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="insight-takeaway">Key Takeaway</Label>
-              <Input id="insight-takeaway" value={insightForm.takeaway} onChange={e => setInsightForm({ ...insightForm, takeaway: e.target.value })} />
+              <Label htmlFor="link-url">URL</Label>
+              <Input id="link-url" value={linkForm.url} onChange={e => setLinkForm({ ...linkForm, url: e.target.value })} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="insight-detail">Detailed Insight</Label>
-              <Textarea id="insight-detail" value={insightForm.detail} onChange={e => setInsightForm({ ...insightForm, detail: e.target.value })} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="insight-source">Source / Author</Label>
-              <Input id="insight-source" value={insightForm.source} onChange={e => setInsightForm({ ...insightForm, source: e.target.value })} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="insight-date">Date Published</Label>
-              <Input id="insight-date" type="date" value={insightForm.date} onChange={e => setInsightForm({ ...insightForm, date: e.target.value })} />
+              <Label htmlFor="link-description">Description</Label>
+              <Textarea id="link-description" value={linkForm.description} onChange={e => setLinkForm({ ...linkForm, description: e.target.value })} />
             </div>
             <div className="grid gap-2">
               <Label>Client Pages</Label>
               <div className="grid grid-cols-2 gap-2">
                 {companies.map(c => (
                   <div key={c.id} className="flex items-center space-x-2">
-                    <Checkbox id={`ins-${c.id}`} checked={insightForm.companies.includes(c.id)} onCheckedChange={() => setInsightForm({ ...insightForm, companies: toggleSelection(insightForm.companies, c.id) })} />
-                    <Label htmlFor={`ins-${c.id}`}>{c.name}</Label>
+                    <Checkbox id={`link-${c.id}`} checked={linkForm.companies.includes(c.id)} onCheckedChange={() => setLinkForm({ ...linkForm, companies: toggleSelection(linkForm.companies, c.id) })} />
+                    <Label htmlFor={`link-${c.id}`}>{c.name}</Label>
                   </div>
                 ))}
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setInsightOpen(false)}>Cancel</Button>
-            <Button onClick={saveInsight}>Save</Button>
+            <Button variant="outline" onClick={() => setLinkOpen(false)}>Cancel</Button>
+            <Button onClick={saveLink}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

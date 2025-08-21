@@ -7,7 +7,7 @@ import AccessDenied from './AccessDenied';
 import Header from '@/components/Header';
 import AnnouncementCard from '@/components/client-portal/AnnouncementCard';
 import ResourceCard from '@/components/client-portal/ResourceCard';
-import InsightCard from '@/components/client-portal/InsightCard';
+import UsefulLinkCard from '@/components/client-portal/UsefulLinkCard';
 import CoachingCard from '@/components/client-portal/CoachingCard';
 import KPITile from '@/components/client-portal/KPITile';
 import EmptyState from '@/components/client-portal/EmptyState';
@@ -37,7 +37,7 @@ const ClientPortal: React.FC = () => {
 
   const announcements: Array<{ id: number; title: string; date: string; status?: 'New' | 'Important'; }> = [];
   const resources: Array<{ id: number; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string; }> = [];
-  const insights: Array<{ id: number; summary: string; timestamp: string; }> = [];
+  const usefulLinks: Array<{ id: number; title: string; url: string; }> = [];
   const nextSession: string | undefined = undefined;
 
   return (
@@ -106,22 +106,22 @@ const ClientPortal: React.FC = () => {
             </div>
           </Card>
 
-          {/* Agent Insights */}
+          {/* Useful Links */}
           <Card className="flex flex-col">
             <CardHeader>
-              <CardTitle className="text-forest-green">Agent Insights</CardTitle>
+              <CardTitle className="text-forest-green">Useful Links</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 space-y-3">
-              {insights.length ? (
-                insights.map(i => (
-                  <InsightCard key={i.id} summary={i.summary} timestamp={i.timestamp} />
+              {usefulLinks.length ? (
+                usefulLinks.map(l => (
+                  <UsefulLinkCard key={l.id} title={l.title} url={l.url} />
                 ))
               ) : (
-                <EmptyState message="Agent summaries appear once your agent is live." />
+                <EmptyState message="No useful links yet." />
               )}
             </CardContent>
             <div className="px-6 pb-4">
-              <Button variant="outline" className="w-full text-forest-green">View details</Button>
+              <Button variant="outline" className="w-full text-forest-green">View all</Button>
             </div>
           </Card>
 
