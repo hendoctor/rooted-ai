@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Pencil, Trash2 } from 'lucide-react';
 import SortableTable, { Column } from './SortableTable';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface CompanyOption {
   id: string;
@@ -84,6 +86,165 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const [coachings, setCoachings] = useState<Coaching[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch all data on component mount
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        fetchAnnouncements(),
+        fetchResources(),
+        fetchUsefulLinks(),
+        fetchCoaching(),
+        fetchReports(),
+        fetchFaqs()
+      ]);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Failed to load data');
+    }
+    setLoading(false);
+  };
+
+  const fetchAnnouncements = async () => {
+    const { data, error } = await supabase
+      .from('announcements')
+      .select(`
+        *,
+        announcement_companies(company_id)
+      `);
+    
+    if (error) throw error;
+    
+    const transformedData = data?.map(item => ({
+      id: item.id,
+      title: item.title || '',
+      author: item.author || '',
+      summary: item.summary || '',
+      content: item.content || '',
+      url: item.url || '',
+      companies: item.announcement_companies?.map(ac => ac.company_id) || []
+    })) || [];
+    
+    setAnnouncements(transformedData);
+  };
+
+  const fetchResources = async () => {
+    const { data, error } = await supabase
+      .from('portal_resources')
+      .select(`
+        *,
+        portal_resource_companies(company_id)
+      `);
+    
+    if (error) throw error;
+    
+    const transformedData = data?.map(item => ({
+      id: item.id,
+      title: item.title || '',
+      description: item.description || '',
+      link: item.link || '',
+      category: item.category || '',
+      companies: item.portal_resource_companies?.map(prc => prc.company_id) || []
+    })) || [];
+    
+    setResources(transformedData);
+  };
+
+  const fetchUsefulLinks = async () => {
+    const { data, error } = await supabase
+      .from('useful_links')
+      .select(`
+        *,
+        useful_link_companies(company_id)
+      `);
+    
+    if (error) throw error;
+    
+    const transformedData = data?.map(item => ({
+      id: item.id,
+      title: item.title || '',
+      url: item.url || '',
+      description: item.description || '',
+      companies: item.useful_link_companies?.map(ulc => ulc.company_id) || []
+    })) || [];
+    
+    setLinks(transformedData);
+  };
+
+  const fetchCoaching = async () => {
+    const { data, error } = await supabase
+      .from('adoption_coaching')
+      .select(`
+        *,
+        adoption_coaching_companies(company_id)
+      `);
+    
+    if (error) throw error;
+    
+    const transformedData = data?.map(item => ({
+      id: item.id,
+      topic: item.topic || '',
+      description: item.description || '',
+      media: item.media || '',
+      contact: item.contact || '',
+      steps: item.steps || '',
+      companies: item.adoption_coaching_companies?.map(acc => acc.company_id) || []
+    })) || [];
+    
+    setCoachings(transformedData);
+  };
+
+  const fetchReports = async () => {
+    const { data, error } = await supabase
+      .from('reports')
+      .select(`
+        *,
+        report_companies(company_id)
+      `);
+    
+    if (error) throw error;
+    
+    const transformedData = data?.map(item => ({
+      id: item.id,
+      name: item.name || '',
+      kpis: Array.isArray(item.kpis) ? (item.kpis as unknown as KPI[]) : [{ name: '', value: '', target: '' }],
+      period: item.period || '',
+      link: item.link || '',
+      notes: item.notes || '',
+      companies: item.report_companies?.map(rc => rc.company_id) || []
+    })) || [];
+    
+    setReports(transformedData);
+  };
+
+  const fetchFaqs = async () => {
+    const { data, error } = await supabase
+      .from('faqs')
+      .select(`
+        *,
+        faq_companies(company_id)
+      `);
+    
+    if (error) throw error;
+    
+    const transformedData = data?.map(item => ({
+      id: item.id,
+      question: item.question || '',
+      answer: item.answer || '',
+      category: item.category || '',
+      updatedBy: item.updated_by || '',
+      goal: item.goal || '',
+      companies: item.faq_companies?.map(fc => fc.company_id) || []
+    })) || [];
+    
+    setFaqs(transformedData);
+  };
 
   // Announcement state
   const [announcementOpen, setAnnouncementOpen] = useState(false);
@@ -135,70 +296,484 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id];
 
   // Save handlers
-  const saveAnnouncement = () => {
-    if (editingAnnouncement) {
-      setAnnouncements(prev => prev.map(a => a.id === editingAnnouncement.id ? { ...announcementForm, id: editingAnnouncement.id } : a));
-    } else {
-      setAnnouncements(prev => [...prev, { ...announcementForm, id: Date.now().toString() }]);
+  const saveAnnouncement = async () => {
+    try {
+      setLoading(true);
+      
+      if (editingAnnouncement) {
+        // Update existing announcement
+        const { error } = await supabase
+          .from('announcements')
+          .update({
+            title: announcementForm.title,
+            author: announcementForm.author,
+            summary: announcementForm.summary,
+            content: announcementForm.content,
+            url: announcementForm.url || null
+          })
+          .eq('id', editingAnnouncement.id);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('announcement_companies')
+          .delete()
+          .eq('announcement_id', editingAnnouncement.id);
+        
+        if (announcementForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('announcement_companies')
+            .insert(
+              announcementForm.companies.map(companyId => ({
+                announcement_id: editingAnnouncement.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new announcement
+        const { data, error } = await supabase
+          .from('announcements')
+          .insert({
+            title: announcementForm.title,
+            author: announcementForm.author,
+            summary: announcementForm.summary,
+            content: announcementForm.content,
+            url: announcementForm.url || null
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (announcementForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('announcement_companies')
+            .insert(
+              announcementForm.companies.map(companyId => ({
+                announcement_id: data.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchAnnouncements();
+      toast.success('Announcement saved successfully');
+      
+      setAnnouncementOpen(false);
+      setEditingAnnouncement(null);
+      setAnnouncementForm(emptyAnnouncement);
+    } catch (error) {
+      console.error('Error saving announcement:', error);
+      toast.error('Failed to save announcement');
     }
-    setAnnouncementOpen(false);
-    setEditingAnnouncement(null);
-    setAnnouncementForm(emptyAnnouncement);
+    setLoading(false);
   };
 
-  const saveResource = () => {
-    if (editingResource) {
-      setResources(prev => prev.map(r => r.id === editingResource.id ? { ...resourceForm, id: editingResource.id } : r));
-    } else {
-      setResources(prev => [...prev, { ...resourceForm, id: Date.now().toString() }]);
+  const saveResource = async () => {
+    try {
+      setLoading(true);
+      
+      if (editingResource) {
+        // Update existing resource
+        const { error } = await supabase
+          .from('portal_resources')
+          .update({
+            title: resourceForm.title,
+            description: resourceForm.description,
+            link: resourceForm.link || null,
+            category: resourceForm.category || null
+          })
+          .eq('id', editingResource.id);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('portal_resource_companies')
+          .delete()
+          .eq('resource_id', editingResource.id);
+        
+        if (resourceForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('portal_resource_companies')
+            .insert(
+              resourceForm.companies.map(companyId => ({
+                resource_id: editingResource.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new resource
+        const { data, error } = await supabase
+          .from('portal_resources')
+          .insert({
+            title: resourceForm.title,
+            description: resourceForm.description,
+            link: resourceForm.link || null,
+            category: resourceForm.category || null
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (resourceForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('portal_resource_companies')
+            .insert(
+              resourceForm.companies.map(companyId => ({
+                resource_id: data.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchResources();
+      toast.success('Resource saved successfully');
+      
+      setResourceOpen(false);
+      setEditingResource(null);
+      setResourceForm(emptyResource);
+    } catch (error) {
+      console.error('Error saving resource:', error);
+      toast.error('Failed to save resource');
     }
-    setResourceOpen(false);
-    setEditingResource(null);
-    setResourceForm(emptyResource);
+    setLoading(false);
   };
 
-  const saveLink = () => {
-    if (editingLink) {
-      setLinks(prev => prev.map(l => l.id === editingLink.id ? { ...linkForm, id: editingLink.id } : l));
-    } else {
-      setLinks(prev => [...prev, { ...linkForm, id: Date.now().toString() }]);
+  const saveLink = async () => {
+    try {
+      setLoading(true);
+      
+      if (editingLink) {
+        // Update existing link
+        const { error } = await supabase
+          .from('useful_links')
+          .update({
+            title: linkForm.title,
+            url: linkForm.url,
+            description: linkForm.description || null
+          })
+          .eq('id', editingLink.id);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('useful_link_companies')
+          .delete()
+          .eq('link_id', editingLink.id);
+        
+        if (linkForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('useful_link_companies')
+            .insert(
+              linkForm.companies.map(companyId => ({
+                link_id: editingLink.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new link
+        const { data, error } = await supabase
+          .from('useful_links')
+          .insert({
+            title: linkForm.title,
+            url: linkForm.url,
+            description: linkForm.description || null
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (linkForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('useful_link_companies')
+            .insert(
+              linkForm.companies.map(companyId => ({
+                link_id: data.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchUsefulLinks();
+      toast.success('Link saved successfully');
+      
+      setLinkOpen(false);
+      setEditingLink(null);
+      setLinkForm(emptyLink);
+    } catch (error) {
+      console.error('Error saving link:', error);
+      toast.error('Failed to save link');
     }
-    setLinkOpen(false);
-    setEditingLink(null);
-    setLinkForm(emptyLink);
+    setLoading(false);
   };
 
-  const saveCoaching = () => {
-    if (editingCoaching) {
-      setCoachings(prev => prev.map(c => c.id === editingCoaching.id ? { ...coachingForm, id: editingCoaching.id } : c));
-    } else {
-      setCoachings(prev => [...prev, { ...coachingForm, id: Date.now().toString() }]);
+  const saveCoaching = async () => {
+    try {
+      setLoading(true);
+      
+      if (editingCoaching) {
+        // Update existing coaching
+        const { error } = await supabase
+          .from('adoption_coaching')
+          .update({
+            topic: coachingForm.topic,
+            description: coachingForm.description || null,
+            media: coachingForm.media || null,
+            contact: coachingForm.contact || null,
+            steps: coachingForm.steps || null
+          })
+          .eq('id', editingCoaching.id);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('adoption_coaching_companies')
+          .delete()
+          .eq('coaching_id', editingCoaching.id);
+        
+        if (coachingForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('adoption_coaching_companies')
+            .insert(
+              coachingForm.companies.map(companyId => ({
+                coaching_id: editingCoaching.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new coaching
+        const { data, error } = await supabase
+          .from('adoption_coaching')
+          .insert({
+            topic: coachingForm.topic,
+            description: coachingForm.description || null,
+            media: coachingForm.media || null,
+            contact: coachingForm.contact || null,
+            steps: coachingForm.steps || null
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (coachingForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('adoption_coaching_companies')
+            .insert(
+              coachingForm.companies.map(companyId => ({
+                coaching_id: data.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchCoaching();
+      toast.success('Coaching content saved successfully');
+      
+      setCoachingOpen(false);
+      setEditingCoaching(null);
+      setCoachingForm(emptyCoaching);
+    } catch (error) {
+      console.error('Error saving coaching:', error);
+      toast.error('Failed to save coaching content');
     }
-    setCoachingOpen(false);
-    setEditingCoaching(null);
-    setCoachingForm(emptyCoaching);
+    setLoading(false);
   };
 
-  const saveReport = () => {
-    if (editingReport) {
-      setReports(prev => prev.map(r => r.id === editingReport.id ? { ...reportForm, id: editingReport.id } : r));
-    } else {
-      setReports(prev => [...prev, { ...reportForm, id: Date.now().toString() }]);
+  const saveReport = async () => {
+    try {
+      setLoading(true);
+      
+      if (editingReport) {
+        // Update existing report
+        const { error } = await supabase
+          .from('reports')
+          .update({
+            name: reportForm.name,
+            kpis: reportForm.kpis as any,
+            period: reportForm.period || null,
+            link: reportForm.link || null,
+            notes: reportForm.notes || null
+          })
+          .eq('id', editingReport.id);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('report_companies')
+          .delete()
+          .eq('report_id', editingReport.id);
+        
+        if (reportForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('report_companies')
+            .insert(
+              reportForm.companies.map(companyId => ({
+                report_id: editingReport.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new report
+        const { data, error } = await supabase
+          .from('reports')
+          .insert({
+            name: reportForm.name,
+            kpis: reportForm.kpis as any,
+            period: reportForm.period || null,
+            link: reportForm.link || null,
+            notes: reportForm.notes || null
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (reportForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('report_companies')
+            .insert(
+              reportForm.companies.map(companyId => ({
+                report_id: data.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchReports();
+      toast.success('Report saved successfully');
+      
+      setReportOpen(false);
+      setEditingReport(null);
+      setReportForm(emptyReport);
+    } catch (error) {
+      console.error('Error saving report:', error);
+      toast.error('Failed to save report');
     }
-    setReportOpen(false);
-    setEditingReport(null);
-    setReportForm(emptyReport);
+    setLoading(false);
   };
 
-  const saveFaq = () => {
-    if (editingFaq) {
-      setFaqs(prev => prev.map(f => f.id === editingFaq.id ? { ...faqForm, id: editingFaq.id } : f));
-    } else {
-      setFaqs(prev => [...prev, { ...faqForm, id: Date.now().toString() }]);
+  const saveFaq = async () => {
+    try {
+      setLoading(true);
+      
+      if (editingFaq) {
+        // Update existing FAQ
+        const { error } = await supabase
+          .from('faqs')
+          .update({
+            question: faqForm.question,
+            answer: faqForm.answer,
+            category: faqForm.category || null,
+            updated_by: faqForm.updatedBy || null,
+            goal: faqForm.goal || null
+          })
+          .eq('id', editingFaq.id);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('faq_companies')
+          .delete()
+          .eq('faq_id', editingFaq.id);
+        
+        if (faqForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('faq_companies')
+            .insert(
+              faqForm.companies.map(companyId => ({
+                faq_id: editingFaq.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new FAQ
+        const { data, error } = await supabase
+          .from('faqs')
+          .insert({
+            question: faqForm.question,
+            answer: faqForm.answer,
+            category: faqForm.category || null,
+            updated_by: faqForm.updatedBy || null,
+            goal: faqForm.goal || null
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (faqForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('faq_companies')
+            .insert(
+              faqForm.companies.map(companyId => ({
+                faq_id: data.id,
+                company_id: companyId
+              }))
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchFaqs();
+      toast.success('FAQ saved successfully');
+      
+      setFaqOpen(false);
+      setEditingFaq(null);
+      setFaqForm(emptyFaq);
+    } catch (error) {
+      console.error('Error saving FAQ:', error);
+      toast.error('Failed to save FAQ');
     }
-    setFaqOpen(false);
-    setEditingFaq(null);
-    setFaqForm(emptyFaq);
+    setLoading(false);
   };
 
   // KPI helpers
