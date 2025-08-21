@@ -130,9 +130,14 @@ const ClientPortal: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-forest-green">Adoption Coaching</CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 flex items-center">
+            <CardContent className="flex-1">
               <CoachingCard nextSession={nextSession} />
             </CardContent>
+            <div className="px-6 pb-4">
+              <Button className="w-full bg-forest-green text-cream hover:bg-forest-green/90">
+                Book a 30-min session
+              </Button>
+            </div>
           </Card>
         </div>
 
