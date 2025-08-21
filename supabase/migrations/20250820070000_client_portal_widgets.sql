@@ -1,4 +1,4 @@
--- Client portal widget tables for announcements, resources, insights, coaching, reports & KPIs, and FAQs
+-- Client portal widget tables for announcements, resources, useful links, coaching, reports & KPIs, and FAQs
 -- Shared tables with company-specific content
 
 -- Announcements
@@ -55,28 +55,29 @@ USING (
   )
 );
 
--- Agent Insights
-CREATE TABLE IF NOT EXISTS public.agent_insights (
+-- Useful Links
+CREATE TABLE IF NOT EXISTS public.useful_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
-  summary TEXT NOT NULL,
-  timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+  title TEXT NOT NULL,
+  url TEXT NOT NULL,
+  description TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.agent_insights ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.useful_links ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Admins can manage all agent_insights"
-ON public.agent_insights FOR ALL
+CREATE POLICY "Admins can manage all useful_links"
+ON public.useful_links FOR ALL
 USING (is_admin());
 
-CREATE POLICY "Users can view company agent_insights"
-ON public.agent_insights FOR SELECT
+CREATE POLICY "Users can view company useful_links"
+ON public.useful_links FOR SELECT
 USING (
   EXISTS (
     SELECT 1 FROM company_memberships cm
-    WHERE cm.company_id = agent_insights.company_id
+    WHERE cm.company_id = useful_links.company_id
       AND cm.user_id = auth.uid()
   )
 );
