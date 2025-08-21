@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuthReliable';
@@ -11,6 +11,7 @@ import UsefulLinkCard from '@/components/client-portal/UsefulLinkCard';
 import CoachingCard from '@/components/client-portal/CoachingCard';
 import KPITile from '@/components/client-portal/KPITile';
 import EmptyState from '@/components/client-portal/EmptyState';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClientPortal: React.FC = () => {
   const { user, userRole, companies, loading } = useAuth();
@@ -20,6 +21,116 @@ const ClientPortal: React.FC = () => {
     ? companies.find(c => c.slug === companyParam)
     : companies[0];
   const companySlug = company?.slug;
+
+  const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; date: string; status?: 'New' | 'Important'; }>>([]);
+  const [resources, setResources] = useState<Array<{ id: string; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string }>>([]);
+  const [usefulLinks, setUsefulLinks] = useState<Array<{ id: string; title: string; url: string }>>([]);
+  const [nextSession, setNextSession] = useState<string | undefined>();
+  const [kpis, setKpis] = useState<Array<{ name: string; value: string }>>([]);
+  const [faqs, setFaqs] = useState<Array<{ id: string; question: string; answer: string }>>([]);
+
+  useEffect(() => {
+    if (!company?.id) return;
+    const companyId = company.id;
+
+    const loadData = async () => {
+      // Announcements
+      const { data: annData, error: annError } = await supabase
+        .from('announcements')
+        .select('id, title, created_at, announcement_companies!inner(company_id)')
+        .eq('announcement_companies.company_id', companyId)
+        .order('created_at', { ascending: false });
+      if (!annError && annData) {
+        type AnnouncementRow = { id: string; title: string | null; created_at: string | null };
+        setAnnouncements(
+          (annData as AnnouncementRow[]).map(a => ({
+            id: a.id,
+            title: a.title || '',
+            date: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
+          }))
+        );
+      }
+
+      // Resources
+      const { data: resData, error: resError } = await supabase
+        .from('portal_resources')
+        .select('id, title, link, category, portal_resource_companies!inner(company_id)')
+        .eq('portal_resource_companies.company_id', companyId);
+      if (!resError && resData) {
+        type ResourceRow = { id: string; title: string | null; link: string | null; category: string | null };
+        setResources(
+          (resData as ResourceRow[]).map(r => ({
+            id: r.id,
+            title: r.title || '',
+            type: (r.category as 'Guide' | 'Video' | 'Slide') || 'Guide',
+            href: r.link || undefined,
+          }))
+        );
+      }
+
+      // Useful Links
+      const { data: linkData, error: linkError } = await supabase
+        .from('useful_links')
+        .select('id, title, url, useful_link_companies!inner(company_id)')
+        .eq('useful_link_companies.company_id', companyId);
+      if (!linkError && linkData) {
+        type LinkRow = { id: string; title: string | null; url: string | null };
+        setUsefulLinks(
+          (linkData as LinkRow[]).map(l => ({
+            id: l.id,
+            title: l.title || '',
+            url: l.url || '',
+          }))
+        );
+      }
+
+      // Adoption Coaching
+      const { data: coachingData, error: coachError } = await supabase
+        .from('adoption_coaching')
+        .select('topic, adoption_coaching_companies!inner(company_id)')
+        .eq('adoption_coaching_companies.company_id', companyId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (!coachError && coachingData && coachingData[0]) {
+        type CoachingRow = { topic: string | null };
+        setNextSession((coachingData[0] as CoachingRow).topic || undefined);
+      } else {
+        setNextSession(undefined);
+      }
+
+      // Reports & KPIs
+      const { data: reportData, error: reportError } = await supabase
+        .from('reports')
+        .select('kpis, report_companies!inner(company_id)')
+        .eq('report_companies.company_id', companyId)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (!reportError && reportData && reportData[0]) {
+        type ReportRow = { kpis: { name: string; value: string }[] | null };
+        setKpis((reportData[0] as ReportRow).kpis || []);
+      } else {
+        setKpis([]);
+      }
+
+      // FAQs
+      const { data: faqData, error: faqError } = await supabase
+        .from('faqs')
+        .select('id, question, answer, faq_companies!inner(company_id)')
+        .eq('faq_companies.company_id', companyId);
+      if (!faqError && faqData) {
+        type FaqRow = { id: string; question: string | null; answer: string | null };
+        setFaqs(
+          (faqData as FaqRow[]).map(f => ({
+            id: f.id,
+            question: f.question || '',
+            answer: f.answer || '',
+          }))
+        );
+      }
+    };
+
+    loadData();
+  }, [company?.id]);
 
   if (loading) {
     return (
@@ -34,11 +145,6 @@ const ClientPortal: React.FC = () => {
   if (!company) {
     return <AccessDenied />;
   }
-
-  const announcements: Array<{ id: number; title: string; date: string; status?: 'New' | 'Important'; }> = [];
-  const resources: Array<{ id: number; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string; }> = [];
-  const usefulLinks: Array<{ id: number; title: string; url: string; }> = [];
-  const nextSession: string | undefined = undefined;
 
   return (
     <div className="min-h-screen flex flex-col bg-warm-beige">
@@ -148,8 +254,13 @@ const ClientPortal: React.FC = () => {
               <CardTitle className="text-forest-green">Reports & KPIs</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
-              <KPITile label="Hours saved" value="0h" />
-              <KPITile label="Completion" value="0%" />
+              {kpis.length ? (
+                kpis.map((kpi, idx) => (
+                  <KPITile key={idx} label={kpi.name} value={kpi.value} />
+                ))
+              ) : (
+                <EmptyState message="No reports yet." />
+              )}
             </CardContent>
           </Card>
 
@@ -158,7 +269,16 @@ const ClientPortal: React.FC = () => {
               <CardTitle className="text-forest-green">FAQ</CardTitle>
             </CardHeader>
             <CardContent>
-              <EmptyState message="Short answers coming soon." />
+              {faqs.length ? (
+                faqs.map(f => (
+                  <div key={f.id} className="mb-4 last:mb-0">
+                    <p className="text-sm font-medium text-forest-green">{f.question}</p>
+                    <p className="text-sm text-slate-gray">{f.answer}</p>
+                  </div>
+                ))
+              ) : (
+                <EmptyState message="Short answers coming soon." />
+              )}
             </CardContent>
           </Card>
         </div>
