@@ -14,6 +14,144 @@ export type Database = {
   }
   public: {
     Tables: {
+      adoption_coaching: {
+        Row: {
+          contact: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          media: string | null
+          steps: string | null
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          media?: string | null
+          steps?: string | null
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          media?: string | null
+          steps?: string | null
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      adoption_coaching_companies: {
+        Row: {
+          coaching_id: string
+          company_id: string
+          created_at: string
+        }
+        Insert: {
+          coaching_id: string
+          company_id: string
+          created_at?: string
+        }
+        Update: {
+          coaching_id?: string
+          company_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "adoption_coaching_companies_coaching_id_fkey"
+            columns: ["coaching_id"]
+            isOneToOne: false
+            referencedRelation: "adoption_coaching"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "adoption_coaching_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcement_companies: {
+        Row: {
+          announcement_id: string
+          company_id: string
+          created_at: string
+        }
+        Insert: {
+          announcement_id: string
+          company_id: string
+          created_at?: string
+        }
+        Update: {
+          announcement_id?: string
+          company_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_companies_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcement_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcements: {
+        Row: {
+          author: string | null
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          summary: string | null
+          title: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          author?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          author?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           created_at: string
@@ -104,6 +242,75 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_companies: {
+        Row: {
+          company_id: string
+          created_at: string
+          faq_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          faq_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          faq_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faq_companies_faq_id_fkey"
+            columns: ["faq_id"]
+            isOneToOne: false
+            referencedRelation: "faqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faqs: {
+        Row: {
+          answer: string
+          category: string | null
+          created_at: string
+          created_by: string | null
+          goal: string | null
+          id: string
+          question: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          answer: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          goal?: string | null
+          id?: string
+          question: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          answer?: string
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          goal?: string | null
+          id?: string
+          question?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       invitation_token_attempts: {
         Row: {
           attempt_time: string
@@ -166,6 +373,141 @@ export type Database = {
           },
         ]
       }
+      portal_resource_companies: {
+        Row: {
+          company_id: string
+          created_at: string
+          resource_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          resource_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          resource_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_resource_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_resource_companies_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "portal_resources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_resources: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          link: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          link?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          link?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      report_companies: {
+        Row: {
+          company_id: string
+          created_at: string
+          report_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          report_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_companies_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          kpis: Json
+          link: string | null
+          name: string
+          notes: string | null
+          period: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kpis?: Json
+          link?: string | null
+          name: string
+          notes?: string | null
+          period?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kpis?: Json
+          link?: string | null
+          name?: string
+          notes?: string | null
+          period?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       security_audit_log: {
         Row: {
           created_at: string
@@ -193,6 +535,69 @@ export type Database = {
           ip_address?: unknown | null
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      useful_link_companies: {
+        Row: {
+          company_id: string
+          created_at: string
+          link_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          link_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "useful_link_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "useful_link_companies_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "useful_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      useful_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+          url?: string
         }
         Relationships: []
       }

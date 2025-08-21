@@ -68,7 +68,7 @@ export function SortableTable<T extends { id: string }>({ data, columns }: Sorta
             <TableRow key={item.id}>
               {columns.map(col => (
                 <TableCell key={col.key}>
-                  {col.render ? col.render(item) : get(item, col.key)}
+                  {col.render ? col.render(item) : String(get(item, col.key))}
                 </TableCell>
               ))}
             </TableRow>

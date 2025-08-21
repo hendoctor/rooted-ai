@@ -18,6 +18,7 @@ import { LoadingSpinner, InlineLoader } from '@/components/LoadingSpinner';
 import InviteUserForm from '@/components/InviteUserForm';
 import PortalContentManager from '@/components/admin/PortalContentManager';
 import { Link } from 'react-router-dom';
+import AccessDenied from './AccessDenied';
 
 interface UserWithRole {
   id: string;
