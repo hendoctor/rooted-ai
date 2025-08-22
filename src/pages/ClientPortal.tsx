@@ -15,8 +15,16 @@ import { supabase } from '@/integrations/supabase/client';
 
 const ClientPortal: React.FC = () => {
   const { user, userRole, companies, loading } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const companyParam = searchParams.get('company');
+
+  // Default to the user's first company if no company is specified
+  useEffect(() => {
+    if (!companyParam && companies.length > 0) {
+      setSearchParams({ company: companies[0].slug });
+    }
+  }, [companyParam, companies, setSearchParams]);
+
   const company = companyParam
     ? companies.find(c => c.slug === companyParam)
     : companies[0];
