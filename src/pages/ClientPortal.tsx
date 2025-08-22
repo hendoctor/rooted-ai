@@ -14,33 +14,13 @@ import EmptyState from '@/components/client-portal/EmptyState';
 import { supabase } from '@/integrations/supabase/client';
 
 const ClientPortal: React.FC = () => {
-  const { user, userRole, companies, loading, session } = useAuth();
+  const { user, userRole, companies, loading } = useAuth();
   const [searchParams] = useSearchParams();
   const companyParam = searchParams.get('company');
-
-  // Determine which company IDs to load content for
-  const companyIds = companyParam
-    ? companies.filter(c => c.slug === companyParam).map(c => c.id)
-    : companies.map(c => c.id);
-
-  // Use first company for quick access link/display
-  const primaryCompany = companyParam
+  const company = companyParam
     ? companies.find(c => c.slug === companyParam)
     : companies[0];
-  const companySlug = primaryCompany?.slug;
-
-  // Debug logging
-  console.log('ClientPortal auth state:', {
-    userLoading: loading,
-    hasUser: !!user,
-    userId: user?.id,
-    hasSession: !!session,
-    userRole,
-    companiesCount: companies.length,
-    selectedCompany: primaryCompany,
-    authUid: user?.id,
-    companyIds
-  });
+  const companySlug = company?.slug;
 
   const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; date: string; status?: 'New' | 'Important'; }>>([]);
   const [resources, setResources] = useState<Array<{ id: string; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string }>>([]);
@@ -50,54 +30,25 @@ const ClientPortal: React.FC = () => {
   const [faqs, setFaqs] = useState<Array<{ id: string; question: string; answer: string }>>([]);
 
   useEffect(() => {
-    // Don't load data until auth is fully ready
-    if (loading || !user || !session) {
-      console.log('ClientPortal waiting for auth:', {
-        loading,
-        hasUser: !!user,
-        hasSession: !!session,
-        companyIds: companyIds.length,
-        userId: user?.id
-      });
-      return;
-    }
-
-    if (companyIds.length === 0) {
-      // User has no company membership - clear content
-      setAnnouncements([]);
-      setResources([]);
-      setUsefulLinks([]);
-      setNextSession(undefined);
-      setKpis([]);
-      setFaqs([]);
-      return;
-    }
+    if (!company?.id) return;
+    const companyId = company.id;
 
     const loadData = async () => {
-      console.log('Loading client portal content for companies:', companyIds);
-      console.log('Auth context for queries:', {
-        userId: user.id,
-        userEmail: user.email,
-        companyIds
-      });
+      console.log('Loading client portal content for company:', companyId);
       
       try {
-        // Announcements - use assignment table to respect RLS
+        // Announcements
         const { data: annData, error: annError } = await supabase
-          .from('announcement_companies')
-          .select('announcements(id, title, created_at)')
-          .in('company_id', companyIds)
-          .order('announcements.created_at', { ascending: false });
-
+          .from('announcements')
+          .select('id, title, created_at, announcement_companies!inner(company_id)')
+          .eq('announcement_companies.company_id', companyId)
+          .order('created_at', { ascending: false });
+        
         console.log('Announcements query result:', { data: annData, error: annError });
-
+        
         if (!annError && annData) {
-          const seen = new Set<string>();
-          const mapped = annData
-            .map(a => a.announcements)
-            .filter((a): a is { id: string; title: string | null; created_at: string | null } => !!a && !seen.has(a.id) && seen.add(a.id));
           setAnnouncements(
-            mapped.map(a => ({
+            annData.map(a => ({
               id: a.id,
               title: a.title || '',
               date: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
@@ -107,19 +58,15 @@ const ClientPortal: React.FC = () => {
 
         // Resources
         const { data: resData, error: resError } = await supabase
-          .from('portal_resource_companies')
-          .select('portal_resources(id, title, link, category)')
-          .in('company_id', companyIds);
-
+          .from('portal_resources')
+          .select('id, title, link, category, portal_resource_companies!inner(company_id)')
+          .eq('portal_resource_companies.company_id', companyId);
+        
         console.log('Resources query result:', { data: resData, error: resError });
-
+        
         if (!resError && resData) {
-          const seen = new Set<string>();
-          const mapped = resData
-            .map(r => r.portal_resources)
-            .filter((r): r is { id: string; title: string | null; link: string | null; category: string | null } => !!r && !seen.has(r.id) && seen.add(r.id));
           setResources(
-            mapped.map(r => ({
+            resData.map(r => ({
               id: r.id,
               title: r.title || '',
               type: (r.category as 'Guide' | 'Video' | 'Slide') || 'Guide',
@@ -130,19 +77,15 @@ const ClientPortal: React.FC = () => {
 
         // Useful Links
         const { data: linkData, error: linkError } = await supabase
-          .from('useful_link_companies')
-          .select('useful_links(id, title, url)')
-          .in('company_id', companyIds);
-
+          .from('useful_links')
+          .select('id, title, url, useful_link_companies!inner(company_id)')
+          .eq('useful_link_companies.company_id', companyId);
+        
         console.log('Useful Links query result:', { data: linkData, error: linkError });
-
+        
         if (!linkError && linkData) {
-          const seen = new Set<string>();
-          const mapped = linkData
-            .map(l => l.useful_links)
-            .filter((l): l is { id: string; title: string | null; url: string | null } => !!l && !seen.has(l.id) && seen.add(l.id));
           setUsefulLinks(
-            mapped.map(l => ({
+            linkData.map(l => ({
               id: l.id,
               title: l.title || '',
               url: l.url || '',
@@ -152,32 +95,32 @@ const ClientPortal: React.FC = () => {
 
         // Adoption Coaching
         const { data: coachingData, error: coachError } = await supabase
-          .from('adoption_coaching_companies')
-          .select('adoption_coaching(topic, created_at)')
-          .in('company_id', companyIds)
-          .order('adoption_coaching.created_at', { ascending: false })
+          .from('adoption_coaching')
+          .select('topic, adoption_coaching_companies!inner(company_id)')
+          .eq('adoption_coaching_companies.company_id', companyId)
+          .order('created_at', { ascending: false })
           .limit(1);
-
+        
         console.log('Coaching query result:', { data: coachingData, error: coachError });
-
-        if (!coachError && coachingData && coachingData[0]?.adoption_coaching) {
-          setNextSession(coachingData[0].adoption_coaching.topic || undefined);
+        
+        if (!coachError && coachingData && coachingData[0]) {
+          setNextSession(coachingData[0].topic || undefined);
         } else {
           setNextSession(undefined);
         }
 
         // Reports & KPIs
         const { data: reportData, error: reportError } = await supabase
-          .from('report_companies')
-          .select('reports(kpis, created_at)')
-          .in('company_id', companyIds)
-          .order('reports.created_at', { ascending: false })
+          .from('reports')
+          .select('kpis, report_companies!inner(company_id)')
+          .eq('report_companies.company_id', companyId)
+          .order('created_at', { ascending: false })
           .limit(1);
-
+        
         console.log('Reports query result:', { data: reportData, error: reportError });
-
-        if (!reportError && reportData && reportData[0]?.reports) {
-          const kpiData = reportData[0].reports.kpis;
+        
+        if (!reportError && reportData && reportData[0]) {
+          const kpiData = reportData[0].kpis;
           if (Array.isArray(kpiData)) {
             setKpis(kpiData as Array<{ name: string; value: string }>);
           } else {
@@ -189,19 +132,15 @@ const ClientPortal: React.FC = () => {
 
         // FAQs
         const { data: faqData, error: faqError } = await supabase
-          .from('faq_companies')
-          .select('faqs(id, question, answer)')
-          .in('company_id', companyIds);
-
+          .from('faqs')
+          .select('id, question, answer, faq_companies!inner(company_id)')
+          .eq('faq_companies.company_id', companyId);
+        
         console.log('FAQs query result:', { data: faqData, error: faqError });
-
+        
         if (!faqError && faqData) {
-          const seen = new Set<string>();
-          const mapped = faqData
-            .map(f => f.faqs)
-            .filter((f): f is { id: string; question: string | null; answer: string | null } => !!f && !seen.has(f.id) && seen.add(f.id));
           setFaqs(
-            mapped.map(f => ({
+            faqData.map(f => ({
               id: f.id,
               question: f.question || '',
               answer: f.answer || '',
@@ -214,22 +153,19 @@ const ClientPortal: React.FC = () => {
     };
 
     loadData();
-  }, [loading, user, session, companyIds.join(',')]);
+  }, [company?.id]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-lg">Loading...</div>
-          <div className="text-sm text-slate-gray mt-2">
-            Authenticating user and loading company data...
-          </div>
-        </div>
-      </div>
+      <div className="min-h-screen flex items-center justify-center">Loading...</div>
     );
   }
 
   if (!user || (userRole !== 'Client' && userRole !== 'Admin')) {
+    return <AccessDenied />;
+  }
+
+  if (!company) {
     return <AccessDenied />;
   }
 
