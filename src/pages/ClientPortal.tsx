@@ -68,88 +68,90 @@ const ClientPortal: React.FC = () => {
       try {
         // Announcements
         const { data: annData, error: annError } = await supabase
-          .from('announcements')
-          .select('id, title, created_at, announcement_companies!inner(company_id)')
-          .eq('announcement_companies.company_id', companyId)
-          .order('created_at', { ascending: false });
-        
+          .from('announcement_companies')
+          .select('announcement:announcements(id, title, created_at)')
+          .eq('company_id', companyId)
+          .order('announcement.created_at', { ascending: false });
+
         console.log('Announcements query result:', { data: annData, error: annError });
-        
+
         if (!annError && annData) {
           setAnnouncements(
             annData.map(a => ({
-              id: a.id,
-              title: a.title || '',
-              date: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
+              id: a.announcement.id,
+              title: a.announcement.title || '',
+              date: a.announcement.created_at
+                ? new Date(a.announcement.created_at).toLocaleDateString()
+                : '',
             }))
           );
         }
 
         // Resources
         const { data: resData, error: resError } = await supabase
-          .from('portal_resources')
-          .select('id, title, link, category, portal_resource_companies!inner(company_id)')
-          .eq('portal_resource_companies.company_id', companyId);
-        
+          .from('portal_resource_companies')
+          .select('resource:portal_resources(id, title, link, category)')
+          .eq('company_id', companyId);
+
         console.log('Resources query result:', { data: resData, error: resError });
-        
+
         if (!resError && resData) {
           setResources(
             resData.map(r => ({
-              id: r.id,
-              title: r.title || '',
-              type: (r.category as 'Guide' | 'Video' | 'Slide') || 'Guide',
-              href: r.link || undefined,
+              id: r.resource.id,
+              title: r.resource.title || '',
+              type: (r.resource.category as 'Guide' | 'Video' | 'Slide') || 'Guide',
+              href: r.resource.link || undefined,
             }))
           );
         }
 
         // Useful Links
         const { data: linkData, error: linkError } = await supabase
-          .from('useful_links')
-          .select('id, title, url, useful_link_companies!inner(company_id)')
-          .eq('useful_link_companies.company_id', companyId);
-        
+          .from('useful_link_companies')
+          .select('link:useful_links(id, title, url)')
+          .eq('company_id', companyId);
+
         console.log('Useful Links query result:', { data: linkData, error: linkError });
-        
+
         if (!linkError && linkData) {
           setUsefulLinks(
             linkData.map(l => ({
-              id: l.id,
-              title: l.title || '',
-              url: l.url || '',
+              id: l.link.id,
+              title: l.link.title || '',
+              url: l.link.url || '',
             }))
           );
         }
 
         // Adoption Coaching
         const { data: coachingData, error: coachError } = await supabase
-          .from('adoption_coaching')
-          .select('topic, adoption_coaching_companies!inner(company_id)')
-          .eq('adoption_coaching_companies.company_id', companyId)
-          .order('created_at', { ascending: false })
+          .from('adoption_coaching_companies')
+          .select('coaching:adoption_coaching(topic, created_at)')
+          .eq('company_id', companyId)
+          .order('coaching.created_at', { ascending: false })
           .limit(1);
-        
+
         console.log('Coaching query result:', { data: coachingData, error: coachError });
-        
+
         if (!coachError && coachingData && coachingData[0]) {
-          setNextSession(coachingData[0].topic || undefined);
+          setNextSession(coachingData[0].coaching.topic || undefined);
         } else {
           setNextSession(undefined);
         }
 
         // Reports & KPIs
         const { data: reportData, error: reportError } = await supabase
-          .from('reports')
-          .select('kpis, report_companies!inner(company_id)')
-          .eq('report_companies.company_id', companyId)
-          .order('created_at', { ascending: false })
+          .from('report_companies')
+          .select('report:reports(kpis, created_at)')
+          .eq('company_id', companyId)
+          .order('report.created_at', { ascending: false })
           .limit(1);
-        
+
         console.log('Reports query result:', { data: reportData, error: reportError });
-        
+
         if (!reportError && reportData && reportData[0]) {
-          const kpiData = reportData[0].kpis;
+          const kpiData = reportData[0].report.kpis;
           if (Array.isArray(kpiData)) {
             setKpis(kpiData as Array<{ name: string; value: string }>);
           } else {
@@ -161,18 +163,18 @@ const ClientPortal: React.FC = () => {
 
         // FAQs
         const { data: faqData, error: faqError } = await supabase
-          .from('faqs')
-          .select('id, question, answer, faq_companies!inner(company_id)')
-          .eq('faq_companies.company_id', companyId);
-        
+          .from('faq_companies')
+          .select('faq:faqs(id, question, answer)')
+          .eq('company_id', companyId);
+
         console.log('FAQs query result:', { data: faqData, error: faqError });
-        
+
         if (!faqError && faqData) {
           setFaqs(
             faqData.map(f => ({
-              id: f.id,
-              question: f.question || '',
-              answer: f.answer || '',
+              id: f.faq.id,
+              question: f.faq.question || '',
+              answer: f.faq.answer || '',
             }))
           );
         }
