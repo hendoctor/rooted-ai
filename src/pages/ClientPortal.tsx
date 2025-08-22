@@ -14,13 +14,25 @@ import EmptyState from '@/components/client-portal/EmptyState';
 import { supabase } from '@/integrations/supabase/client';
 
 const ClientPortal: React.FC = () => {
-  const { user, userRole, companies, loading } = useAuth();
+  const { user, userRole, companies, loading, session } = useAuth();
   const [searchParams] = useSearchParams();
   const companyParam = searchParams.get('company');
   const company = companyParam
     ? companies.find(c => c.slug === companyParam)
     : companies[0];
   const companySlug = company?.slug;
+
+  // Debug logging
+  console.log('ClientPortal auth state:', {
+    userLoading: loading,
+    hasUser: !!user,
+    userId: user?.id,
+    hasSession: !!session,
+    userRole,
+    companiesCount: companies.length,
+    selectedCompany: company,
+    authUid: user?.id
+  });
 
   const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; date: string; status?: 'New' | 'Important'; }>>([]);
   const [resources, setResources] = useState<Array<{ id: string; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string }>>([]);
@@ -30,11 +42,28 @@ const ClientPortal: React.FC = () => {
   const [faqs, setFaqs] = useState<Array<{ id: string; question: string; answer: string }>>([]);
 
   useEffect(() => {
-    if (!company?.id) return;
+    // Don't load data until auth is fully ready
+    if (loading || !user || !session || !company?.id) {
+      console.log('ClientPortal waiting for auth:', { 
+        loading, 
+        hasUser: !!user, 
+        hasSession: !!session, 
+        hasCompany: !!company?.id,
+        userId: user?.id 
+      });
+      return;
+    }
+    
     const companyId = company.id;
 
     const loadData = async () => {
       console.log('Loading client portal content for company:', companyId);
+      console.log('Auth context for queries:', {
+        userId: user.id,
+        userEmail: user.email,
+        companyId,
+        companyName: company.name
+      });
       
       try {
         // Announcements
@@ -153,11 +182,18 @@ const ClientPortal: React.FC = () => {
     };
 
     loadData();
-  }, [company?.id]);
+  }, [loading, user, session, company?.id]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg">Loading...</div>
+          <div className="text-sm text-slate-gray mt-2">
+            Authenticating user and loading company data...
+          </div>
+        </div>
+      </div>
     );
   }
 
