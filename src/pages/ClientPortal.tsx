@@ -11,7 +11,7 @@ import UsefulLinkCard from '@/components/client-portal/UsefulLinkCard';
 import CoachingCard from '@/components/client-portal/CoachingCard';
 import KPITile from '@/components/client-portal/KPITile';
 import EmptyState from '@/components/client-portal/EmptyState';
-import { companyContentQuery } from '@/utils/companyContent';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClientPortal: React.FC = () => {
   const { user, userRole, companies, loading } = useAuth();
@@ -34,95 +34,121 @@ const ClientPortal: React.FC = () => {
     const companyId = company.id;
 
     const loadData = async () => {
-      // Announcements
-      const { data: annData, error: annError } = await companyContentQuery<{
-        id: string;
-        title: string | null;
-        created_at: string | null;
-      }>('announcements', 'announcement_companies', 'id, title, created_at', companyId)
-        .order('created_at', { ascending: false });
-      if (!annError && annData) {
-        setAnnouncements(
-          annData.map(a => ({
-            id: a.id,
-            title: a.title || '',
-            date: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
-          }))
-        );
-      }
+      console.log('Loading client portal content for company:', companyId);
+      
+      try {
+        // Announcements
+        const { data: annData, error: annError } = await supabase
+          .from('announcements')
+          .select('id, title, created_at, announcement_companies!inner(company_id)')
+          .eq('announcement_companies.company_id', companyId)
+          .order('created_at', { ascending: false });
+        
+        console.log('Announcements query result:', { data: annData, error: annError });
+        
+        if (!annError && annData) {
+          setAnnouncements(
+            annData.map(a => ({
+              id: a.id,
+              title: a.title || '',
+              date: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
+            }))
+          );
+        }
 
-      // Resources
-      const { data: resData, error: resError } = await companyContentQuery<{
-        id: string;
-        title: string | null;
-        link: string | null;
-        category: string | null;
-      }>('portal_resources', 'portal_resource_companies', 'id, title, link, category', companyId);
-      if (!resError && resData) {
-        setResources(
-          resData.map(r => ({
-            id: r.id,
-            title: r.title || '',
-            type: (r.category as 'Guide' | 'Video' | 'Slide') || 'Guide',
-            href: r.link || undefined,
-          }))
-        );
-      }
+        // Resources
+        const { data: resData, error: resError } = await supabase
+          .from('portal_resources')
+          .select('id, title, link, category, portal_resource_companies!inner(company_id)')
+          .eq('portal_resource_companies.company_id', companyId);
+        
+        console.log('Resources query result:', { data: resData, error: resError });
+        
+        if (!resError && resData) {
+          setResources(
+            resData.map(r => ({
+              id: r.id,
+              title: r.title || '',
+              type: (r.category as 'Guide' | 'Video' | 'Slide') || 'Guide',
+              href: r.link || undefined,
+            }))
+          );
+        }
 
-      // Useful Links
-      const { data: linkData, error: linkError } = await companyContentQuery<{
-        id: string;
-        title: string | null;
-        url: string | null;
-      }>('useful_links', 'useful_link_companies', 'id, title, url', companyId);
-      if (!linkError && linkData) {
-        setUsefulLinks(
-          linkData.map(l => ({
-            id: l.id,
-            title: l.title || '',
-            url: l.url || '',
-          }))
-        );
-      }
+        // Useful Links
+        const { data: linkData, error: linkError } = await supabase
+          .from('useful_links')
+          .select('id, title, url, useful_link_companies!inner(company_id)')
+          .eq('useful_link_companies.company_id', companyId);
+        
+        console.log('Useful Links query result:', { data: linkData, error: linkError });
+        
+        if (!linkError && linkData) {
+          setUsefulLinks(
+            linkData.map(l => ({
+              id: l.id,
+              title: l.title || '',
+              url: l.url || '',
+            }))
+          );
+        }
 
-      // Adoption Coaching
-      const { data: coachingData, error: coachError } = await companyContentQuery<{
-        topic: string | null;
-      }>('adoption_coaching', 'adoption_coaching_companies', 'topic', companyId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (!coachError && coachingData && coachingData[0]) {
-        setNextSession(coachingData[0].topic || undefined);
-      } else {
-        setNextSession(undefined);
-      }
+        // Adoption Coaching
+        const { data: coachingData, error: coachError } = await supabase
+          .from('adoption_coaching')
+          .select('topic, adoption_coaching_companies!inner(company_id)')
+          .eq('adoption_coaching_companies.company_id', companyId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        console.log('Coaching query result:', { data: coachingData, error: coachError });
+        
+        if (!coachError && coachingData && coachingData[0]) {
+          setNextSession(coachingData[0].topic || undefined);
+        } else {
+          setNextSession(undefined);
+        }
 
-      // Reports & KPIs
-      const { data: reportData, error: reportError } = await companyContentQuery<{
-        kpis: { name: string; value: string }[] | null;
-      }>('reports', 'report_companies', 'kpis', companyId)
-        .order('created_at', { ascending: false })
-        .limit(1);
-      if (!reportError && reportData && reportData[0]) {
-        setKpis(reportData[0].kpis || []);
-      } else {
-        setKpis([]);
-      }
+        // Reports & KPIs
+        const { data: reportData, error: reportError } = await supabase
+          .from('reports')
+          .select('kpis, report_companies!inner(company_id)')
+          .eq('report_companies.company_id', companyId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        console.log('Reports query result:', { data: reportData, error: reportError });
+        
+        if (!reportError && reportData && reportData[0]) {
+          const kpiData = reportData[0].kpis;
+          if (Array.isArray(kpiData)) {
+            setKpis(kpiData as Array<{ name: string; value: string }>);
+          } else {
+            setKpis([]);
+          }
+        } else {
+          setKpis([]);
+        }
 
-      // FAQs
-      const { data: faqData, error: faqError } = await companyContentQuery<{
-        id: string;
-        question: string | null;
-        answer: string | null;
-      }>('faqs', 'faq_companies', 'id, question, answer', companyId);
-      if (!faqError && faqData) {
-        setFaqs(
-          faqData.map(f => ({
-            id: f.id,
-            question: f.question || '',
-            answer: f.answer || '',
-          }))
-        );
+        // FAQs
+        const { data: faqData, error: faqError } = await supabase
+          .from('faqs')
+          .select('id, question, answer, faq_companies!inner(company_id)')
+          .eq('faq_companies.company_id', companyId);
+        
+        console.log('FAQs query result:', { data: faqData, error: faqError });
+        
+        if (!faqError && faqData) {
+          setFaqs(
+            faqData.map(f => ({
+              id: f.id,
+              question: f.question || '',
+              answer: f.answer || '',
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Error loading client portal content:', error);
       }
     };
 
