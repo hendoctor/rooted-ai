@@ -82,39 +82,44 @@ const ClientPortal: React.FC = () => {
       });
       
       try {
-        // Announcements
-        // Announcements - query content table to satisfy RLS
+        // Announcements - use assignment table to respect RLS
         const { data: annData, error: annError } = await supabase
-          .from('announcements')
-          .select('id, title, created_at, announcement_companies!inner(company_id)')
-          .in('announcement_companies.company_id', companyIds)
-          .order('created_at', { ascending: false });
+          .from('announcement_companies')
+          .select('announcements(id, title, created_at)')
+          .in('company_id', companyIds)
+          .order('announcements.created_at', { ascending: false });
 
         console.log('Announcements query result:', { data: annData, error: annError });
 
         if (!annError && annData) {
+          const seen = new Set<string>();
+          const mapped = annData
+            .map(a => a.announcements)
+            .filter((a): a is { id: string; title: string | null; created_at: string | null } => !!a && !seen.has(a.id) && seen.add(a.id));
           setAnnouncements(
-            annData.map(a => ({
+            mapped.map(a => ({
               id: a.id,
               title: a.title || '',
-              date: a.created_at
-                ? new Date(a.created_at).toLocaleDateString()
-                : '',
+              date: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
             }))
           );
         }
 
         // Resources
         const { data: resData, error: resError } = await supabase
-          .from('portal_resources')
-          .select('id, title, link, category, portal_resource_companies!inner(company_id)')
-          .in('portal_resource_companies.company_id', companyIds);
+          .from('portal_resource_companies')
+          .select('portal_resources(id, title, link, category)')
+          .in('company_id', companyIds);
 
         console.log('Resources query result:', { data: resData, error: resError });
 
         if (!resError && resData) {
+          const seen = new Set<string>();
+          const mapped = resData
+            .map(r => r.portal_resources)
+            .filter((r): r is { id: string; title: string | null; link: string | null; category: string | null } => !!r && !seen.has(r.id) && seen.add(r.id));
           setResources(
-            resData.map(r => ({
+            mapped.map(r => ({
               id: r.id,
               title: r.title || '',
               type: (r.category as 'Guide' | 'Video' | 'Slide') || 'Guide',
@@ -125,15 +130,19 @@ const ClientPortal: React.FC = () => {
 
         // Useful Links
         const { data: linkData, error: linkError } = await supabase
-          .from('useful_links')
-          .select('id, title, url, useful_link_companies!inner(company_id)')
-          .in('useful_link_companies.company_id', companyIds);
+          .from('useful_link_companies')
+          .select('useful_links(id, title, url)')
+          .in('company_id', companyIds);
 
         console.log('Useful Links query result:', { data: linkData, error: linkError });
 
         if (!linkError && linkData) {
+          const seen = new Set<string>();
+          const mapped = linkData
+            .map(l => l.useful_links)
+            .filter((l): l is { id: string; title: string | null; url: string | null } => !!l && !seen.has(l.id) && seen.add(l.id));
           setUsefulLinks(
-            linkData.map(l => ({
+            mapped.map(l => ({
               id: l.id,
               title: l.title || '',
               url: l.url || '',
@@ -143,32 +152,32 @@ const ClientPortal: React.FC = () => {
 
         // Adoption Coaching
         const { data: coachingData, error: coachError } = await supabase
-          .from('adoption_coaching')
-          .select('topic, created_at, adoption_coaching_companies!inner(company_id)')
-          .in('adoption_coaching_companies.company_id', companyIds)
-          .order('created_at', { ascending: false })
+          .from('adoption_coaching_companies')
+          .select('adoption_coaching(topic, created_at)')
+          .in('company_id', companyIds)
+          .order('adoption_coaching.created_at', { ascending: false })
           .limit(1);
 
         console.log('Coaching query result:', { data: coachingData, error: coachError });
 
-        if (!coachError && coachingData && coachingData[0]) {
-          setNextSession(coachingData[0].topic || undefined);
+        if (!coachError && coachingData && coachingData[0]?.adoption_coaching) {
+          setNextSession(coachingData[0].adoption_coaching.topic || undefined);
         } else {
           setNextSession(undefined);
         }
 
         // Reports & KPIs
         const { data: reportData, error: reportError } = await supabase
-          .from('reports')
-          .select('kpis, created_at, report_companies!inner(company_id)')
-          .in('report_companies.company_id', companyIds)
-          .order('created_at', { ascending: false })
+          .from('report_companies')
+          .select('reports(kpis, created_at)')
+          .in('company_id', companyIds)
+          .order('reports.created_at', { ascending: false })
           .limit(1);
 
         console.log('Reports query result:', { data: reportData, error: reportError });
 
-        if (!reportError && reportData && reportData[0]) {
-          const kpiData = reportData[0].kpis;
+        if (!reportError && reportData && reportData[0]?.reports) {
+          const kpiData = reportData[0].reports.kpis;
           if (Array.isArray(kpiData)) {
             setKpis(kpiData as Array<{ name: string; value: string }>);
           } else {
@@ -180,15 +189,19 @@ const ClientPortal: React.FC = () => {
 
         // FAQs
         const { data: faqData, error: faqError } = await supabase
-          .from('faqs')
-          .select('id, question, answer, faq_companies!inner(company_id)')
-          .in('faq_companies.company_id', companyIds);
+          .from('faq_companies')
+          .select('faqs(id, question, answer)')
+          .in('company_id', companyIds);
 
         console.log('FAQs query result:', { data: faqData, error: faqError });
 
         if (!faqError && faqData) {
+          const seen = new Set<string>();
+          const mapped = faqData
+            .map(f => f.faqs)
+            .filter((f): f is { id: string; question: string | null; answer: string | null } => !!f && !seen.has(f.id) && seen.add(f.id));
           setFaqs(
-            faqData.map(f => ({
+            mapped.map(f => ({
               id: f.id,
               question: f.question || '',
               answer: f.answer || '',
