@@ -774,6 +774,109 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       toast.error('Failed to save FAQ');
     }
     setLoading(false);
+};
+
+  // Delete handlers
+  const deleteAnnouncement = async (id: string) => {
+    if (!window.confirm('Delete this announcement? This action cannot be undone.')) return;
+    try {
+      setLoading(true);
+      await supabase.from('announcement_companies').delete().eq('announcement_id', id);
+      const { error } = await supabase.from('announcements').delete().eq('id', id);
+      if (error) throw error;
+      await fetchAnnouncements();
+      toast.success('Announcement deleted');
+    } catch (err) {
+      console.error('Error deleting announcement:', err);
+      toast.error('Failed to delete announcement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteResource = async (id: string) => {
+    if (!window.confirm('Delete this resource? This action cannot be undone.')) return;
+    try {
+      setLoading(true);
+      await supabase.from('portal_resource_companies').delete().eq('resource_id', id);
+      const { error } = await supabase.from('portal_resources').delete().eq('id', id);
+      if (error) throw error;
+      await fetchResources();
+      toast.success('Resource deleted');
+    } catch (err) {
+      console.error('Error deleting resource:', err);
+      toast.error('Failed to delete resource');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteLink = async (id: string) => {
+    if (!window.confirm('Delete this link? This action cannot be undone.')) return;
+    try {
+      setLoading(true);
+      await supabase.from('useful_link_companies').delete().eq('link_id', id);
+      const { error } = await supabase.from('useful_links').delete().eq('id', id);
+      if (error) throw error;
+      await fetchUsefulLinks();
+      toast.success('Link deleted');
+    } catch (err) {
+      console.error('Error deleting link:', err);
+      toast.error('Failed to delete link');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteCoaching = async (id: string) => {
+    if (!window.confirm('Delete this coaching item? This action cannot be undone.')) return;
+    try {
+      setLoading(true);
+      await supabase.from('adoption_coaching_companies').delete().eq('coaching_id', id);
+      const { error } = await supabase.from('adoption_coaching').delete().eq('id', id);
+      if (error) throw error;
+      await fetchCoaching();
+      toast.success('Coaching content deleted');
+    } catch (err) {
+      console.error('Error deleting coaching:', err);
+      toast.error('Failed to delete coaching content');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteReport = async (id: string) => {
+    if (!window.confirm('Delete this report? This action cannot be undone.')) return;
+    try {
+      setLoading(true);
+      await supabase.from('report_companies').delete().eq('report_id', id);
+      const { error } = await supabase.from('reports').delete().eq('id', id);
+      if (error) throw error;
+      await fetchReports();
+      toast.success('Report deleted');
+    } catch (err) {
+      console.error('Error deleting report:', err);
+      toast.error('Failed to delete report');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteFaq = async (id: string) => {
+    if (!window.confirm('Delete this FAQ? This action cannot be undone.')) return;
+    try {
+      setLoading(true);
+      await supabase.from('faq_companies').delete().eq('faq_id', id);
+      const { error } = await supabase.from('faqs').delete().eq('id', id);
+      if (error) throw error;
+      await fetchFaqs();
+      toast.success('FAQ deleted');
+    } catch (err) {
+      console.error('Error deleting FAQ:', err);
+      toast.error('Failed to delete FAQ');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // KPI helpers
@@ -834,7 +937,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       render: a => (
         <div className="space-x-2">
           <Button size="icon" variant="ghost" onClick={() => { setEditingAnnouncement(a); setAnnouncementForm(a); setAnnouncementOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" onClick={() => setAnnouncements(prev => prev.filter(x => x.id !== a.id))}><Trash2 className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => deleteAnnouncement(a.id)}><Trash2 className="h-4 w-4" /></Button>
         </div>
       ),
     },
@@ -853,7 +956,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       render: r => (
         <div className="space-x-2">
           <Button size="icon" variant="ghost" onClick={() => { setEditingResource(r); setResourceForm(r); setResourceOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" onClick={() => setResources(prev => prev.filter(x => x.id !== r.id))}><Trash2 className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => deleteResource(r.id)}><Trash2 className="h-4 w-4" /></Button>
         </div>
       ),
     },
@@ -871,7 +974,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       render: l => (
         <div className="space-x-2">
           <Button size="icon" variant="ghost" onClick={() => { setEditingLink(l); setLinkForm(l); setLinkOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" onClick={() => setLinks(prev => prev.filter(x => x.id !== l.id))}><Trash2 className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => deleteLink(l.id)}><Trash2 className="h-4 w-4" /></Button>
         </div>
       ),
     },
@@ -891,7 +994,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       render: c => (
         <div className="space-x-2">
           <Button size="icon" variant="ghost" onClick={() => { setEditingCoaching(c); setCoachingForm(c); setCoachingOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" onClick={() => setCoachings(prev => prev.filter(x => x.id !== c.id))}><Trash2 className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => deleteCoaching(c.id)}><Trash2 className="h-4 w-4" /></Button>
         </div>
       ),
     },
@@ -911,7 +1014,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       render: r => (
         <div className="space-x-2">
           <Button size="icon" variant="ghost" onClick={() => { setEditingReport(r); setReportForm(r); setReportOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" onClick={() => setReports(prev => prev.filter(x => x.id !== r.id))}><Trash2 className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => deleteReport(r.id)}><Trash2 className="h-4 w-4" /></Button>
         </div>
       ),
     },
@@ -931,7 +1034,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       render: f => (
         <div className="space-x-2">
           <Button size="icon" variant="ghost" onClick={() => { setEditingFaq(f); setFaqForm(f); setFaqOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-          <Button size="icon" variant="ghost" onClick={() => setFaqs(prev => prev.filter(x => x.id !== f.id))}><Trash2 className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" onClick={() => deleteFaq(f.id)}><Trash2 className="h-4 w-4" /></Button>
         </div>
       ),
     },
