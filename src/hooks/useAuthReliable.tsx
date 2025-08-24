@@ -307,11 +307,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Set up auth listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
-        
+
         cleanup = () => {
           subscription.unsubscribe();
           if (timeoutId) clearTimeout(timeoutId);
         };
+
+        // Use cached session for immediate render when available
+        const cachedSession = AuthCache.getSession();
+        if (cachedSession?.user) {
+          console.log('⚡ Using cached session for immediate auth state');
+          await handleAuthStateChange('CACHED_SESSION', cachedSession);
+        }
 
         // Check for existing session without racing timeouts to avoid false negatives
         const {
@@ -352,6 +359,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (cleanup) cleanup();
       if (timeoutId) clearTimeout(timeoutId);
     };
+  }, [handleAuthStateChange]);
+
+  // Refresh auth state when returning to the tab or app
+  useEffect(() => {
+    const handleVisibility = async () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          const {
+            data: { session },
+            error
+          } = await supabase.auth.getSession();
+
+          if (error) {
+            console.warn('Visibility session check error:', error);
+            return;
+          }
+
+          if (session?.user) {
+            await handleAuthStateChange('VISIBILITY_REFRESH', session);
+          }
+        } catch (err) {
+          console.error('Failed to refresh session on visibility change:', err);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [handleAuthStateChange]);
 
   const value: AuthContextType = {
