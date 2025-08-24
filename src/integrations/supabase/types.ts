@@ -373,6 +373,33 @@ export type Database = {
           },
         ]
       }
+      policy_access_log: {
+        Row: {
+          access_timestamp: string | null
+          company_id: string
+          id: number
+          resource_type: string
+          user_id: string
+          was_allowed: boolean
+        }
+        Insert: {
+          access_timestamp?: string | null
+          company_id: string
+          id?: never
+          resource_type: string
+          user_id: string
+          was_allowed: boolean
+        }
+        Update: {
+          access_timestamp?: string | null
+          company_id?: string
+          id?: never
+          resource_type?: string
+          user_id?: string
+          was_allowed?: boolean
+        }
+        Relationships: []
+      }
       portal_resource_companies: {
         Row: {
           company_id: string
@@ -696,7 +723,14 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      policy_access_metrics: {
+        Row: {
+          accessible_rows: number | null
+          resource_type: string | null
+          total_rows: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_invitation_attempt_rate_limit: {
@@ -779,6 +813,10 @@ export type Database = {
       }
       shares_company_with_user: {
         Args: { target_auth_id: string }
+        Returns: boolean
+      }
+      user_is_company_member: {
+        Args: { check_company_id: string }
         Returns: boolean
       }
       validate_invitation_secure: {
