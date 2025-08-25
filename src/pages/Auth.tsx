@@ -224,102 +224,55 @@ const Auth = () => {
         // Invitation signup flow
         console.log('Starting invitation signup for:', invitation.email);
         
-        const redirectUrl = `${window.location.origin}/`;
-        
-        const { data, error } = await supabase.auth.signUp({
-          email: invitation.email, // Use invitation email explicitly
-          password,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              full_name: invitation.full_name, // Use invitation name
-              invited_role: invitation.role,
-              invitation_id: invitation.id
-            }
+        try {
+          const inviteTokenParam = new URLSearchParams(window.location.search).get('invite');
+          if (!inviteTokenParam) {
+            throw new Error('Missing invitation token in URL');
           }
-        });
 
-        console.log('Signup result:', { data, error });
-
-        if (error) {
-          console.error('Signup error:', error);
-          toast({
-            title: "Account Creation Failed",
-            description: error.message,
-            variant: "destructive",
+          // Call secure edge function to accept invitation and create the user server-side
+          const { data: acceptData, error: acceptError } = await supabase.functions.invoke('accept-invitation', {
+            body: {
+              token: inviteTokenParam,
+              password,
+            },
           });
-        } else if (data.user) {
-          console.log('User created successfully:', data.user.id);
-          
-          try {
-            // Mark invitation as accepted with real-time update
-            const { error: updateError } = await supabase
-              .from('user_invitations')
-              .update({ 
-                status: 'accepted',
-                accepted_at: new Date().toISOString()
-              })
-              .eq('id', invitation.id);
 
-            if (updateError) {
-              console.error('Failed to update invitation:', updateError);
-              throw new Error('Failed to update invitation status');
-            }
-
-            // Create/update user record with role and client_name
-            const userRecord = {
-              auth_user_id: data.user.id,
-              email: invitation.email,
-              role: invitation.role,
-              client_name: invitation.client_name || null
-            };
-
-            console.log('Creating user record:', userRecord);
-
-            const { error: userError } = await supabase
-              .from('users')
-              .upsert(userRecord, { 
-                onConflict: 'auth_user_id',
-                ignoreDuplicates: false
-              });
-
-            if (userError) {
-              console.error('Failed to create user record:', userError);
-              throw new Error(`Database error: ${userError.message}`);
-            }
-
-            console.log('User record created successfully');
-
-            // Log successful account creation
-            await supabase.rpc('log_security_event', {
-              event_type: 'invitation_account_created',
-              event_details: { 
-                user_id: data.user.id,
-                email: invitation.email,
-                role: invitation.role,
-                invitation_id: invitation.id
-              }
-            });
-
-            toast({
-              title: "Welcome to the team!",
-              description: `Your account has been created successfully with ${invitation.role} access.`,
-            });
-
-            // Redirect new users to client portal
-            setTimeout(() => {
-              navigate('/client-portal');
-            }, 1500);
-            return;
-            
-          } catch (processError) {
-            console.error('Failed to process invitation after signup:', processError);
-            toast({
-              title: "Account Created",
-              description: "Your account was created but there was an issue setting up your role. Please contact support.",
-              variant: "destructive",
-            });
+          if (acceptError) {
+            console.error('Accept invitation error:', acceptError);
+            throw new Error(acceptError.message || 'Failed to complete registration');
           }
+
+          // Now sign the user in
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: invitation.email,
+            password,
+          });
+
+          if (signInError) {
+            console.error('Auto sign-in after acceptance failed:', signInError);
+            throw new Error('Account created, but sign-in failed. Please log in manually.');
+          }
+
+          toast({
+            title: 'Welcome!',
+            description: `Your account has been created with ${invitation.role} access.`,
+          });
+
+          // Redirect based on role
+          setTimeout(() => {
+            if (invitation.role === 'Admin') {
+              navigate('/admin');
+            } else {
+              navigate('/client-portal');
+            }
+          }, 800);
+        } catch (err: any) {
+          toast({
+            title: 'Registration Failed',
+            description: err?.message || 'Unable to complete registration.',
+            variant: 'destructive',
+          });
         }
       }
     } catch (error: unknown) {
