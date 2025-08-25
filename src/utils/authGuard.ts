@@ -107,16 +107,15 @@ export class AuthGuard {
   // Sign out with proper cleanup
   static async signOut(): Promise<void> {
     try {
-      // Clear any cached data
-      localStorage.removeItem('supabase.auth.token');
-      sessionStorage.clear();
+      // Clear only our own cache, not Supabase's storage
+      AuthCache.clearSession();
       
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Sign out error:', error);
       }
       
-      // Force navigation to home
+      // Navigate to home
       window.location.href = '/';
     } catch (error) {
       console.error('Failed to sign out:', error);
@@ -126,18 +125,23 @@ export class AuthGuard {
   }
 }
 
-// Cache management for auth state
+// Improved cache management for auth state
 export class AuthCache {
   private static readonly SESSION_KEY = 'auth_session_cache';
-  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private static readonly CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
   static setSession(session: Session | null): void {
     try {
+      if (!session) {
+        this.clearSession();
+        return;
+      }
+      
       const cacheData = {
         session,
         timestamp: Date.now()
       };
-      sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(cacheData));
+      localStorage.setItem(this.SESSION_KEY, JSON.stringify(cacheData));
     } catch (error) {
       console.warn('Failed to cache session:', error);
     }
@@ -145,7 +149,7 @@ export class AuthCache {
 
   static getSession(): Session | null {
     try {
-      const cached = sessionStorage.getItem(this.SESSION_KEY);
+      const cached = localStorage.getItem(this.SESSION_KEY);
       if (!cached) return null;
 
       const { session, timestamp } = JSON.parse(cached);
@@ -165,26 +169,9 @@ export class AuthCache {
 
   static clearSession(): void {
     try {
-      sessionStorage.removeItem(this.SESSION_KEY);
+      localStorage.removeItem(this.SESSION_KEY);
     } catch (error) {
       console.warn('Failed to clear session cache:', error);
-    }
-  }
-
-  // Clear all auth-related caches
-  static clearAll(): void {
-    try {
-      // Clear session cache
-      this.clearSession();
-      
-      // Clear other auth caches
-      Object.keys(sessionStorage).forEach(key => {
-        if (key.startsWith('auth_') || key.startsWith('supabase.')) {
-          sessionStorage.removeItem(key);
-        }
-      });
-    } catch (error) {
-      console.warn('Failed to clear auth caches:', error);
     }
   }
 }

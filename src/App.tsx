@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuthReliable";
+import { AuthProvider, useAuth } from "@/hooks/useAuthReliable";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SessionSecurity from "@/components/SessionSecurity";
 import FastAuthGuard from "@/components/FastAuthGuard";
@@ -19,6 +19,21 @@ import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 import RBACDemo from "./pages/RBACDemo";
 import RBACGuard from "@/components/RBACGuard";
+
+// Loading wrapper component
+const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
 
 const AppContent = () => {
   return (
@@ -104,7 +119,9 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <AppContent />
+              <AppLoadingWrapper>
+                <AppContent />
+              </AppLoadingWrapper>
             </BrowserRouter>
           </AuthProvider>
         </TooltipProvider>

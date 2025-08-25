@@ -185,7 +185,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user?.id, fetchUserRole, fetchUserCompanies]);
 
-  // Handle auth state changes with timeout protection
+  // Simplified auth state change handler
   const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
     console.log('🔄 Auth state change:', event, !!newSession?.user);
 
@@ -194,60 +194,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const sameUser = currentUserIdRef.current === newSession.user.id;
         currentUserIdRef.current = newSession.user.id;
 
-        // Update basic session state
+        // Update basic session state immediately
         setUser(newSession.user);
         setSession(newSession);
+        setError(null);
 
         // Cache session
         AuthCache.setSession(newSession);
 
-        const shouldFetchData = !sameUser || ['INITIAL_SESSION', 'SIGNED_IN', 'USER_UPDATED'].includes(event);
+        // Only fetch additional data when needed
+        const shouldFetchData = !sameUser || ['INITIAL_SESSION', 'SIGNED_IN'].includes(event);
 
         if (shouldFetchData) {
-          console.log('👤 User signed in, fetching additional data...');
-
-          const dataPromise = (async () => {
+          console.log('👤 Fetching user role and companies...');
+          
+          try {
             const roleResult = await fetchUserRole(newSession.user.id);
             const companiesResult = await fetchUserCompanies(roleResult);
-            return [roleResult, companiesResult] as [string | null, Company[]];
-          })();
-
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('User data fetch timeout')), 15000)
-          );
-
-          try {
-            const [roleResult, companiesResult] = await Promise.race([
-              dataPromise,
-              timeoutPromise
-            ]) as [string | null, Company[]];
-
+            
             setUserRole(roleResult);
             setCompanies(companiesResult);
-            setError(null);
-            console.log('✅ Auth state fully loaded');
+            console.log('✅ Auth data loaded successfully');
           } catch (fetchError) {
-            console.warn('⚠️ User data fetch failed, retaining existing data:', fetchError);
-            // Preserve existing role/companies; attempt to derive role from session
-            setUserRole(prev => prev ?? (
-              ((newSession?.user as any)?.app_metadata?.role as string) ||
-              ((newSession?.user as any)?.user_metadata?.role as string) ||
-              'Client'
-            ));
-            setError(null);
+            console.warn('⚠️ Failed to fetch user data, using fallback:', fetchError);
+            // Use fallback role from session metadata
+            const fallbackRole = ((newSession?.user as any)?.app_metadata?.role as string) ||
+                                 ((newSession?.user as any)?.user_metadata?.role as string) ||
+                                 'Client';
+            setUserRole(fallbackRole);
+            setCompanies([]);
           }
         }
       } else {
         console.log('🚪 User signed out, clearing state...');
-        // User signed out
         setUser(null);
         setSession(null);
         setUserRole(null);
         setCompanies([]);
         currentUserIdRef.current = null;
-
-        // Clear caches
-        AuthCache.clearAll();
+        AuthCache.clearSession();
       }
     } catch (error) {
       console.error('Error handling auth state change:', error);
@@ -286,108 +271,69 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     prevRole.current = userRole;
   }, [userRole]);
 
-  // Initialize auth state with timeout protection
+  // Simplified auth initialization
   useEffect(() => {
     if (initializingRef.current) return;
     initializingRef.current = true;
 
-    let timeoutId: NodeJS.Timeout;
-    let cleanup: (() => void) | undefined;
-
     const initAuth = async () => {
       try {
         console.log('🚀 Auth initialization starting...');
-        
-        // Set loading timeout (30 seconds maximum)
-        timeoutId = setTimeout(() => {
-          console.warn('⚠️ Auth initialization timeout after 30 seconds');
-          setError('Authentication timeout - please refresh the page');
-          setLoading(false);
-        }, 30000);
 
         // Set up auth listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-        cleanup = () => {
-          subscription.unsubscribe();
-          if (timeoutId) clearTimeout(timeoutId);
-        };
-
-        // Use cached session for immediate render when available
-        const cachedSession = AuthCache.getSession();
-        if (cachedSession?.user) {
-          console.log('⚡ Using cached session for immediate auth state');
-          await handleAuthStateChange('CACHED_SESSION', cachedSession);
-        }
-
-        // Check for existing session without racing timeouts to avoid false negatives
-        const {
-          data: { session },
-          error
-        } = await supabase.auth.getSession();
+        // Check for existing session
+        const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) {
           console.warn('Session check error:', error);
-          clearTimeout(timeoutId);
           setLoading(false);
           return;
         }
 
         if (session?.user) {
-          console.log('✅ Existing session found, loading user data...');
+          console.log('✅ Existing session found');
           await handleAuthStateChange('INITIAL_SESSION', session);
-          // Clear initialization timeout once auth state is handled
-          clearTimeout(timeoutId);
         } else {
           console.log('❌ No existing session, user not authenticated');
-          clearTimeout(timeoutId);
           setLoading(false);
         }
 
+        return () => subscription.unsubscribe();
       } catch (error) {
         console.error('Auth initialization failed:', error);
         setError('Failed to initialize authentication');
-        clearTimeout(timeoutId);
         setLoading(false);
       }
     };
 
-    initAuth();
-
-    // Cleanup function
+    const cleanup = initAuth();
     return () => {
-      if (cleanup) cleanup();
-      if (timeoutId) clearTimeout(timeoutId);
+      cleanup?.then(unsub => unsub?.());
     };
   }, [handleAuthStateChange]);
 
-  // Refresh auth state when returning to the tab or app
+  // Only refresh session if it's actually expired (not on every visibility change)
   useEffect(() => {
     const handleVisibility = async () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && user) {
         try {
-          const {
-            data: { session },
-            error
-          } = await supabase.auth.getSession();
-
-          if (error) {
-            console.warn('Visibility session check error:', error);
-            return;
-          }
-
-          if (session?.user) {
-            await handleAuthStateChange('VISIBILITY_REFRESH', session);
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error || !session) {
+            console.log('Session expired, signing out...');
+            await handleAuthStateChange('SIGNED_OUT', null);
           }
         } catch (err) {
-          console.error('Failed to refresh session on visibility change:', err);
+          console.error('Visibility session check failed:', err);
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [handleAuthStateChange]);
+  }, [user, handleAuthStateChange]);
 
   const value: AuthContextType = {
     user,

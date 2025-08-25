@@ -115,15 +115,16 @@ export const useSecureSession = () => {
     };
   }, [updateActivity, sessionWarning]);
 
-  // Set up periodic checks
+  // Reduced frequency checks to avoid conflicts
   useEffect(() => {
     const interval = setInterval(() => {
+      // Only check idle timeout, not session validation
+      // Session validation is handled by main auth flow
       checkIdleTimeout();
-      validateSession();
-    }, 60000); // Check every minute
+    }, 5 * 60 * 1000); // Check every 5 minutes
 
     return () => clearInterval(interval);
-  }, [checkIdleTimeout, validateSession]);
+  }, [checkIdleTimeout]);
 
   // Dismiss warning
   const dismissWarning = useCallback(() => {

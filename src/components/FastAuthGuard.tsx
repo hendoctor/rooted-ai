@@ -19,30 +19,8 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [shouldRender, setShouldRender] = useState(false);
-  const [timeoutReached, setTimeoutReached] = useState(false);
 
-  // Destructure with safety checks
   const { user, session, loading, requireRole, error } = auth || {};
-
-  // Timeout protection for infinite loading
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (loading && !shouldRender) {
-        console.warn('⚠️ FastAuthGuard timeout after 30 seconds');
-        setTimeoutReached(true);
-      }
-    }, 30000);
-
-    return () => clearTimeout(timeoutId);
-  }, [loading, shouldRender]);
-
-  // Reset timeout flag once loading completes
-  useEffect(() => {
-    if (!loading && shouldRender) {
-      setTimeoutReached(false);
-    }
-  }, [loading, shouldRender]);
 
   useEffect(() => {
     console.log('🛡️ FastAuthGuard check:', { 
@@ -58,7 +36,7 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
     const authState = { user, session, loading };
     const searchParams = new URLSearchParams(location.search);
     
-    // Fast redirect check
+    // Check for redirects
     const redirectUrl = AuthGuard.getRedirectUrl(authState, location.pathname, searchParams);
     
     if (redirectUrl) {
@@ -67,7 +45,7 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
       return;
     }
 
-    // Instant role check using cached permissions
+    // Check role permissions
     if (user && requiredRoles.length > 0) {
       const hasAccess = requireRole?.(requiredRoles, companyId);
       
@@ -79,19 +57,18 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
     }
 
     console.log('✅ FastAuthGuard: Access granted');
-    setShouldRender(true);
   }, [auth, user, session, loading, location.pathname, location.search, navigate, requireRole, requiredRoles, companyId]);
 
-  // Show timeout error with retry option
-  if (timeoutReached || error) {
+  // Show error state
+  if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4 p-8">
           <div className="text-destructive text-lg font-medium">
-            {error || 'Loading timeout'}
+            {error}
           </div>
           <p className="text-muted-foreground">
-            {error ? 'Authentication error occurred' : 'The page is taking too long to load'}
+            Authentication error occurred
           </p>
           <Button onClick={() => window.location.reload()}>
             Refresh Page
@@ -101,16 +78,9 @@ const FastAuthGuard: React.FC<FastAuthGuardProps> = ({
     );
   }
 
-  // Zero-flicker loading state with error boundary
-  if (!auth || loading || !shouldRender) {
-    return (
-      <div className="min-h-screen bg-background">
-        {/* Minimal spinner to prevent layout shift */}
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+  // Simple loading state without white screen
+  if (!auth || loading) {
+    return null; // Let the parent handle loading UI
   }
 
   return <>{children}</>;
