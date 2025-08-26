@@ -803,6 +803,15 @@ export type Database = {
         Args: { event_details?: Json; event_type: string; user_id?: string }
         Returns: undefined
       }
+      log_security_event_enhanced: {
+        Args: {
+          event_details?: Json
+          event_type: string
+          risk_level?: string
+          user_id?: string
+        }
+        Returns: undefined
+      }
       require_role: {
         Args: { company_id_param?: string; required_roles: string[] }
         Returns: boolean
