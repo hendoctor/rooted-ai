@@ -221,104 +221,76 @@ const Auth = () => {
           });
         }
       } else {
-        // Invitation signup flow
+        // Invitation signup flow using edge function
         console.log('Starting invitation signup for:', invitation.email);
         
-        const redirectUrl = `${window.location.origin}/`;
-        
-        const { data, error } = await supabase.auth.signUp({
-          email: invitation.email, // Use invitation email explicitly
-          password,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              full_name: invitation.full_name, // Use invitation name
-              invited_role: invitation.role,
-              invitation_id: invitation.id
-            }
+        const { data, error } = await supabase.functions.invoke('accept-invitation', {
+          body: {
+            invitation_token: invitation.invitation_token,
+            password: password
           }
         });
 
-        console.log('Signup result:', { data, error });
+        console.log('Accept invitation result:', { data, error });
 
         if (error) {
-          console.error('Signup error:', error);
+          console.error('Accept invitation error:', error);
           toast({
-            title: "Account Creation Failed",
-            description: error.message,
+            title: "Registration Failed",
+            description: error.message || "Failed to accept invitation",
             variant: "destructive",
           });
-        } else if (data.user) {
-          console.log('User created successfully:', data.user.id);
+        } else if (data?.error) {
+          console.error('Edge function error:', data.error);
           
-          try {
-            // Mark invitation as accepted with real-time update
-            const { error: updateError } = await supabase
-              .from('user_invitations')
-              .update({ 
-                status: 'accepted',
-                accepted_at: new Date().toISOString()
-              })
-              .eq('id', invitation.id);
-
-            if (updateError) {
-              console.error('Failed to update invitation:', updateError);
-              throw new Error('Failed to update invitation status');
-            }
-
-            // Create/update user record with role and client_name
-            const userRecord = {
-              auth_user_id: data.user.id,
-              email: invitation.email,
-              role: invitation.role,
-              client_name: invitation.client_name || null
-            };
-
-            console.log('Creating user record:', userRecord);
-
-            const { error: userError } = await supabase
-              .from('users')
-              .upsert(userRecord, { 
-                onConflict: 'auth_user_id',
-                ignoreDuplicates: false
-              });
-
-            if (userError) {
-              console.error('Failed to create user record:', userError);
-              throw new Error(`Database error: ${userError.message}`);
-            }
-
-            console.log('User record created successfully');
-
-            // Log successful account creation
-            await supabase.rpc('log_security_event', {
-              event_type: 'invitation_account_created',
-              event_details: { 
-                user_id: data.user.id,
-                email: invitation.email,
-                role: invitation.role,
-                invitation_id: invitation.id
-              }
-            });
-
+          if (data.should_login) {
             toast({
-              title: "Welcome to the team!",
-              description: `Your account has been created successfully with ${invitation.role} access.`,
-            });
-
-            // Redirect new users to client portal
-            setTimeout(() => {
-              navigate('/client-portal');
-            }, 1500);
-            return;
-            
-          } catch (processError) {
-            console.error('Failed to process invitation after signup:', processError);
-            toast({
-              title: "Account Created",
-              description: "Your account was created but there was an issue setting up your role. Please contact support.",
+              title: "Account Already Exists",
+              description: data.error,
               variant: "destructive",
             });
+            setIsLogin(true);
+            return;
+          }
+          
+          toast({
+            title: "Registration Failed",
+            description: data.error,
+            variant: "destructive",
+          });
+        } else if (data?.success) {
+          console.log('User created successfully via edge function:', data.user);
+          
+          toast({
+            title: "Welcome to the team!",
+            description: `Your account has been created successfully with ${invitation.role} access.`,
+          });
+
+          // Now sign in the user with their new credentials
+          try {
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+              email: invitation.email,
+              password: password,
+            });
+
+            if (signInError) {
+              console.error('Auto sign-in failed:', signInError);
+              toast({
+                title: "Account Created",
+                description: "Your account was created successfully. Please sign in manually.",
+              });
+              setIsLogin(true);
+            } else {
+              // Sign-in successful, the auth state change will handle redirection
+              console.log('Auto sign-in successful');
+            }
+          } catch (signInError) {
+            console.error('Unexpected sign-in error:', signInError);
+            toast({
+              title: "Account Created",
+              description: "Your account was created successfully. Please sign in manually.",
+            });
+            setIsLogin(true);
           }
         }
       }
