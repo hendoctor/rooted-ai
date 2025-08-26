@@ -12,6 +12,15 @@ interface AcceptInvitationRequest {
   password: string;
 }
 
+interface InvitationRecord {
+  id: string;
+  email: string;
+  role: string;
+  client_name?: string | null;
+  full_name?: string | null;
+  company_id?: string | null;
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -49,28 +58,45 @@ serve(async (req: Request) => {
     });
 
     // 1) Validate invitation token securely in DB
-    const { data: validationData, error: validationError } = await supabase.rpc(
-      "validate_invitation_secure",
-      { token_input: token }
-    );
-
-    if (validationError) {
-      console.error("Invitation validation error:", validationError);
-      return new Response(
-        JSON.stringify({ error: "Invalid or expired invitation token" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    let invitation: InvitationRecord | null = null;
+    try {
+      const { data: validationData, error: validationError } = await supabase.rpc(
+        "validate_invitation_secure",
+        { token_input: token }
       );
+
+      if (validationError) {
+        console.error("Invitation validation error:", validationError);
+      } else {
+        const validation = validationData as { valid: boolean; invitation?: InvitationRecord; error?: string };
+        if (validation?.valid && validation.invitation) {
+          invitation = validation.invitation;
+        }
+      }
+    } catch (e) {
+      console.error("validate_invitation_secure threw error:", e);
     }
 
-    const validation = validationData as { valid: boolean; invitation?: any; error?: string };
-    if (!validation?.valid || !validation.invitation) {
-      return new Response(
-        JSON.stringify({ error: validation?.error || "Invalid or expired invitation token" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
+    // Fallback validation if secure RPC fails
+    if (!invitation) {
+      const { data: inviteData, error: inviteError } = await supabase
+        .from("user_invitations")
+        .select("*")
+        .eq("invitation_token", token)
+        .eq("status", "pending")
+        .gt("expires_at", new Date().toISOString())
+        .single();
+
+      if (inviteError || !inviteData) {
+        return new Response(
+          JSON.stringify({ error: "Invalid or expired invitation token" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      invitation = inviteData as InvitationRecord;
     }
 
-    const invitation = validation.invitation;
     const email: string = invitation.email;
     const role: string = invitation.role || "Client";
     const client_name: string | null = invitation.client_name ?? null;
@@ -105,7 +131,7 @@ serve(async (req: Request) => {
     // 3) Update DB: mark invitation accepted, create users row, add company membership
     const nowIso = new Date().toISOString();
 
-    const updates = [] as Promise<any>[];
+    const updates: Promise<unknown>[] = [];
 
     updates.push(
       supabase
@@ -138,8 +164,8 @@ serve(async (req: Request) => {
     }
 
     const results = await Promise.all(updates);
-    for (const r of results) {
-      if (r?.error) {
+    for (const r of results as Array<{ error?: unknown }>) {
+      if (r.error) {
         console.error("Database update error:", r.error);
         // continue; don't fail signup if aux updates fail
       }
@@ -160,10 +186,11 @@ serve(async (req: Request) => {
       JSON.stringify({ success: true, user_id: createdUser.id, email }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("accept-invitation unexpected error:", err);
+    const message = err instanceof Error ? err.message : "Unexpected server error";
     return new Response(
-      JSON.stringify({ error: err?.message || "Unexpected server error" }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }

@@ -8,6 +8,24 @@ import { useToast } from '@/hooks/use-toast';
 import type { User, Session } from '@supabase/supabase-js';
 import { validatePasswordStrength } from '@/utils/securityConfig';
 
+interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  full_name: string;
+  client_name?: string | null;
+  company_id?: string | null;
+  company_slug?: string | null;
+}
+
+interface CompanyInfo {
+  company_id: string;
+  company_name: string;
+  company_slug: string;
+  user_role: string;
+  is_admin: boolean;
+}
+
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showResetPassword, setShowResetPassword] = useState(false);
@@ -21,7 +39,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [invitation, setInvitation] = useState<any>(null);
+  const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [loadingInvitation, setLoadingInvitation] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [invitationError, setInvitationError] = useState<string | null>(null);
@@ -60,16 +78,22 @@ const Auth = () => {
                 supabase.rpc('get_user_companies')
               ]);
 
-              const userRole = (roleResult.data as any)?.role || 'Client';
+              const userRole = ((roleResult.data as { role: string } | null)?.role) || 'Client';
 
               if (userRole === 'Admin') {
                 navigate('/admin');
                 return;
               }
 
-              // Client users should go to their B2B client portal
+              // Client users should go to their specific company portal
               if (userRole === 'Client') {
-                navigate('/client-portal');
+                const companies = (companiesResult.data as CompanyInfo[] | null) || [];
+                const firstCompany = companies[0];
+                if (firstCompany?.company_slug) {
+                  navigate(`/client-portal/${firstCompany.company_slug}`);
+                } else {
+                  navigate('/client-portal');
+                }
                 return;
               }
             } catch (error) {
@@ -112,7 +136,7 @@ const Auth = () => {
       }
 
       // Type-safe handling of the JSON response
-      const validationResult = data as { valid: boolean; error?: string; invitation?: any };
+      const validationResult = data as { valid: boolean; error?: string; invitation?: Invitation };
 
       if (!validationResult?.valid) {
         const errorMsg = validationResult?.error || "This invitation link is invalid or has expired.";
@@ -138,10 +162,11 @@ const Auth = () => {
         description: `Welcome ${invitation.full_name}! Complete your account setup below.`,
       });
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load invitation:', error);
-      setInvitationError(error.message || "Failed to load invitation details.");
-      
+      const message = error instanceof Error ? error.message : "Failed to load invitation details.";
+      setInvitationError(message);
+
       toast({
         title: "Error",
         description: "Failed to load invitation details. Please check the link and try again.",
@@ -259,27 +284,33 @@ const Auth = () => {
             description: `Your account has been created with ${invitation.role} access.`,
           });
 
-          // Redirect based on role
-          setTimeout(() => {
-            if (invitation.role === 'Admin') {
-              navigate('/admin');
+          // Redirect based on role and company membership
+          if (invitation.role === 'Admin') {
+            navigate('/admin');
+          } else {
+            const { data: companiesData } = await supabase.rpc('get_user_companies');
+            const firstCompany = (companiesData as CompanyInfo[] | null)?.[0];
+            if (firstCompany?.company_slug) {
+              navigate(`/client-portal/${firstCompany.company_slug}`);
             } else {
               navigate('/client-portal');
             }
-          }, 800);
-        } catch (err: any) {
+          }
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : 'Unable to complete registration.';
           toast({
             title: 'Registration Failed',
-            description: err?.message || 'Unable to complete registration.',
+            description: message,
             variant: 'destructive',
           });
         }
       }
     } catch (error: unknown) {
       console.error('Unexpected error during submit:', error);
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: message,
         variant: "destructive",
       });
     } finally {
