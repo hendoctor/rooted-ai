@@ -149,7 +149,7 @@ serve(async (req) => {
       // Don't fail the request since the auth user was created successfully
     }
 
-    // Create company membership if invitation has company_id
+    // Create or link company membership
     if (invitationData.company_id) {
       const { error: membershipError } = await supabaseAdmin
         .from('company_memberships')
@@ -163,6 +163,69 @@ serve(async (req) => {
 
       if (membershipError) {
         console.error('Failed to create company membership:', membershipError);
+      }
+    } else if (invitationData.client_name) {
+      try {
+        // Normalize slug from client_name (lowercase, hyphenated)
+        const slug = invitationData.client_name
+          .toString()
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-');
+
+        // Try to find existing company by slug or name
+        const { data: existingCompany, error: findErr } = await supabaseAdmin
+          .from('companies')
+          .select('id')
+          .or(`slug.eq.${slug},name.eq.${invitationData.client_name}`)
+          .maybeSingle();
+
+        if (findErr) {
+          console.warn('Company lookup warning:', findErr.message || findErr);
+        }
+
+        let companyId = existingCompany?.id as string | undefined;
+
+        // Create company if not found
+        if (!companyId) {
+          const { data: createdCompany, error: createCompanyErr } = await supabaseAdmin
+            .from('companies')
+            .insert({
+              name: invitationData.client_name,
+              slug,
+              settings: {}
+            })
+            .select('id')
+            .single();
+
+          if (createCompanyErr) {
+            console.error('Failed to create company:', createCompanyErr);
+          } else {
+            companyId = createdCompany.id;
+          }
+        }
+
+        // Create membership if we have a company id
+        if (companyId) {
+          const { error: membershipErr2 } = await supabaseAdmin
+            .from('company_memberships')
+            .insert({
+              company_id: companyId,
+              user_id: newUserData.user.id,
+              role: 'Member',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (membershipErr2) {
+            console.error('Failed to create membership for new company:', membershipErr2);
+          }
+        }
+      } catch (e) {
+        console.error('Company linking/creation failed:', e);
+        // Do not fail the whole request
       }
     }
 
