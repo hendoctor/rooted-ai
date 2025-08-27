@@ -29,11 +29,6 @@ serve(async (req) => {
       }
     });
 
-    // Create regular client for auth operations
-    const supabaseAnon = createClient(
-      supabaseUrl,
-      Deno.env.get('SUPABASE_ANON_KEY')!
-    );
 
     const { invitation_token, password }: AcceptInvitationRequest = await req.json();
 
@@ -64,32 +59,6 @@ serve(async (req) => {
 
     console.log('Valid invitation found:', invitationData.email);
 
-    // Check if user already exists
-    const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(invitationData.email);
-    
-    if (existingUser.user) {
-      console.log('User already exists, updating invitation status');
-      
-      // Mark invitation as accepted
-      await supabaseAdmin
-        .from('user_invitations')
-        .update({ 
-          status: 'accepted',
-          accepted_at: new Date().toISOString()
-        })
-        .eq('id', invitationData.id);
-
-      return new Response(
-        JSON.stringify({ 
-          error: 'Account already exists. Please try logging in instead.',
-          should_login: true
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
 
     // Create user with admin API (bypasses email confirmation)
     const { data: newUserData, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
@@ -104,12 +73,38 @@ serve(async (req) => {
       }
     });
 
-    if (createUserError || !newUserData.user) {
+    if (createUserError || !newUserData?.user) {
       console.error('Failed to create user:', createUserError);
+      const msg = (createUserError as any)?.message || '';
+      const status = (createUserError as any)?.status;
+
+      // If the user already exists, mark invitation as accepted and instruct client to log in
+      if (status === 422 || /already exists|already registered|User already/i.test(msg)) {
+        await supabaseAdmin
+          .from('user_invitations')
+          .update({ 
+            status: 'accepted',
+            accepted_at: new Date().toISOString()
+          })
+          .eq('id', invitationData.id);
+
+        return new Response(
+          JSON.stringify({ 
+            success: true,
+            should_login: true,
+            message: 'Account already exists. Please log in.'
+          }),
+          { 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+
       return new Response(
         JSON.stringify({ 
           error: 'Failed to create user account',
-          details: createUserError?.message 
+          details: msg 
         }),
         { 
           status: 500, 
