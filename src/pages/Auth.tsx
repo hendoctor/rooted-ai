@@ -268,44 +268,40 @@ const Auth = () => {
           });
         }
       } else {
-        // New invitation flow: authenticate first, then finalize via RPC
-
+        // New invitation flow using edge function for reliable account creation
         console.log('Starting invitation flow for:', invitation.email);
 
-        // 1) Try sign-in (if account already exists)
+        // 1) Call edge function to accept invitation and create account
+        const { data: acceptData, error: acceptError } = await supabase.functions.invoke('accept-invitation', {
+          body: {
+            invitation_token: invitation.invitation_token,
+            password: password,
+          }
+        });
+
+        if (acceptError || !acceptData?.success) {
+          console.error('Invitation acceptance failed:', acceptError || acceptData);
+          toast({
+            title: 'Invitation Failed',
+            description: acceptError?.message || acceptData?.error || 'Could not accept your invitation.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // Prevent duplicate finalization in auth listener
+        finalizeAttemptedRef.current = true;
+
+        // 2) Sign in with the newly created credentials
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: invitation.email,
           password: password,
         });
 
-        if (!signInError) {
-          // Signed in successfully, finalize now
-          finalizeAttemptedRef.current = false; // allow one finalize inside listener if needed
-          const result = await finalizeInvitation(invitation.invitation_token);
-          if (result.success) {
-            // Listener will handle redirect shortly; provide quick feedback
-            toast({
-              title: "You're in!",
-              description: "Your invitation has been accepted. Redirecting...",
-            });
-          }
-          // No further action; auth listener will navigate based on role
-          return;
-        }
-
-        // 2) If sign-in failed, try sign-up (may require email confirmation)
-        const redirectUrl = `${window.location.origin}/auth?invite=${invitation.invitation_token}`;
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: invitation.email,
-          password: password,
-          options: {
-            emailRedirectTo: redirectUrl,
-          },
-        });
-
-        if (signUpError) {
-          console.error('Sign up failed:', signUpError);
-          // Fallback: try passwordless email OTP (often succeeds when signup hits a DB 500)
+        if (signInError) {
+          console.error('Sign in after invitation acceptance failed:', signInError);
+          // Fallback to passwordless OTP
+          const redirectUrl = `${window.location.origin}/auth?invite=${invitation.invitation_token}`;
           const { error: otpError } = await supabase.auth.signInWithOtp({
             email: invitation.email,
             options: { emailRedirectTo: redirectUrl },
@@ -313,8 +309,8 @@ const Auth = () => {
 
           if (otpError) {
             toast({
-              title: 'Registration Failed',
-              description: signUpError.message || otpError.message || 'Could not register your account.',
+              title: 'Login Failed',
+              description: signInError.message || otpError.message || 'Could not sign you in.',
               variant: 'destructive',
             });
             return;
@@ -322,17 +318,16 @@ const Auth = () => {
 
           toast({
             title: 'Check Your Email',
-            description: 'We sent you a secure sign-in link. After confirming, you will be signed in and your invitation will be finalized.',
+            description: 'We sent you a secure sign-in link. After confirming, you will be signed in.',
           });
           return;
         }
 
-        // If email confirmation is required, user must confirm before session exists.
-        // Once confirmed and redirected back, the auth listener will finalize the invitation and navigate.
         toast({
-          title: 'Confirm Your Email',
-          description: "We sent you a confirmation link. After confirming, you'll be signed in and your invitation will be finalized.",
+          title: "You're in!",
+          description: 'Your invitation has been accepted. Redirecting...',
         });
+        // Auth listener will handle navigation
       }
     } catch (error: unknown) {
       console.error('Unexpected error during submit:', error);
