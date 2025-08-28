@@ -28,6 +28,22 @@ const About = () => {
     }
   ];
 
+  const perfectFit = [
+    "Professional services (law, accounting, consulting)",
+    "Healthcare practices and clinics",
+    "Real estate agencies and brokerages",
+    "Local retail and e-commerce businesses",
+    "Manufacturing and logistics companies",
+  ];
+
+  const businessCharacteristics = [
+    "10-250 employees",
+    "Already using Microsoft 365 or Azure",
+    "Growth-minded leadership",
+    "Values efficiency and innovation",
+    "Committed to employee development",
+  ];
+
   return (
     <section id="about" className="py-20 innovation-bg">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -115,65 +131,47 @@ const About = () => {
         </AnimatedSection>
 
         {/* Target Market */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 sm:p-12 shadow-lg">
-          <div className="max-w-4xl mx-auto">
-            <h3 className="text-2xl sm:text-3xl font-bold text-forest-green text-center mb-8">
-              Who We Serve
-            </h3>
-            <div className="flex flex-col md:flex-row gap-8">
-              <div className="flex-1 text-left">
-                <h4 className="text-xl font-semibold text-earth-brown mb-4">Perfect Fit Businesses:</h4>
-                <ul className="space-y-3 text-slate-gray">
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>Professional services (law, accounting, consulting)</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>Healthcare practices and clinics</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>Real estate agencies and brokerages</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>Local retail and e-commerce businesses</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>Manufacturing and logistics companies</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="flex-1 text-left">
-                <h4 className="text-xl font-semibold text-earth-brown mb-4">Business Characteristics:</h4>
-                <ul className="space-y-3 text-slate-gray">
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>10-250 employees</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>Already using Microsoft 365 or Azure</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>Growth-minded leadership</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>Values efficiency and innovation</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
-                    <span>Committed to employee development</span>
-                  </li>
-                </ul>
+        <AnimatedSection animation="animate-slide-up" delay={200}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 sm:p-12 shadow-lg card-energy">
+            <div className="max-w-4xl mx-auto">
+              <h3 className="text-2xl sm:text-3xl font-bold text-forest-green text-center mb-8">
+                Who We Serve
+              </h3>
+              <div className="flex flex-col md:flex-row gap-8">
+                <div className="flex-1 text-left">
+                  <h4 className="text-xl font-semibold text-earth-brown mb-4">Perfect Fit Businesses:</h4>
+                  <ul className="space-y-3 text-slate-gray">
+                    {perfectFit.map((item, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start space-x-2 interactive-scale opacity-0 animate-fade-in-up"
+                        style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
+                      >
+                        <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex-1 text-left">
+                  <h4 className="text-xl font-semibold text-earth-brown mb-4">Business Characteristics:</h4>
+                  <ul className="space-y-3 text-slate-gray">
+                    {businessCharacteristics.map((item, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start space-x-2 interactive-scale opacity-0 animate-fade-in-up"
+                        style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
+                      >
+                        <div className="w-2 h-2 bg-sage rounded-full mt-2"></div>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </AnimatedSection>
         
       </div>
     </section>
