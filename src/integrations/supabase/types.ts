@@ -733,6 +733,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_invitation_finalize: {
+        Args: { token_input: string }
+        Returns: Json
+      }
       check_invitation_attempt_rate_limit: {
         Args: {
           client_ip: unknown

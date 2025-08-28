@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,45 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
+  // Track whether we've already attempted to finalize this invitation to avoid duplicate calls
+  const finalizeAttemptedRef = useRef(false);
+
+  // Helper: finalize invitation after the user is authenticated
+  const finalizeInvitation = async (token: string) => {
+    console.log('Finalizing invitation via RPC for token:', token.substring(0, 8));
+    const { data, error } = await supabase.rpc('accept_invitation_finalize', {
+      token_input: token,
+    });
+
+    if (error) {
+      console.error('Invitation finalization failed:', error);
+      toast({
+        title: 'Invitation Finalization Failed',
+        description: error.message || 'Could not finalize your invitation. Please try again.',
+        variant: 'destructive',
+      });
+      return { success: false, error };
+    }
+
+    if (!data?.success) {
+      console.warn('Invitation finalization returned unsuccessful:', data);
+      toast({
+        title: 'Invitation Finalization',
+        description: data?.error || 'Could not finalize your invitation.',
+        variant: 'destructive',
+      });
+      return { success: false, error: data?.error };
+    }
+
+    console.log('Invitation finalized successfully:', data);
+    toast({
+      title: 'Invitation Accepted',
+      description: 'Your account has been linked and access has been granted.',
+    });
+
+    return { success: true, data };
+  };
+
   useEffect(() => {
     // Check if this is a password recovery flow
     const type = searchParams.get('type');
@@ -52,9 +91,15 @@ const Auth = () => {
         
         // Only redirect after successful login and a short delay to allow main auth system to catch up
         if (event === 'SIGNED_IN' && session?.user && type !== 'recovery') {
-          // Check role and redirect accordingly
           setTimeout(async () => {
             try {
+              // If this is an invitation flow, finalize it first (idempotent)
+              const inviteParam = searchParams.get('invite');
+              if (inviteParam && !finalizeAttemptedRef.current) {
+                finalizeAttemptedRef.current = true;
+                await finalizeInvitation(inviteParam);
+              }
+
               const [roleResult, companiesResult] = await Promise.all([
                 supabase.rpc('get_user_role_by_auth_id', { auth_user_id: session.user.id }),
                 supabase.rpc('get_user_companies')
@@ -85,7 +130,6 @@ const Auth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
       // Don't redirect on initial load - let user interact first
     });
 
@@ -221,78 +265,57 @@ const Auth = () => {
           });
         }
       } else {
-        // Invitation signup flow using edge function
-        console.log('Starting invitation signup for:', invitation.email);
-        
-        const { data, error } = await supabase.functions.invoke('accept-invitation', {
-          body: {
-            invitation_token: invitation.invitation_token,
-            password: password
-          }
+        // New invitation flow: authenticate first, then finalize via RPC
+
+        console.log('Starting invitation flow for:', invitation.email);
+
+        // 1) Try sign-in (if account already exists)
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: invitation.email,
+          password: password,
         });
 
-        console.log('Accept invitation result:', { data, error });
-
-        if (error) {
-          console.error('Accept invitation error:', error);
-          toast({
-            title: "Registration Failed",
-            description: error.message || "Failed to accept invitation",
-            variant: "destructive",
-          });
-        } else if (data?.error) {
-          console.error('Edge function error:', data.error);
-          
-          if (data.should_login) {
+        if (!signInError) {
+          // Signed in successfully, finalize now
+          finalizeAttemptedRef.current = false; // allow one finalize inside listener if needed
+          const result = await finalizeInvitation(invitation.invitation_token);
+          if (result.success) {
+            // Listener will handle redirect shortly; provide quick feedback
             toast({
-              title: "Account Already Exists",
-              description: data.error,
-              variant: "destructive",
+              title: "You're in!",
+              description: "Your invitation has been accepted. Redirecting...",
             });
-            setIsLogin(true);
-            return;
           }
-          
-          toast({
-            title: "Registration Failed",
-            description: data.error,
-            variant: "destructive",
-          });
-        } else if (data?.success) {
-          console.log('User created successfully via edge function:', data.user);
-          
-          toast({
-            title: "Welcome to the team!",
-            description: `Your account has been created successfully with ${invitation.role} access.`,
-          });
-
-          // Now sign in the user with their new credentials
-          try {
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-              email: invitation.email,
-              password: password,
-            });
-
-            if (signInError) {
-              console.error('Auto sign-in failed:', signInError);
-              toast({
-                title: "Account Created",
-                description: "Your account was created successfully. Please sign in manually.",
-              });
-              setIsLogin(true);
-            } else {
-              // Sign-in successful, the auth state change will handle redirection
-              console.log('Auto sign-in successful');
-            }
-          } catch (signInError) {
-            console.error('Unexpected sign-in error:', signInError);
-            toast({
-              title: "Account Created",
-              description: "Your account was created successfully. Please sign in manually.",
-            });
-            setIsLogin(true);
-          }
+          // No further action; auth listener will navigate based on role
+          return;
         }
+
+        // 2) If sign-in failed, try sign-up (may require email confirmation)
+        const redirectUrl = `${window.location.origin}/auth?invite=${invitation.invitation_token}`;
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: invitation.email,
+          password: password,
+          options: {
+            emailRedirectTo: redirectUrl,
+          },
+        });
+
+        if (signUpError) {
+          console.error('Sign up failed:', signUpError);
+          toast({
+            title: "Registration Failed",
+            description: signUpError.message || "Could not register your account.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // If email confirmation is required, user must confirm before session exists.
+        // Once confirmed and redirected back, the auth listener will finalize the invitation and navigate.
+        toast({
+          title: "Confirm Your Email",
+          description: "We sent you a confirmation link. After confirming, you'll be signed in and your invitation will be finalized.",
+        });
       }
     } catch (error: unknown) {
       console.error('Unexpected error during submit:', error);
