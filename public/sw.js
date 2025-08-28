@@ -1,4 +1,4 @@
-const CACHE_VERSION = '1.3.0';
+const CACHE_VERSION = '1.4.0';
 const CACHE_NAME = `rooted-ai-v${CACHE_VERSION}`;
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const API_CACHE = `${CACHE_NAME}-api`;
@@ -62,18 +62,48 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-first for navigation requests with fallback to cached shell
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(STATIC_CACHE).then((cache) => cache.put('/', copy));
+          return response;
+        })
+        .catch(() => caches.match('/'))
+    );
+    return;
+  }
+
+  // Network-first for API requests with cache fallback
+  if (event.request.url.includes('/api/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(API_CACHE).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   if (event.request.destination === 'image' || event.request.url.includes('/Assets/')) {
     event.respondWith(
       caches.match(event.request).then((response) => {
         return (
           response ||
-          fetch(event.request).then((fetchResponse) => {
-            const responseClone = fetchResponse.clone();
-            caches.open(STATIC_CACHE).then((cache) => {
-              cache.put(event.request, responseClone);
-            });
-            return fetchResponse;
-          })
+          fetch(event.request)
+            .then((fetchResponse) => {
+              const responseClone = fetchResponse.clone();
+              caches.open(STATIC_CACHE).then((cache) => {
+                cache.put(event.request, responseClone);
+              });
+              return fetchResponse;
+            })
+            .catch(() => caches.match(event.request))
         );
       })
     );
