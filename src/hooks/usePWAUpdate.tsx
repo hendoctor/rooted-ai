@@ -15,7 +15,7 @@ export const usePWAUpdate = (): PWAUpdateHook => {
   const [hasUpdate, setHasUpdate] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [currentVersion, setCurrentVersion] = useState('1.2.0'); // Default from service worker
+  const [currentVersion, setCurrentVersion] = useState('1.4.0'); // Default from service worker
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
   const [newWorker, setNewWorker] = useState<ServiceWorker | null>(null);
   const { toast } = useToast();
