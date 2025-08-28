@@ -92,10 +92,10 @@ const About = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {values.map((value, index) => (
-                <AnimatedSection 
-                  key={index} 
-                  animation="animate-elastic-in" 
-                  delay={300 + index * 100}
+                <AnimatedSection
+                  key={index}
+                  animation="animate-fade-in-up"
+                  delay={index * 100}
                 >
                   <Card className="card-energy border-sage/30 hover:border-forest-green/50 text-center group h-full">
                     <CardContent className="p-6">
