@@ -42,7 +42,7 @@ const Hero = () => {
 
           {/* Subheading */}
           <p className="text-lg sm:text-xl lg:text-2xl text-slate-gray dark:text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed animate-spring-up-delayed [text-shadow:_0_1px_4px_rgb(255_255_255_/_0.9)] dark:[text-shadow:_0_1px_4px_rgb(0_0_0_/_0.5)]">
-            Helping small businesses in Kansas City flourish with AI solutions built on Microsoft tools. 
+            Helping small businesses flourish with AI solutions built on Microsoft tools. 
             From awareness to adoption, we're your local growth partners.
           </p>
 
