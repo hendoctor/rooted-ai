@@ -305,10 +305,24 @@ const Auth = () => {
 
         if (signUpError) {
           console.error('Sign up failed:', signUpError);
+          // Fallback: try passwordless email OTP (often succeeds when signup hits a DB 500)
+          const { error: otpError } = await supabase.auth.signInWithOtp({
+            email: invitation.email,
+            options: { emailRedirectTo: redirectUrl },
+          });
+
+          if (otpError) {
+            toast({
+              title: 'Registration Failed',
+              description: signUpError.message || otpError.message || 'Could not register your account.',
+              variant: 'destructive',
+            });
+            return;
+          }
+
           toast({
-            title: "Registration Failed",
-            description: signUpError.message || "Could not register your account.",
-            variant: "destructive",
+            title: 'Check Your Email',
+            description: 'We sent you a secure sign-in link. After confirming, you will be signed in and your invitation will be finalized.',
           });
           return;
         }
@@ -316,7 +330,7 @@ const Auth = () => {
         // If email confirmation is required, user must confirm before session exists.
         // Once confirmed and redirected back, the auth listener will finalize the invitation and navigate.
         toast({
-          title: "Confirm Your Email",
+          title: 'Confirm Your Email',
           description: "We sent you a confirmation link. After confirming, you'll be signed in and your invitation will be finalized.",
         });
       }
