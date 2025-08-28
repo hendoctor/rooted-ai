@@ -50,23 +50,26 @@ const Auth = () => {
       return { success: false, error };
     }
 
-    if (!data?.success) {
-      console.warn('Invitation finalization returned unsuccessful:', data);
+    // Type cast the response to the expected structure
+    const result = data as { success: boolean; error?: string; user_id?: string; email?: string; role?: string; company_id?: string };
+
+    if (!result?.success) {
+      console.warn('Invitation finalization returned unsuccessful:', result);
       toast({
         title: 'Invitation Finalization',
-        description: data?.error || 'Could not finalize your invitation.',
+        description: result?.error || 'Could not finalize your invitation.',
         variant: 'destructive',
       });
-      return { success: false, error: data?.error };
+      return { success: false, error: result?.error };
     }
 
-    console.log('Invitation finalized successfully:', data);
+    console.log('Invitation finalized successfully:', result);
     toast({
       title: 'Invitation Accepted',
       description: 'Your account has been linked and access has been granted.',
     });
 
-    return { success: true, data };
+    return { success: true, data: result };
   };
 
   useEffect(() => {
