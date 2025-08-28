@@ -2,8 +2,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuthReliable";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -107,6 +106,8 @@ const AppContent = () => {
     </Routes>
   );
 };
+
+const queryClient = new QueryClient();
 
 const App = () => {
   return (

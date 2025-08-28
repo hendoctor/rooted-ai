@@ -9,7 +9,6 @@ import Team from '@/components/Team';
 import Contact from '@/components/Contact';
 import Footer from '@/components/Footer';
 import PWAUpdateNotification from '@/components/PWAUpdateNotification';
-import PublicAnnouncements from '@/components/PublicAnnouncements';
 
 const Index = () => {
   return (
@@ -21,7 +20,6 @@ const Index = () => {
         <Services />
         <Reviews />
         <Team />
-        <PublicAnnouncements />
         <Contact />
       </main>
       <Footer />

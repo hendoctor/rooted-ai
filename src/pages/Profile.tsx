@@ -6,11 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { User, Mail, Building, Save, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
-import { supabase } from '@/integrations/supabase/client';
-import { useTable } from '@/hooks/useTable';
 
 const Profile = () => {
   const { user, userRole, companies } = useAuth();
@@ -24,25 +23,33 @@ const Profile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const { data: profileRows = [], showCachedHint } = useTable<{ display_name?: string; email?: string }>({
-    table: 'users',
-    role: userRole || 'anon',
-    userId: user?.id,
-    companyIds: companies?.map(c => c.id) || [],
-    filters: user?.email ? { email: user.email } : {},
-    select: 'display_name, email',
-    enabled: !!user?.email,
-  });
-
+  // Fetch profile on mount
   useEffect(() => {
-    if (profileRows[0]) {
-      setProfile(profileRows[0]);
-      setFormData({
-        display_name: profileRows[0].display_name || '',
-        email: profileRows[0].email || user?.email || '',
-      });
-    }
-  }, [profileRows, user]);
+    const fetchProfile = async () => {
+      if (user?.email) {
+        const { data } = await supabase
+          .from('users')
+          .select('display_name')
+          .eq('email', user.email)
+          .maybeSingle();
+        
+        if (data) {
+          setProfile(data);
+          setFormData({
+            display_name: data.display_name || '',
+            email: user.email || '',
+          });
+        } else {
+          setFormData({
+            display_name: '',
+            email: user.email || '',
+          });
+        }
+      }
+    };
+    
+    fetchProfile();
+  }, [user]);
 
   useEffect(() => {
     if (profile && user) {
@@ -133,9 +140,6 @@ const Profile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {showCachedHint && (
-                  <p className="text-xs text-muted-foreground">Showing cached data (network issue)</p>
-                )}
                 <div className="space-y-2">
                   <Label htmlFor="display_name">Display Name</Label>
                   <Input
