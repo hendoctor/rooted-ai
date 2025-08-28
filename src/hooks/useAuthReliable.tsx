@@ -286,15 +286,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Check for existing session
         const { data: { session }, error } = await supabase.auth.getSession();
 
+        let initialSession = session;
+
         if (error) {
           console.warn('Session check error:', error);
-          setLoading(false);
-          return;
         }
 
-        if (session?.user) {
+        // Fall back to cached session if Supabase can't provide one
+        if (!initialSession) {
+          const cached = AuthCache.getSession();
+          if (cached) {
+            console.log('✅ Restoring session from cache');
+            initialSession = cached as Session;
+          }
+        }
+
+        if (initialSession?.user) {
           console.log('✅ Existing session found');
-          await handleAuthStateChange('INITIAL_SESSION', session);
+          await handleAuthStateChange('INITIAL_SESSION', initialSession);
         } else {
           console.log('❌ No existing session, user not authenticated');
           setLoading(false);
@@ -314,14 +323,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [handleAuthStateChange]);
 
-  // Only refresh session if it's actually expired (not on every visibility change)
+  // Attempt to restore session when returning to the page
   useEffect(() => {
     const handleVisibility = async () => {
       if (document.visibilityState === 'visible' && user) {
         try {
           const { data: { session }, error } = await supabase.auth.getSession();
-          
-          if (error || !session) {
+
+          if (session) return; // session is valid
+
+          if (error) {
+            console.error('Visibility session check error:', error);
+          }
+
+          // Try to recover from cached session first
+          const cached = AuthCache.getSession();
+          if (cached) {
+            console.log('🔄 Restoring session from cache');
+            await handleAuthStateChange('INITIAL_SESSION', cached as Session);
+            return;
+          }
+
+          // Attempt to refresh the session with Supabase
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshData?.session) {
+            await handleAuthStateChange('SIGNED_IN', refreshData.session);
+          } else if (refreshError) {
             console.log('Session expired, signing out...');
             await handleAuthStateChange('SIGNED_OUT', null);
           }
