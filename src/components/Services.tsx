@@ -235,20 +235,22 @@ const Services = () => {
         </div>
 
         {/* CTA Section */}
-        <div className="text-center bg-sage/10 dark:bg-slate-900 rounded-2xl p-8 sm:p-12">
-          <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-4">
-            Ready to Transform Your Business?
-          </h3>
-          <p className="text-lg text-slate-gray mb-6 max-w-2xl mx-auto">
-            Let's discuss how AI can help your business grow smarter while staying rooted in your values.
-          </p>
-          <Button
-            asChild
-            className="bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-8 py-3 text-lg rounded-lg transition-all duration-200 hover:shadow-lg"
-          >
-            <a href="#contact">Cultivate Your Vision</a>
-          </Button>
-        </div>
+        <AnimatedSection animation="animate-slide-up" delay={services.length * 150}>
+          <div className="text-center bg-sage/10 dark:bg-slate-900 rounded-2xl p-8 sm:p-12 card-energy">
+            <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-4">
+              Ready to Transform Your Business?
+            </h3>
+            <p className="text-lg text-slate-gray mb-6 max-w-2xl mx-auto">
+              Let's discuss how AI can help your business grow smarter while staying rooted in your values.
+            </p>
+            <Button
+              asChild
+              className="button-energy bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-8 py-3 text-lg rounded-lg"
+            >
+              <a href="#contact">Cultivate Your Vision</a>
+            </Button>
+          </div>
+        </AnimatedSection>
       </div>
     </section>
   );

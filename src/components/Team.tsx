@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Globe } from 'lucide-react';
+import { AnimatedSection } from '@/hooks/useScrollAnimation';
 
 const ProfileImage = ({ member, index }: { member: any, index: number }) => {
   const [rotation, setRotation] = useState(0);
@@ -332,16 +333,18 @@ const Team = () => {
         </div>
 
         {/* Team Philosophy */}
-        <div className="mt-16 bg-sage/5 dark:bg-slate-900 rounded-2xl p-8 sm:p-12 text-center">
-          <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-6">
-            Our Approach
-          </h3>
-          <p className="text-lg text-slate-gray max-w-4xl mx-auto leading-relaxed">
-            We believe that successful AI implementation requires both technical expertise and human understanding. 
-            Our team combines deep technical knowledge with a genuine commitment to helping small businesses thrive. 
-            We're not just consultants—we're your local partners in growth, here to support you every step of the way.
-          </p>
-        </div>
+        <AnimatedSection animation="animate-slide-up" delay={200}>
+          <div className="mt-16 bg-sage/5 dark:bg-slate-900 rounded-2xl p-8 sm:p-12 text-center card-energy">
+            <h3 className="text-2xl sm:text-3xl font-bold text-forest-green mb-6">
+              Our Approach
+            </h3>
+            <p className="text-lg text-slate-gray max-w-4xl mx-auto leading-relaxed">
+              We believe that successful AI implementation requires both technical expertise and human understanding.
+              Our team combines deep technical knowledge with a genuine commitment to helping small businesses thrive.
+              We're not just consultants—we're your local partners in growth, here to support you every step of the way.
+            </p>
+          </div>
+        </AnimatedSection>
       </div>
     </section>
   );

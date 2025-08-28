@@ -163,7 +163,9 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .interactive-lift:hover {
+  .interactive-lift:hover,
+  .interactive-lift:focus-visible,
+  .interactive-lift:active {
     transform: translateY(-3px);
     box-shadow: 0 10px 25px hsl(var(--forest-green) / 0.15);
   }
@@ -172,7 +174,8 @@
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .interactive-scale:hover {
+  .interactive-scale:hover,
+  .interactive-scale:focus-visible {
     transform: scale(1.02);
   }
 
@@ -205,11 +208,15 @@
     transition: left 0.5s;
   }
 
-  .button-energy:hover::before {
+  .button-energy:hover::before,
+  .button-energy:focus-visible::before,
+  .button-energy:active::before {
     left: 100%;
   }
 
-  .button-energy:hover {
+  .button-energy:hover,
+  .button-energy:focus-visible,
+  .button-energy:active {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px hsl(var(--forest-green) / 0.3);
   }
@@ -219,7 +226,9 @@
     position: relative;
   }
 
-  .card-energy:hover {
+  .card-energy:hover,
+  .card-energy:focus-visible,
+  .card-energy:active {
     transform: translateY(-4px) scale(1.01);
     box-shadow: 0 15px 35px hsl(var(--forest-green) / 0.15);
   }
@@ -264,9 +273,17 @@
     }
 
     .interactive-lift:hover,
+    .interactive-lift:focus-visible,
+    .interactive-lift:active,
     .interactive-scale:hover,
+    .interactive-scale:focus-visible,
+    .interactive-scale:active,
     .button-energy:hover,
-    .card-energy:hover {
+    .button-energy:focus-visible,
+    .button-energy:active,
+    .card-energy:hover,
+    .card-energy:focus-visible,
+    .card-energy:active {
       transform: none;
       box-shadow: none;
     }

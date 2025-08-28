@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import CountUp from '@/components/CountUp';
+import { AnimatedSection } from '@/hooks/useScrollAnimation';
 
 const Reviews = () => {
   const testimonials = [
@@ -44,80 +45,112 @@ const Reviews = () => {
     <section id="reviews" className="py-20 bg-cream dark:bg-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16 animate-fade-in-up">
-          <h2 className="text-4xl lg:text-5xl font-bold text-forest-green mb-6">
-            What Our Clients Say
-          </h2>
-          <p className="text-lg text-slate-gray max-w-3xl mx-auto leading-relaxed">
-            Real stories from Kansas City businesses who've embraced AI with our help
-          </p>
-        </div>
+        <AnimatedSection animation="animate-slide-up">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl lg:text-5xl font-bold text-forest-green mb-6">
+              What Our Clients Say
+            </h2>
+            <p className="text-lg text-slate-gray max-w-3xl mx-auto leading-relaxed">
+              Real stories from Kansas City businesses who've embraced AI with our help
+            </p>
+          </div>
+        </AnimatedSection>
 
         {/* Testimonials Grid */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
-          {testimonials.map((testimonial, index) => {
-            const card = (
-              <Card
-                className="card-energy bg-white dark:bg-slate-900 shadow-lg border-0 animate-elastic-in"
-                style={{ animationDelay: `${index * 150}ms` }}
-              >
-                <CardContent className="p-8">
-                  {/* Quote Icon */}
-                  <div className="text-sage text-6xl font-serif mb-4 leading-none">"</div>
+          {testimonials.map((testimonial, index) => (
+            <AnimatedSection
+              key={index}
+              animation="animate-elastic-in"
+              delay={index * 150}
+            >
+              {testimonial.company === "The Survey Institute" ? (
+                <a
+                  href="https://surveyinstitute.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <Card className="card-energy bg-white dark:bg-slate-900 shadow-lg border-0">
+                    <CardContent className="p-8">
+                      {/* Quote Icon */}
+                      <div className="text-sage text-6xl font-serif mb-4 leading-none">"</div>
 
-                  {/* Rating */}
-                  <div className="flex mb-6">{renderStars(testimonial.rating)}</div>
+                      {/* Rating */}
+                      <div className="flex mb-6">{renderStars(testimonial.rating)}</div>
 
-                  {/* Quote */}
-                  <blockquote className="text-slate-gray leading-relaxed mb-6 italic">
-                    {testimonial.quote}
-                  </blockquote>
+                      {/* Quote */}
+                      <blockquote className="text-slate-gray leading-relaxed mb-6 italic">
+                        {testimonial.quote}
+                      </blockquote>
 
-                  {/* Author Info */}
-                  <div className="border-t border-sage/20 pt-6">
-                    <div className="font-semibold text-forest-green text-lg">
-                      {testimonial.name}
+                      {/* Author Info */}
+                      <div className="border-t border-sage/20 pt-6">
+                        <div className="font-semibold text-forest-green text-lg">
+                          {testimonial.name}
+                        </div>
+                        <div className="text-earth-brown font-medium">
+                          {testimonial.title}
+                        </div>
+                        <div className="text-slate-gray text-sm">{testimonial.company}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </a>
+              ) : (
+                <Card className="card-energy bg-white dark:bg-slate-900 shadow-lg border-0">
+                  <CardContent className="p-8">
+                    {/* Quote Icon */}
+                    <div className="text-sage text-6xl font-serif mb-4 leading-none">"</div>
+
+                    {/* Rating */}
+                    <div className="flex mb-6">{renderStars(testimonial.rating)}</div>
+
+                    {/* Quote */}
+                    <blockquote className="text-slate-gray leading-relaxed mb-6 italic">
+                      {testimonial.quote}
+                    </blockquote>
+
+                    {/* Author Info */}
+                    <div className="border-t border-sage/20 pt-6">
+                      <div className="font-semibold text-forest-green text-lg">
+                        {testimonial.name}
+                      </div>
+                      <div className="text-earth-brown font-medium">
+                        {testimonial.title}
+                      </div>
+                      <div className="text-slate-gray text-sm">{testimonial.company}</div>
                     </div>
-                    <div className="text-earth-brown font-medium">
-                      {testimonial.title}
-                    </div>
-                    <div className="text-slate-gray text-sm">{testimonial.company}</div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-
-            return testimonial.company === "The Survey Institute" ? (
-              <a
-                key={index}
-                href="https://surveyinstitute.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-              >
-                {card}
-              </a>
-            ) : (
-              <React.Fragment key={index}>{card}</React.Fragment>
-            );
-          })}
+                  </CardContent>
+                </Card>
+              )}
+            </AnimatedSection>
+          ))}
         </div>
 
         {/* Stats Section */}
-        <div className="bg-forest-green dark:bg-[hsl(139_28%_25%)] rounded-2xl p-8 lg:p-12 animate-fade-in-up">
-          <div className="grid md:grid-cols-3 gap-8 text-center">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-white">
-                <div className="text-4xl lg:text-5xl font-bold mb-2 text-sage">
-                  <CountUp value={stat.number} />
-                </div>
-                <div className="text-lg font-medium opacity-90">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
+        <AnimatedSection animation="animate-slide-up" delay={testimonials.length * 150}>
+          <div className="bg-forest-green dark:bg-[hsl(139_28%_25%)] rounded-2xl p-8 lg:p-12 card-energy">
+            <div className="grid md:grid-cols-3 gap-8 text-center">
+              {stats.map((stat, index) => (
+                <AnimatedSection
+                  key={index}
+                  animation="animate-fade-in-up"
+                  delay={index * 150}
+                >
+                  <div className="text-white">
+                    <div className="text-4xl lg:text-5xl font-bold mb-2 text-sage">
+                      <CountUp value={stat.number} />
+                    </div>
+                    <div className="text-lg font-medium opacity-90">
+                      {stat.label}
+                    </div>
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
           </div>
-        </div>
+        </AnimatedSection>
       </div>
     </section>
   );
