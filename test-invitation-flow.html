@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Invitation Flow</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        input { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 4px; width: 200px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Invitation Flow for testy@hennahane.com</h1>
+    
+    <div class="section">
+        <h2>Step 1: Admin Login</h2>
+        <input type="email" id="adminEmail" placeholder="Admin Email" value="james@hennahane.com">
+        <input type="password" id="adminPassword" placeholder="Admin Password">
+        <button onclick="loginAdmin()">Login as Admin</button>
+        <div id="adminStatus"></div>
+    </div>
+
+    <div class="section">
+        <h2>Step 2: Create Invitation</h2>
+        <input type="email" id="inviteEmail" placeholder="Email" value="testy@hennahane.com">
+        <input type="text" id="inviteName" placeholder="Full Name" value="Test Client User">
+        <input type="text" id="inviteCompany" placeholder="Company" value="Test Company">
+        <select id="inviteRole">
+            <option value="Client">Client</option>
+            <option value="Admin">Admin</option>
+        </select>
+        <button onclick="createInvitation()">Send Invitation</button>
+        <div id="inviteStatus"></div>
+    </div>
+
+    <div class="section">
+        <h2>Step 3: Check Invitation Record</h2>
+        <button onclick="checkInvitation()">Check Database</button>
+        <div id="inviteRecord"></div>
+    </div>
+
+    <div class="section">
+        <h2>Step 4: Test Invitation URL</h2>
+        <div id="invitationUrl"></div>
+        <button onclick="testInvitationUrl()">Test Invitation Validation</button>
+        <div id="urlTestResult"></div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://ylewpehqfgltbhpkaout.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlsZXdwZWhxZmdsdGJocGthb3V0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4NDkzMTcsImV4cCI6MjA2NTQyNTMxN30.ljNvNQSG0A2RsRkW8WXxADiOqVmZywD2GX318riotXs';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        let currentSession = null;
+        let invitationToken = null;
+
+        async function loginAdmin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            const status = document.getElementById('adminStatus');
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                
+                currentSession = data.session;
+                status.innerHTML = `<div class="success">✅ Admin logged in successfully: ${data.user.email}</div>`;
+            } catch (error) {
+                status.innerHTML = `<div class="error">❌ Login failed: ${error.message}</div>`;
+            }
+        }
+
+        async function createInvitation() {
+            if (!currentSession) {
+                document.getElementById('inviteStatus').innerHTML = '<div class="error">❌ Please login as admin first</div>';
+                return;
+            }
+
+            const email = document.getElementById('inviteEmail').value;
+            const full_name = document.getElementById('inviteName').value;
+            const client_name = document.getElementById('inviteCompany').value;
+            const role = document.getElementById('inviteRole').value;
+            const status = document.getElementById('inviteStatus');
+
+            try {
+                const { data, error } = await supabase.functions.invoke('send-invitation', {
+                    body: { email, full_name, client_name, role },
+                    headers: {
+                        Authorization: `Bearer ${currentSession.access_token}`,
+                    },
+                });
+
+                if (error) throw error;
+                if (data.error) throw new Error(data.error);
+
+                status.innerHTML = `<div class="success">✅ Invitation sent successfully!</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                status.innerHTML = `<div class="error">❌ Failed to send invitation: ${error.message}</div>`;
+            }
+        }
+
+        async function checkInvitation() {
+            const status = document.getElementById('inviteRecord');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('user_invitations')
+                    .select('*')
+                    .eq('email', 'testy@hennahane.com')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    invitationToken = data[0].invitation_token;
+                    status.innerHTML = `<div class="success">✅ Invitation found in database</div><pre>${JSON.stringify(data[0], null, 2)}</pre>`;
+                    
+                    // Show invitation URL
+                    const baseUrl = window.location.origin;
+                    const inviteUrl = `${baseUrl}/auth?token=${invitationToken}`;
+                    document.getElementById('invitationUrl').innerHTML = 
+                        `<div class="info">🔗 <strong>Invitation URL:</strong><br><a href="${inviteUrl}" target="_blank">${inviteUrl}</a></div>`;
+                } else {
+                    status.innerHTML = '<div class="error">❌ No invitation found</div>';
+                }
+            } catch (error) {
+                status.innerHTML = `<div class="error">❌ Error checking invitation: ${error.message}</div>`;
+            }
+        }
+
+        async function testInvitationUrl() {
+            if (!invitationToken) {
+                document.getElementById('urlTestResult').innerHTML = '<div class="error">❌ No invitation token found. Check invitation first.</div>';
+                return;
+            }
+
+            const status = document.getElementById('urlTestResult');
+            
+            try {
+                // Test the validate_invitation_secure RPC
+                const { data, error } = await supabase.rpc('validate_invitation_secure', {
+                    token_input: invitationToken
+                });
+
+                if (error) throw error;
+
+                status.innerHTML = `<div class="success">✅ Invitation validation successful</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                status.innerHTML = `<div class="error">❌ Invitation validation failed: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
