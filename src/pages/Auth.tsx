@@ -300,6 +300,7 @@ const Auth = () => {
           password: password,
           options: {
             emailRedirectTo: redirectUrl,
+            data: { full_name: fullName },
           },
         });
 
@@ -308,7 +309,7 @@ const Auth = () => {
           // Fallback: try passwordless email OTP (often succeeds when signup hits a DB 500)
           const { error: otpError } = await supabase.auth.signInWithOtp({
             email: invitation.email,
-            options: { emailRedirectTo: redirectUrl },
+            options: { emailRedirectTo: redirectUrl, data: { full_name: fullName } },
           });
 
           if (otpError) {
