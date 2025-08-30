@@ -268,71 +268,71 @@ const Auth = () => {
           });
         }
       } else {
-        // New invitation flow: authenticate first, then finalize via RPC
+        // Invitation flow: create account via accept-invitation edge function
 
         console.log('Starting invitation flow for:', invitation.email);
 
-        // 1) Try sign-in (if account already exists)
+        // 1) Try sign-in first (if account already exists)
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: invitation.email,
           password: password,
         });
 
         if (!signInError) {
-          // Signed in successfully, finalize now
-          finalizeAttemptedRef.current = false; // allow one finalize inside listener if needed
+          // User already exists and signed in - finalize invitation
+          finalizeAttemptedRef.current = false;
           const result = await finalizeInvitation(invitation.invitation_token);
           if (result.success) {
-            // Listener will handle redirect shortly; provide quick feedback
             toast({
-              title: "You're in!",
+              title: "Welcome back!",
               description: "Your invitation has been accepted. Redirecting...",
             });
           }
-          // No further action; auth listener will navigate based on role
           return;
         }
 
-        // 2) If sign-in failed, try sign-up (may require email confirmation)
-        const redirectUrl = `${window.location.origin}/auth?invite=${invitation.invitation_token}`;
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: invitation.email,
-          password: password,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: { full_name: fullName },
-          },
+        // 2) User doesn't exist - create account via accept-invitation edge function
+        console.log('User does not exist, creating account via accept-invitation');
+        
+        const { data: acceptResult, error: acceptError } = await supabase.functions.invoke('accept-invitation', {
+          body: {
+            invitation_token: invitation.invitation_token,
+            password: password
+          }
         });
 
-        if (signUpError) {
-          console.error('Sign up failed:', signUpError);
-          // Fallback: try passwordless email OTP (often succeeds when signup hits a DB 500)
-          const { error: otpError } = await supabase.auth.signInWithOtp({
-            email: invitation.email,
-            options: { emailRedirectTo: redirectUrl, data: { full_name: fullName } },
-          });
-
-          if (otpError) {
-            toast({
-              title: 'Registration Failed',
-              description: signUpError.message || otpError.message || 'Could not register your account.',
-              variant: 'destructive',
-            });
-            return;
-          }
-
+        if (acceptError || !acceptResult?.success) {
+          console.error('Accept invitation failed:', acceptError, acceptResult);
           toast({
-            title: 'Check Your Email',
-            description: 'We sent you a secure sign-in link. After confirming, you will be signed in and your invitation will be finalized.',
+            title: 'Registration Failed',
+            description: acceptError?.message || acceptResult?.error || 'Could not create your account.',
+            variant: 'destructive',
           });
           return;
         }
 
-        // If email confirmation is required, user must confirm before session exists.
-        // Once confirmed and redirected back, the auth listener will finalize the invitation and navigate.
+        console.log('Account created successfully, now signing in');
+        
+        // 3) Account created - now sign in with the credentials
+        const { error: postCreateSignInError } = await supabase.auth.signInWithPassword({
+          email: invitation.email,
+          password: password,
+        });
+
+        if (postCreateSignInError) {
+          console.error('Post-creation sign in failed:', postCreateSignInError);
+          toast({
+            title: 'Sign In Failed',
+            description: 'Account created but sign in failed. Please try signing in manually.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        // Success - auth listener will handle finalization and redirect
         toast({
-          title: 'Confirm Your Email',
-          description: "We sent you a confirmation link. After confirming, you'll be signed in and your invitation will be finalized.",
+          title: 'Account Created!',
+          description: 'Your account has been created successfully. Redirecting to your portal...',
         });
       }
     } catch (error: unknown) {
