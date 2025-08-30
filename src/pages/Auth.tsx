@@ -268,72 +268,53 @@ const Auth = () => {
           });
         }
       } else {
-        // Invitation flow: create account via accept-invitation edge function
+        // Invitation flow: sign up normally then finalize via RPC after email confirmation
+        console.log('Starting invitation signup flow (no edge function) for:', invitation.email);
 
-        console.log('Starting invitation flow for:', invitation.email);
+        const redirectUrl = `${window.location.origin}/auth?invite=${invitation.invitation_token}`;
 
-        // 1) Try sign-in first (if account already exists)
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: invitation.email,
-          password: password,
+          password,
+          options: { emailRedirectTo: redirectUrl }
         });
 
-        if (!signInError) {
-          // User already exists and signed in - finalize invitation
-          finalizeAttemptedRef.current = false;
-          const result = await finalizeInvitation(invitation.invitation_token);
-          if (result.success) {
-            toast({
-              title: "Welcome back!",
-              description: "Your invitation has been accepted. Redirecting...",
+        if (signUpError) {
+          const msg = signUpError.message?.toLowerCase() || '';
+          if (msg.includes('already registered')) {
+            // Try to sign in (may fail if email not confirmed yet)
+            const { error: signInErr } = await supabase.auth.signInWithPassword({
+              email: invitation.email,
+              password
             });
+            if (signInErr) {
+              toast({
+                title: 'Confirm Your Email',
+                description: 'Your account exists but email is not confirmed. Please check your inbox.',
+              });
+              return;
+            }
+            // Signed in successfully - finalize invitation
+            finalizeAttemptedRef.current = false;
+            await finalizeInvitation(invitation.invitation_token);
+            return;
           }
-          return;
-        }
 
-        // 2) User doesn't exist - create account via accept-invitation edge function
-        console.log('User does not exist, creating account via accept-invitation');
-        
-        const { data: acceptResult, error: acceptError } = await supabase.functions.invoke('accept-invitation', {
-          body: {
-            invitation_token: invitation.invitation_token,
-            password: password
-          }
-        });
-
-        if (acceptError || !acceptResult?.success) {
-          console.error('Accept invitation failed:', acceptError, acceptResult);
+          console.error('Sign up failed:', signUpError);
           toast({
             title: 'Registration Failed',
-            description: acceptError?.message || acceptResult?.error || 'Could not create your account.',
+            description: signUpError.message,
             variant: 'destructive',
           });
           return;
         }
 
-        console.log('Account created successfully, now signing in');
-        
-        // 3) Account created - now sign in with the credentials
-        const { error: postCreateSignInError } = await supabase.auth.signInWithPassword({
-          email: invitation.email,
-          password: password,
-        });
-
-        if (postCreateSignInError) {
-          console.error('Post-creation sign in failed:', postCreateSignInError);
-          toast({
-            title: 'Sign In Failed',
-            description: 'Account created but sign in failed. Please try signing in manually.',
-            variant: 'destructive',
-          });
-          return;
-        }
-
-        // Success - auth listener will handle finalization and redirect
+        // Sign up succeeded; if confirmation required, the user must confirm via email
         toast({
-          title: 'Account Created!',
-          description: 'Your account has been created successfully. Redirecting to your portal...',
+          title: 'Check your email',
+          description: 'We sent a confirmation link. After confirming, you will be redirected and your invitation finalized.',
         });
+        return;
       }
     } catch (error: unknown) {
       console.error('Unexpected error during submit:', error);
