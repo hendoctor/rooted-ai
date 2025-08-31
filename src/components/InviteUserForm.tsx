@@ -174,6 +174,9 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
                 <SelectItem value="Admin">Admin</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-slate-gray">
+              Use "Client Invitations" section above for client portal access
+            </p>
           </div>
 
           <Button 

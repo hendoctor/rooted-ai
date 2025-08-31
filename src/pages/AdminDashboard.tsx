@@ -17,6 +17,7 @@ import Footer from '@/components/Footer';
 import { LoadingSpinner, InlineLoader } from '@/components/LoadingSpinner';
 import InviteUserForm from '@/components/InviteUserForm';
 import PortalContentManager from '@/components/admin/PortalContentManager';
+import ClientInvitationManager from '@/components/admin/ClientInvitationManager';
 import { Link } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
 
@@ -852,6 +853,8 @@ const AdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
+        <ClientInvitationManager onInvitationSent={fetchInvitations} />
+        
         <PortalContentManager companies={allCompanies} currentAdmin={user?.email || ""} />
       </div>
       <Footer />

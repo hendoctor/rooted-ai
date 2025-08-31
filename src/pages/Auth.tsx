@@ -92,7 +92,7 @@ const Auth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Only redirect after successful login and a short delay to allow main auth system to catch up
+        // Handle post-authentication flows
         if (event === 'SIGNED_IN' && session?.user && type !== 'recovery') {
           setTimeout(async () => {
             try {
@@ -268,52 +268,81 @@ const Auth = () => {
           });
         }
       } else {
-        // Invitation flow: sign up normally then finalize via RPC after email confirmation
-        console.log('Starting invitation signup flow (no edge function) for:', invitation.email);
+        // Invitation flow: create account and auto-finalize invitation
+        console.log('Starting invitation signup flow for:', invitation.email);
 
-        const redirectUrl = `${window.location.origin}/auth?invite=${invitation.invitation_token}`;
+        const redirectUrl = `${window.location.origin}/client-portal`;
 
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: invitation.email,
           password,
-          options: { emailRedirectTo: redirectUrl }
+          options: { 
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: invitation.full_name,
+              invitation_token: invitation.invitation_token
+            }
+          }
         });
 
         if (signUpError) {
           const msg = signUpError.message?.toLowerCase() || '';
-          if (msg.includes('already registered')) {
-            // Try to sign in (may fail if email not confirmed yet)
+          if (msg.includes('already registered') || msg.includes('user already registered')) {
+            // Try to sign in 
             const { error: signInErr } = await supabase.auth.signInWithPassword({
               email: invitation.email,
               password
             });
             if (signInErr) {
-              toast({
-                title: 'Confirm Your Email',
-                description: 'Your account exists but email is not confirmed. Please check your inbox.',
-              });
+              if (signInErr.message?.includes('email not confirmed')) {
+                toast({
+                  title: 'Confirm Your Email',
+                  description: 'Your account exists but email is not confirmed. Please check your inbox.',
+                });
+              } else {
+                toast({
+                  title: 'Sign In Failed',
+                  description: signInErr.message,
+                  variant: 'destructive',
+                });
+              }
               return;
             }
-            // Signed in successfully - finalize invitation
-            finalizeAttemptedRef.current = false;
-            await finalizeInvitation(invitation.invitation_token);
+            // Signed in successfully - finalize invitation and redirect
+            const result = await finalizeInvitation(invitation.invitation_token);
+            if (result.success) {
+              navigate('/client-portal');
+            }
             return;
           }
 
           console.error('Sign up failed:', signUpError);
           toast({
-            title: 'Registration Failed',
+            title: 'Registration Failed', 
             description: signUpError.message,
             variant: 'destructive',
           });
           return;
         }
 
-        // Sign up succeeded; if confirmation required, the user must confirm via email
-        toast({
-          title: 'Check your email',
-          description: 'We sent a confirmation link. After confirming, you will be redirected and your invitation finalized.',
-        });
+        // Account created successfully
+        if (signUpData.user && !signUpData.user.email_confirmed_at) {
+          // Email confirmation required
+          toast({
+            title: 'Check your email',
+            description: 'We sent a confirmation link. Click it to complete your registration.',
+          });
+        } else {
+          // No email confirmation needed, finalize invitation
+          const result = await finalizeInvitation(invitation.invitation_token);
+          if (result.success) {
+            toast({
+              title: 'Welcome!',
+              description: 'Your account has been created and invitation accepted.',
+            });
+            navigate('/client-portal');
+          }
+        }
         return;
       }
     } catch (error: unknown) {
