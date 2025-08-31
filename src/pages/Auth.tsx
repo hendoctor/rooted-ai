@@ -332,16 +332,20 @@ const Auth = () => {
             title: 'Check your email',
             description: 'We sent a confirmation link. Click it to complete your registration.',
           });
+        } else if (signUpData.user && signUpData.session) {
+          // User is authenticated, wait a moment for session to be fully established
+          toast({
+            title: 'Account Created!',
+            description: 'Setting up your profile...',
+          });
+          
+          // Let the onAuthStateChange handler deal with finalization
+          // It will be triggered when the session is fully established
         } else {
-          // No email confirmation needed, finalize invitation
-          const result = await finalizeInvitation(invitation.invitation_token);
-          if (result.success) {
-            toast({
-              title: 'Welcome!',
-              description: 'Your account has been created and invitation accepted.',
-            });
-            navigate('/client-portal');
-          }
+          toast({
+            title: 'Account Created!',
+            description: 'Please sign in to complete your setup.',
+          });
         }
         return;
       }
