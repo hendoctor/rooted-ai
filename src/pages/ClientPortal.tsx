@@ -28,7 +28,31 @@ const ClientPortal: React.FC = () => {
   const company = companyParam
     ? companies.find(c => c.slug === companyParam)
     : companies[0];
-  const companySlug = company?.slug;
+
+  // Fallback resolver: fetch companies directly if context hasn't populated yet
+  const [resolvedCompany, setResolvedCompany] = useState<{ id: string; name?: string; slug: string } | undefined>();
+  useEffect(() => {
+    if (user && companyParam && (!company || companies.length === 0)) {
+      (async () => {
+        try {
+          const { data } = await supabase.rpc('get_user_companies');
+          if (Array.isArray(data)) {
+            const match = (data as any[]).find(c => c.company_slug === companyParam);
+            if (match) {
+              setResolvedCompany({ id: match.company_id, name: match.company_name, slug: match.company_slug });
+            } else if (data[0]) {
+              setSearchParams({ company: (data as any[])[0].company_slug });
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to resolve company from RPC:', e);
+        }
+      })();
+    }
+  }, [user, companyParam, company, companies, setSearchParams]);
+
+  const activeCompany = company || resolvedCompany;
+  const companySlug = activeCompany?.slug;
 
   const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; date: string; status?: 'New' | 'Important'; }>>([]);
   const [resources, setResources] = useState<Array<{ id: string; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string }>>([]);
@@ -37,9 +61,9 @@ const ClientPortal: React.FC = () => {
   const [kpis, setKpis] = useState<Array<{ name: string; value: string }>>([]);
   const [faqs, setFaqs] = useState<Array<{ id: string; question: string; answer: string }>>([]);
 
-  useEffect(() => {
-    if (!company?.id) return;
-    const companyId = company.id;
+useEffect(() => {
+  if (!activeCompany?.id) return;
+  const companyId = activeCompany.id;
 
     const loadData = async () => {
       console.log('Loading client portal content for company:', companyId);
@@ -161,7 +185,7 @@ const ClientPortal: React.FC = () => {
     };
 
     loadData();
-  }, [company?.id]);
+  }, [activeCompany?.id]);
 
   if (loading) {
     return (
@@ -173,8 +197,10 @@ const ClientPortal: React.FC = () => {
     return <AccessDenied />;
   }
 
-  if (!company) {
-    return <AccessDenied />;
+  if (!activeCompany) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">Initializing your company portal...</div>
+    );
   }
 
   return (

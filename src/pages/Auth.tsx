@@ -7,6 +7,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import type { User, Session } from '@supabase/supabase-js';
 import { validatePasswordStrength } from '@/utils/securityConfig';
+import { useAuth } from '@/hooks/useAuthReliable';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,12 +27,13 @@ const Auth = () => {
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
   const [invitationError, setInvitationError] = useState<string | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { toast } = useToast();
+const navigate = useNavigate();
+const [searchParams] = useSearchParams();
+const { toast } = useToast();
+const { refreshAuth } = useAuth();
 
-  // Track whether we've already attempted to finalize this invitation to avoid duplicate calls
-  const finalizeAttemptedRef = useRef(false);
+// Track whether we've already attempted to finalize this invitation to avoid duplicate calls
+const finalizeAttemptedRef = useRef(false);
 
   // Helper: finalize invitation after the user is authenticated
   const finalizeInvitation = async (token: string) => {
@@ -115,9 +117,12 @@ const Auth = () => {
                 return;
               }
 
-              // Client users should go to their B2B client portal
+              // Client users should go to their B2B client portal (scoped to first company if available)
               if (userRole === 'Client') {
-                navigate('/client-portal');
+                const companiesArr = Array.isArray(companiesResult.data) ? companiesResult.data as any[] : [];
+                const firstSlug = companiesArr[0]?.company_slug as string | undefined;
+                try { await refreshAuth(); } catch {}
+                navigate(firstSlug ? `/client-portal?company=${firstSlug}` : '/client-portal');
                 return;
               }
             } catch (error) {
@@ -311,7 +316,10 @@ const Auth = () => {
             // Signed in successfully - finalize invitation and redirect
             const result = await finalizeInvitation(invitation.invitation_token);
             if (result.success) {
-              navigate('/client-portal');
+              try { await refreshAuth(); } catch {}
+              const { data: comps } = await supabase.rpc('get_user_companies');
+              const slug = Array.isArray(comps) ? (comps as any[])[0]?.company_slug as string | undefined : undefined;
+              navigate(slug ? `/client-portal?company=${slug}` : '/client-portal');
             }
             return;
           }
