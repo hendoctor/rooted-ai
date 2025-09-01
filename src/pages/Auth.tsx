@@ -103,6 +103,8 @@ const finalizeAttemptedRef = useRef(false);
               if (inviteParam && !finalizeAttemptedRef.current) {
                 finalizeAttemptedRef.current = true;
                 await finalizeInvitation(inviteParam);
+                // Refresh auth context after finalization
+                try { await refreshAuth(); } catch {}
               }
 
               const [roleResult, companiesResult] = await Promise.all([
@@ -117,12 +119,15 @@ const finalizeAttemptedRef = useRef(false);
                 return;
               }
 
-              // Client users should go to their B2B client portal (scoped to first company if available)
+              // Client users should go to their unique company portal
               if (userRole === 'Client') {
                 const companiesArr = Array.isArray(companiesResult.data) ? companiesResult.data as any[] : [];
-                const firstSlug = companiesArr[0]?.company_slug as string | undefined;
-                try { await refreshAuth(); } catch {}
-                navigate(firstSlug ? `/client-portal?company=${firstSlug}` : '/client-portal');
+                if (companiesArr.length > 0) {
+                  const companySlug = companiesArr[0]?.company_slug;
+                  navigate(`/client-portal?company=${companySlug}`);
+                } else {
+                  navigate('/client-portal');
+                }
                 return;
               }
             } catch (error) {
@@ -318,8 +323,12 @@ const finalizeAttemptedRef = useRef(false);
             if (result.success) {
               try { await refreshAuth(); } catch {}
               const { data: comps } = await supabase.rpc('get_user_companies');
-              const slug = Array.isArray(comps) ? (comps as any[])[0]?.company_slug as string | undefined : undefined;
-              navigate(slug ? `/client-portal?company=${slug}` : '/client-portal');
+              if (Array.isArray(comps) && comps.length > 0) {
+                const companySlug = (comps as any[])[0]?.company_slug;
+                navigate(`/client-portal?company=${companySlug}`);
+              } else {
+                navigate('/client-portal');
+              }
             }
             return;
           }
