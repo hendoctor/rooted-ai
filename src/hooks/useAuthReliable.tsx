@@ -200,8 +200,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         supabase.realtime.setAuth(newSession.access_token);
         setError(null);
 
-        // Cache session
-        AuthCache.setSession(newSession);
+        // Cache session securely
+        await AuthCache.setSession(newSession);
 
         // Ensure auth tokens keep refreshing and realtime stays connected
         supabase.auth.startAutoRefresh();
@@ -237,7 +237,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUserRole(null);
         setCompanies([]);
         currentUserIdRef.current = null;
-        AuthCache.clearSession();
+        await AuthCache.clearSession();
         supabase.auth.stopAutoRefresh();
         supabase.realtime.disconnect();
         supabase.realtime.setAuth('');
@@ -292,17 +292,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
         // Check for existing session
+        console.log('🔍 Attempting session restoration...');
         const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('🧾 Session restore result', { hasSession: !!session, error });
 
         if (error) {
           console.warn('Session check error:', error);
+          setError('Failed to restore session');
           setLoading(false);
           return;
         }
 
         if (session?.user) {
-          console.log('✅ Existing session found');
-          await handleAuthStateChange('INITIAL_SESSION', session);
+          // Check for expiration and attempt refresh if needed
+          if (session.expires_at && session.expires_at * 1000 < Date.now()) {
+            console.log('⏳ Session expired, attempting refresh...');
+            const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError || !refreshed.session) {
+              console.warn('🔁 Session refresh failed:', refreshError);
+              await AuthCache.clearSession();
+              setError('Session expired. Please sign in again.');
+              setLoading(false);
+              return;
+            }
+            await handleAuthStateChange('INITIAL_SESSION', refreshed.session);
+          } else {
+            console.log('✅ Existing session found');
+            await handleAuthStateChange('INITIAL_SESSION', session);
+          }
         } else {
           console.log('❌ No existing session, user not authenticated');
           setLoading(false);
