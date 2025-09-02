@@ -10,12 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, Edit2, Users, Building2, Mail, Crown, UserPlus, X, ExternalLink, MessageSquare } from 'lucide-react';
+import { Trash2, Edit2, Users, Building2, Crown, UserPlus, X, ExternalLink, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { LoadingSpinner, InlineLoader } from '@/components/LoadingSpinner';
-import InviteUserForm from '@/components/InviteUserForm';
 import PortalContentManager from '@/components/admin/PortalContentManager';
 import ClientInvitationManager from '@/components/admin/ClientInvitationManager';
 import { Link } from 'react-router-dom';
@@ -59,7 +58,6 @@ const AdminDashboard: React.FC = () => {
   const { user, loading, userRole } = useAuth();
   const isAdmin = userRole === 'Admin';
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRole[]>([]);
-  const [invitations, setInvitations] = useState<any[]>([]);
   const [allCompanies, setAllCompanies] = useState<CompanyWithCount[]>([]);
   const [newsletterSubscriptions, setNewsletterSubscriptions] = useState<NewsletterSubscription[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -98,7 +96,6 @@ const AdminDashboard: React.FC = () => {
       // Add timeout protection
       const dataPromise = Promise.all([
         fetchUsersWithRoles(),
-        fetchInvitations(), 
         fetchAllCompanies(),
         fetchNewsletterSubscriptions()
       ]);
@@ -186,17 +183,6 @@ const AdminDashboard: React.FC = () => {
   };
   // Role permissions are now managed directly in users table - no separate fetch needed
 
-  const fetchInvitations = async () => {
-    const { data, error } = await supabase
-      .from('user_invitations')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (!error) {
-      setInvitations(data ?? []);
-    }
-  };
-
   const fetchAllCompanies = async () => {
     try {
       // Get all companies
@@ -268,9 +254,6 @@ const AdminDashboard: React.FC = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
         fetchUsersWithRoles();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_invitations' }, () => {
-        fetchInvitations();
-      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'companies' }, () => {
         fetchAllCompanies();
       })
@@ -310,27 +293,6 @@ const AdminDashboard: React.FC = () => {
   };
 
   // Permission management is now handled directly through users.role field
-
-  const cancelInvitation = async (invitationId: string) => {
-    const { error } = await supabase
-      .from('user_invitations')
-      .update({ status: 'cancelled' })
-      .eq('id', invitationId);
-    
-    if (!error) {
-      toast({
-        title: "Success",
-        description: "Invitation cancelled successfully",
-      });
-      fetchInvitations();
-    } else {
-      toast({
-        title: "Error",
-        description: "Failed to cancel invitation",
-        variant: "destructive"
-      });
-    }
-  };
 
   const deleteUser = async (userEmail: string) => {
     const { error } = await supabase.rpc('delete_user_completely', {
@@ -564,54 +526,6 @@ const AdminDashboard: React.FC = () => {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* User Invitations Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              User Invitations
-            </CardTitle>
-            <CardDescription>
-              Send invitations and manage pending requests.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-6 md:grid-cols-2">
-              <InviteUserForm onInvitationSent={fetchInvitations} />
-              
-              <div>
-                <h3 className="font-semibold mb-4">Pending Invitations</h3>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {invitations.filter(inv => inv.status === 'pending').map(invitation => (
-                    <div key={invitation.id} className="p-3 bg-muted rounded border">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{invitation.full_name}</p>
-                          <p className="text-xs text-muted-foreground">{invitation.email}</p>
-                          <p className="text-xs">{invitation.role}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Expires: {new Date(invitation.expires_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => cancelInvitation(invitation.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  {invitations.filter(inv => inv.status === 'pending').length === 0 && (
-                    <p className="text-sm text-muted-foreground">No pending invitations</p>
-                  )}
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
@@ -853,7 +767,7 @@ const AdminDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <ClientInvitationManager onInvitationSent={fetchInvitations} />
+        <ClientInvitationManager />
         
         <PortalContentManager companies={allCompanies} currentAdmin={user?.email || ""} />
       </div>
