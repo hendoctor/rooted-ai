@@ -160,7 +160,10 @@ const AdminDashboard: React.FC = () => {
 
       // Build a quick lookup for companies by id
       const companyById = new Map(
-        companiesData.map((c: any) => [c.id, { id: c.id, name: c.name, slug: c.slug }])
+        companiesData.map((c: { id: string; name: string; slug: string }) => [
+          c.id,
+          { id: c.id, name: c.name, slug: c.slug }
+        ])
       );
 
       // Group memberships by user_id and attach company details
@@ -174,7 +177,18 @@ const AdminDashboard: React.FC = () => {
       }
 
       // Type-cast the role and attach companies to each user
-      const typedUsers: UserWithRole[] = usersData.map((u: any) => ({
+      interface DBUser {
+        id: string;
+        auth_user_id: string;
+        email: string;
+        role: string;
+        client_name: string | null;
+        display_name: string | null;
+        created_at: string;
+        updated_at: string;
+      }
+
+      const typedUsers: UserWithRole[] = usersData.map((u: DBUser) => ({
         ...u,
         role: u.role as 'Client' | 'Admin',
         client_name: u.client_name || 'N/A',
@@ -455,11 +469,14 @@ const AdminDashboard: React.FC = () => {
       if (editForm.companyId && editForm.companyId !== 'none') {
         const { error: membershipError } = await supabase
           .from('company_memberships')
-          .upsert({
-            user_id: editingUser.auth_user_id,
-            company_id: editForm.companyId,
-            role: editForm.companyRole
-          });
+          .upsert(
+            {
+              user_id: editingUser.auth_user_id,
+              company_id: editForm.companyId,
+              role: editForm.companyRole
+            },
+            { onConflict: 'user_id,company_id' }
+          );
 
         if (membershipError) throw membershipError;
       }
@@ -510,7 +527,7 @@ const AdminDashboard: React.FC = () => {
   const toggleNewsletterSubscription = async (subscription: NewsletterSubscription) => {
     try {
       const newStatus = subscription.status === 'active' ? 'unsubscribed' : 'active';
-      const updateData: any = { 
+      const updateData: Record<string, unknown> = {
         status: newStatus,
         updated_at: new Date().toISOString()
       };
