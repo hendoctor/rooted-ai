@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, Edit2, Users, Building2, Crown, UserPlus, X, ExternalLink, MessageSquare } from 'lucide-react';
+import { Trash2, Edit2, Users, Building2, Crown, UserPlus, X, ExternalLink, MessageSquare, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -69,6 +69,11 @@ const AdminDashboard: React.FC = () => {
     companyId: 'none',
     companyRole: 'Member' as 'Member' | 'Admin'
   });
+  const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<CompanyWithCount | null>(null);
+  const [companyForm, setCompanyForm] = useState({ name: '', slug: '' });
+  const [isNewsletterDialogOpen, setIsNewsletterDialogOpen] = useState(false);
+  const [newsletterForm, setNewsletterForm] = useState({ email: '' });
   const { toast } = useToast();
 
   // Fetch data with timeout protection
@@ -245,6 +250,91 @@ const AdminDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching newsletter subscriptions:', error);
+    }
+  };
+
+  const openCompanyDialog = (company?: CompanyWithCount) => {
+    if (company) {
+      setEditingCompany(company);
+      setCompanyForm({ name: company.name, slug: company.slug });
+    } else {
+      setEditingCompany(null);
+      setCompanyForm({ name: '', slug: '' });
+    }
+    setIsCompanyDialogOpen(true);
+  };
+
+  const saveCompany = async () => {
+    try {
+      if (editingCompany) {
+        const { error } = await supabase
+          .from('companies')
+          .update({ name: companyForm.name, slug: companyForm.slug })
+          .eq('id', editingCompany.id);
+        if (error) throw error;
+        toast({ title: 'Success', description: 'Company updated successfully' });
+      } else {
+        const { error } = await supabase
+          .from('companies')
+          .insert({ name: companyForm.name, slug: companyForm.slug });
+        if (error) throw error;
+        toast({ title: 'Success', description: 'Company created successfully' });
+      }
+      setIsCompanyDialogOpen(false);
+      setEditingCompany(null);
+      setCompanyForm({ name: '', slug: '' });
+      fetchAllCompanies();
+    } catch (error) {
+      console.error('Error saving company:', error);
+      toast({ title: 'Error', description: 'Failed to save company', variant: 'destructive' });
+    }
+  };
+
+  const deleteCompany = async (id: string) => {
+    try {
+      const { error } = await supabase.from('companies').delete().eq('id', id);
+      if (error) throw error;
+      toast({ title: 'Success', description: 'Company deleted' });
+      fetchAllCompanies();
+    } catch (error) {
+      console.error('Error deleting company:', error);
+      toast({ title: 'Error', description: 'Failed to delete company', variant: 'destructive' });
+    }
+  };
+
+  const openNewsletterDialog = () => {
+    setNewsletterForm({ email: '' });
+    setIsNewsletterDialogOpen(true);
+  };
+
+  const addNewsletterSubscription = async () => {
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscriptions')
+        .insert({ email: newsletterForm.email, status: 'active', source: 'admin' });
+      if (error) throw error;
+      toast({ title: 'Success', description: 'Subscriber added' });
+      setIsNewsletterDialogOpen(false);
+      setNewsletterForm({ email: '' });
+      fetchNewsletterSubscriptions();
+    } catch (error) {
+      console.error('Error adding subscription:', error);
+      toast({ title: 'Error', description: 'Failed to add subscriber', variant: 'destructive' });
+    }
+  };
+
+  const deleteNewsletterSubscription = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscriptions')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      toast({ title: 'Success', description: 'Subscription deleted' });
+      fetchNewsletterSubscriptions();
+    } catch (error) {
+      console.error('Error deleting subscription:', error);
+      toast({ title: 'Error', description: 'Failed to delete subscription', variant: 'destructive' });
     }
   };
 
@@ -482,14 +572,20 @@ const AdminDashboard: React.FC = () => {
 
         {/* Company Portals Section */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Company Portals
-            </CardTitle>
-            <CardDescription>
-              Access and manage all registered company portals and their user counts.
-            </CardDescription>
+          <CardHeader className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Company Portals
+              </CardTitle>
+              <CardDescription>
+                Access and manage all registered company portals and their user counts.
+              </CardDescription>
+            </div>
+            <Button size="sm" onClick={() => openCompanyDialog()}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Company
+            </Button>
           </CardHeader>
           <CardContent>
             {loadingData ? (
@@ -519,6 +615,13 @@ const AdminDashboard: React.FC = () => {
                               View Portal
                             </Link>
                           </Button>
+                          <Button variant="outline" size="sm" onClick={() => openCompanyDialog(company)}>
+                            <Edit2 className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => deleteCompany(company.id)}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -528,6 +631,36 @@ const AdminDashboard: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        <Dialog open={isCompanyDialogOpen} onOpenChange={setIsCompanyDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingCompany ? 'Edit Company' : 'Add Company'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="company-name">Name</Label>
+                <Input
+                  id="company-name"
+                  value={companyForm.name}
+                  onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="company-slug">Slug</Label>
+                <Input
+                  id="company-slug"
+                  value={companyForm.slug}
+                  onChange={(e) => setCompanyForm({ ...companyForm, slug: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCompanyDialogOpen(false)}>Cancel</Button>
+              <Button onClick={saveCompany}>{editingCompany ? 'Save Changes' : 'Create Company'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* User Management Section */}
         <Card>
@@ -702,14 +835,20 @@ const AdminDashboard: React.FC = () => {
 
         {/* Newsletter Subscriptions Section */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Newsletter Subscriptions
-            </CardTitle>
-            <CardDescription>
-              Manage newsletter subscriptions and subscriber status.
-            </CardDescription>
+          <CardHeader className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Newsletter Subscriptions
+              </CardTitle>
+              <CardDescription>
+                Manage newsletter subscriptions and subscriber status.
+              </CardDescription>
+            </div>
+            <Button size="sm" onClick={openNewsletterDialog}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Subscriber
+            </Button>
           </CardHeader>
           <CardContent>
             {loadingData ? (
@@ -756,6 +895,14 @@ const AdminDashboard: React.FC = () => {
                             <span className="text-sm">
                               {subscription.status === 'active' ? 'Active' : 'Inactive'}
                             </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-auto p-1"
+                              onClick={() => deleteNewsletterSubscription(subscription.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -766,6 +913,32 @@ const AdminDashboard: React.FC = () => {
             )}
           </CardContent>
         </Card>
+
+        <Dialog open={isNewsletterDialogOpen} onOpenChange={setIsNewsletterDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Subscriber</DialogTitle>
+              <DialogDescription>
+                Manually add a new newsletter subscription.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="newsletter-email">Email</Label>
+                <Input
+                  id="newsletter-email"
+                  type="email"
+                  value={newsletterForm.email}
+                  onChange={(e) => setNewsletterForm({ email: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsNewsletterDialogOpen(false)}>Cancel</Button>
+              <Button onClick={addNewsletterSubscription}>Add</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <ClientInvitationManager />
         
