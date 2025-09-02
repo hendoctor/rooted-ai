@@ -2,6 +2,7 @@ const CACHE_VERSION = '1.3.0';
 const CACHE_NAME = `rooted-ai-v${CACHE_VERSION}`;
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const API_CACHE = `${CACHE_NAME}-api`;
+const OFFLINE_FALLBACK = '/';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -10,6 +11,7 @@ self.addEventListener('install', (event) => {
       .then((cache) =>
         cache.addAll([
           '/',
+          '/index.html',
           '/manifest.json',
           '/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png',
         ])
@@ -59,6 +61,14 @@ self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('/lovable-uploads/')) {
     const redirected = event.request.url.replace('/lovable-uploads/', '/Assets/');
     event.respondWith(fetch(redirected));
+    return;
+  }
+
+  // Network-first strategy for navigation requests with offline fallback
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(OFFLINE_FALLBACK))
+    );
     return;
   }
 
