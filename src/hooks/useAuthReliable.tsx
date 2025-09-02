@@ -202,6 +202,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Cache session
         AuthCache.setSession(newSession);
 
+        // Ensure auth tokens keep refreshing and realtime stays connected
+        supabase.auth.startAutoRefresh();
+        supabase.realtime.connect();
+
         // Only fetch additional data when needed
         const shouldFetchData = !sameUser || ['INITIAL_SESSION', 'SIGNED_IN'].includes(event);
 
@@ -233,6 +237,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setCompanies([]);
         currentUserIdRef.current = null;
         AuthCache.clearSession();
+        supabase.auth.stopAutoRefresh();
+        supabase.realtime.disconnect();
       }
     } catch (error) {
       console.error('Error handling auth state change:', error);
@@ -314,26 +320,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [handleAuthStateChange]);
 
-  // Only refresh session if it's actually expired (not on every visibility change)
+  // Manage session refresh and realtime connections when tab visibility changes
   useEffect(() => {
     const handleVisibility = async () => {
-      if (document.visibilityState === 'visible' && user) {
-        try {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
-          if (error || !session) {
-            console.log('Session expired, signing out...');
-            await handleAuthStateChange('SIGNED_OUT', null);
+      if (document.visibilityState === 'visible') {
+        if (user) {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+              await supabase.auth.refreshSession();
+            }
+          } catch (err) {
+            console.error('Visibility session refresh failed:', err);
           }
-        } catch (err) {
-          console.error('Visibility session check failed:', err);
         }
+        supabase.realtime.connect();
+        supabase.auth.startAutoRefresh();
+      } else {
+        supabase.auth.stopAutoRefresh();
+        supabase.realtime.disconnect();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibility);
+    // run once on mount
+    handleVisibility();
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [user, handleAuthStateChange]);
+  }, [user]);
 
   const value: AuthContextType = {
     user,
