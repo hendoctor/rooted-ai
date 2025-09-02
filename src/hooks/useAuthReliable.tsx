@@ -197,6 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Update basic session state immediately
         setUser(newSession.user);
         setSession(newSession);
+        supabase.realtime.setAuth(newSession.access_token);
         setError(null);
 
         // Cache session
@@ -239,6 +240,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         AuthCache.clearSession();
         supabase.auth.stopAutoRefresh();
         supabase.realtime.disconnect();
+        supabase.realtime.setAuth('');
       }
     } catch (error) {
       console.error('Error handling auth state change:', error);
@@ -346,6 +348,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // run once on mount
     handleVisibility();
     return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [user]);
+
+  // Manage realtime and token refresh based on network connectivity
+  useEffect(() => {
+    const handleOnline = () => {
+      if (user) {
+        supabase.realtime.connect();
+        supabase.auth.startAutoRefresh();
+      }
+    };
+
+    const handleOffline = () => {
+      supabase.auth.stopAutoRefresh();
+      supabase.realtime.disconnect();
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, [user]);
 
   const value: AuthContextType = {
