@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuthReliable";
+import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SessionSecurity from "@/components/SessionSecurity";
 import FastAuthGuard from "@/components/FastAuthGuard";
@@ -22,12 +23,24 @@ import RBACGuard from "@/components/RBACGuard";
 
 // Loading wrapper component
 const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { loading } = useAuth();
+  const { loading, error, refreshAuth, signOut } = useAuth();
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <p className="text-sm text-center text-muted-foreground">{error}</p>
+        <div className="flex gap-2">
+          <Button onClick={refreshAuth}>Retry</Button>
+          <Button variant="outline" onClick={signOut}>Re-login</Button>
+        </div>
       </div>
     );
   }

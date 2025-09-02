@@ -1,6 +1,7 @@
 // Centralized authentication guard with redirect logic
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { get, set, del } from 'idb-keyval';
 
 export interface AuthState {
   user: User | null;
@@ -108,7 +109,7 @@ export class AuthGuard {
   static async signOut(): Promise<void> {
     try {
       // Clear only our own cache, not Supabase's storage
-      AuthCache.clearSession();
+      await AuthCache.clearSession();
       
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -130,33 +131,33 @@ export class AuthCache {
   private static readonly SESSION_KEY = 'auth_session_cache';
   private static readonly CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
-  static setSession(session: Session | null): void {
+  static async setSession(session: Session | null): Promise<void> {
     try {
       if (!session) {
-        this.clearSession();
+        await this.clearSession();
         return;
       }
-      
+
       const cacheData = {
         session,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
-      localStorage.setItem(this.SESSION_KEY, JSON.stringify(cacheData));
+      await set(this.SESSION_KEY, cacheData);
     } catch (error) {
       console.warn('Failed to cache session:', error);
     }
   }
 
-  static getSession(): Session | null {
+  static async getSession(): Promise<Session | null> {
     try {
-      const cached = localStorage.getItem(this.SESSION_KEY);
+      const cached = await get<{ session: Session; timestamp: number }>(this.SESSION_KEY);
       if (!cached) return null;
 
-      const { session, timestamp } = JSON.parse(cached);
-      
+      const { session, timestamp } = cached;
+
       // Check if cache is still valid
       if (Date.now() - timestamp > this.CACHE_DURATION) {
-        this.clearSession();
+        await this.clearSession();
         return null;
       }
 
@@ -167,9 +168,9 @@ export class AuthCache {
     }
   }
 
-  static clearSession(): void {
+  static async clearSession(): Promise<void> {
     try {
-      localStorage.removeItem(this.SESSION_KEY);
+      await del(this.SESSION_KEY);
     } catch (error) {
       console.warn('Failed to clear session cache:', error);
     }

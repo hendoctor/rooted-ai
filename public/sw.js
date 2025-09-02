@@ -1,4 +1,4 @@
-const CACHE_VERSION = '1.3.0';
+const CACHE_VERSION = '1.4.0';
 const CACHE_NAME = `rooted-ai-v${CACHE_VERSION}`;
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const API_CACHE = `${CACHE_NAME}-api`;
@@ -58,6 +58,12 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Always hit the network for Supabase auth and API calls
+  if (event.request.url.includes('supabase.co')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   if (event.request.url.includes('/lovable-uploads/')) {
     const redirected = event.request.url.replace('/lovable-uploads/', '/Assets/');
     event.respondWith(fetch(redirected));
