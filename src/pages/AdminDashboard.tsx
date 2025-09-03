@@ -630,32 +630,51 @@ const AdminDashboard: React.FC = () => {
                       <CardDescription>/{company.slug}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            {company.userCount} user{company.userCount !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/client-portal?company=${company.slug}`}>
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              View Portal
-                            </Link>
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => openCompanyUsersDialog(company)}>
-                            <Users className="h-3 w-3 mr-1" />
-                            Users
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => openCompanyDialog(company)}>
-                            <Edit2 className="h-3 w-3 mr-1" />
-                            Edit
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => deleteCompany(company.id)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          {company.userCount} user{company.userCount !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="w-full"
+                        >
+                          <Link to={`/client-portal?company=${company.slug}`}
+                            className="flex items-center justify-center">
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            View Portal
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openCompanyUsersDialog(company)}
+                          className="w-full"
+                        >
+                          <Users className="h-3 w-3 mr-1" />
+                          Users
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openCompanyDialog(company)}
+                          className="w-full"
+                        >
+                          <Edit2 className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteCompany(company.id)}
+                          className="w-full"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
