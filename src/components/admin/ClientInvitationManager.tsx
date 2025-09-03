@@ -109,14 +109,15 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
       fetchInvitations();
       onInvitationSent?.();
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to send invitation:', error);
       let description = 'Failed to send invitation';
-      
-      if (error?.message?.includes('rate limit')) {
+
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('rate limit')) {
         description = 'Rate limit exceeded. Please wait before sending more invitations.';
-      } else if (error?.message) {
-        description = error.message;
+      } else if (message) {
+        description = message;
       }
 
       toast({
@@ -186,19 +187,17 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="text-forest-green flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Client Invitations
-          </CardTitle>
-          <p className="text-slate-gray text-sm">
-            Manage client invitations and portal access
-          </p>
-        </div>
+      <CardHeader className="space-y-4">
+        <CardTitle className="text-forest-green flex items-center gap-2">
+          <Mail className="h-5 w-5" />
+          Client Invitations
+        </CardTitle>
+        <p className="text-slate-gray text-sm">
+          Manage client invitations and portal access
+        </p>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-forest-green hover:bg-forest-green/90">
+            <Button className="bg-forest-green hover:bg-forest-green/90 w-fit">
               <Plus className="h-4 w-4 mr-2" />
               Invite Client
             </Button>
