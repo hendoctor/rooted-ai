@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, User, Building, Plus, X, ExternalLink, Clock } from 'lucide-react';
@@ -23,18 +24,24 @@ interface Invitation {
   invitation_token: string;
 }
 
-interface ClientInvitationManagerProps {
-  onInvitationSent?: () => void;
+interface CompanyOption {
+  id: string;
+  name: string;
 }
 
-const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInvitationSent }) => {
+interface ClientInvitationManagerProps {
+  onInvitationSent?: () => void;
+  companies: CompanyOption[];
+}
+
+const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInvitationSent, companies }) => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    client_name: ''
+    companyId: ''
   });
   const { toast } = useToast();
 
@@ -72,9 +79,16 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
         throw new Error('Not authenticated');
       }
 
+      const selectedCompany = companies.find(c => c.id === formData.companyId);
+      if (!selectedCompany) {
+        throw new Error('Please select a company');
+      }
+
       const { data, error } = await supabase.functions.invoke('send-invitation', {
         body: {
-          ...formData,
+          email: formData.email,
+          full_name: formData.full_name,
+          client_name: selectedCompany.name,
           role: 'Client'
         },
         headers: {
@@ -90,7 +104,7 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
         description: `Successfully sent invitation to ${formData.email}`,
       });
 
-      setFormData({ email: '', full_name: '', client_name: '' });
+      setFormData({ email: '', full_name: '', companyId: '' });
       setIsDialogOpen(false);
       fetchInvitations();
       onInvitationSent?.();
@@ -227,20 +241,28 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="client_name" className="flex items-center gap-2">
+                <Label htmlFor="company" className="flex items-center gap-2">
                   <Building className="h-4 w-4" />
-                  Company Name
+                  Company
                 </Label>
-                <Input
-                  id="client_name"
-                  type="text"
-                  value={formData.client_name}
-                  onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                  placeholder="ACME Corporation"
+                <Select
+                  value={formData.companyId}
+                  onValueChange={(value) => setFormData({ ...formData, companyId: value })}
                   disabled={isLoading}
-                />
+                >
+                  <SelectTrigger id="company">
+                    <SelectValue placeholder="Select company" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-slate-gray">
-                  This will create a dedicated company portal for the client
+                  Client will be assigned to this company portal
                 </p>
               </div>
 
