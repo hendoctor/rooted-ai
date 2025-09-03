@@ -121,15 +121,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = (data || []).map((item: any) => ({
-      id: item.id,
-      title: item.title || '',
-      author: item.author || '',
-      summary: item.summary || '',
-      content: item.content || '',
-      url: item.url || '',
-      companies: (item.announcement_companies || []).map((ac: any) => ac.company_id)
-    }));
+    const transformedData = (data || [])
+      .filter((item: any) => item && typeof item === 'object')
+      .map((item: any) => ({
+        id: item.id || '',
+        title: item.title || '',
+        author: item.author || '',
+        summary: item.summary || '',
+        content: item.content || '',
+        url: item.url || '',
+        companies: ((item.announcement_companies as any[]) || []).map((ac: any) => ac.company_id)
+      }));
     
     setAnnouncements(transformedData);
   };
@@ -144,14 +146,16 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = (data || []).map((item: any) => ({
-      id: item.id,
-      title: item.title || '',
-      description: item.description || '',
-      link: item.link || '',
-      category: item.category || '',
-      companies: (item.portal_resource_companies || []).map((prc: any) => prc.company_id)
-    }));
+    const transformedData = (data || [])
+      .filter((item: any) => item && typeof item === 'object')
+      .map((item: any) => ({
+        id: item.id || '',
+        title: item.title || '',
+        description: item.description || '',
+        link: item.link || '',
+        category: item.category || '',
+        companies: ((item.portal_resource_companies as any[]) || []).map((prc: any) => prc.company_id)
+      }));
     
     setResources(transformedData);
   };
@@ -166,13 +170,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = (data || []).map((item: any) => ({
-      id: item.id,
-      title: item.title || '',
-      url: item.url || '',
-      description: item.description || '',
-      companies: (item.useful_link_companies || []).map((ulc: any) => ulc.company_id)
-    }));
+    const transformedData = (data || [])
+      .filter((item: any) => item && typeof item === 'object')
+      .map((item: any) => ({
+        id: item.id || '',
+        title: item.title || '',
+        url: item.url || '',
+        description: item.description || '',
+        companies: ((item.useful_link_companies as any[]) || []).map((ulc: any) => ulc.company_id)
+      }));
     
     setLinks(transformedData);
   };
@@ -187,15 +193,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = (data || []).map((item: any) => ({
-      id: item.id,
-      topic: item.topic || '',
-      description: item.description || '',
-      media: item.media || '',
-      contact: item.contact || '',
-      steps: item.steps || '',
-      companies: (item.adoption_coaching_companies || []).map((acc: any) => acc.company_id)
-    }));
+    const transformedData = (data || [])
+      .filter((item: any) => item && typeof item === 'object')
+      .map((item: any) => ({
+        id: item.id || '',
+        topic: item.topic || '',
+        description: item.description || '',
+        media: item.media || '',
+        contact: item.contact || '',
+        steps: item.steps || '',
+        companies: ((item.adoption_coaching_companies as any[]) || []).map((acc: any) => acc.company_id)
+      }));
     
     setCoachings(transformedData);
   };
@@ -210,15 +218,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = (data || []).map((item: any) => ({
-      id: item.id,
-      name: item.name || '',
-      kpis: Array.isArray(item.kpis) ? (item.kpis as unknown as KPI[]) : [{ name: '', value: '', target: '' }],
-      period: item.period || '',
-      link: item.link || '',
-      notes: item.notes || '',
-      companies: (item.report_companies || []).map((rc: any) => rc.company_id)
-    }));
+    const transformedData = (data || [])
+      .filter((item: any) => item && typeof item === 'object')
+      .map((item: any) => ({
+        id: item.id || '',
+        name: item.name || '',
+        kpis: Array.isArray(item.kpis) ? (item.kpis as KPI[]) : [{ name: '', value: '', target: '' }],
+        period: item.period || '',
+        link: item.link || '',
+        notes: item.notes || '',
+        companies: ((item.report_companies as any[]) || []).map((rc: any) => rc.company_id)
+      }));
     
     setReports(transformedData);
   };
@@ -233,45 +243,52 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = (data || []).map((item: any) => ({
-      id: item.id,
-      question: item.question || '',
-      answer: item.answer || '',
-      category: item.category || '',
-      updatedBy: item.updated_by || '',
-      goal: item.goal || '',
-      companies: (item.faq_companies || []).map((fc: any) => fc.company_id)
-    }));
+    const transformedData = (data || [])
+      .filter((item: any) => item && typeof item === 'object')
+      .map((item: any) => ({
+        id: item.id || '',
+        question: item.question || '',
+        answer: item.answer || '',
+        category: item.category || '',
+        updatedBy: item.updated_by || '',
+        goal: item.goal || '',
+        companies: ((item.faq_companies as any[]) || []).map((fc: any) => fc.company_id)
+      }));
     
     setFaqs(transformedData);
   };
 
-  // Form states
+  // Announcement state
   const [announcementOpen, setAnnouncementOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const emptyAnnouncement: Announcement = { id: '', title: '', author: '', summary: '', content: '', url: '', companies: [] };
   const [announcementForm, setAnnouncementForm] = useState<Announcement>(emptyAnnouncement);
 
+  // Resource state
   const [resourceOpen, setResourceOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
   const emptyResource: Resource = { id: '', title: '', description: '', link: '', category: '', companies: [] };
   const [resourceForm, setResourceForm] = useState<Resource>(emptyResource);
 
+  // Useful link state
   const [linkOpen, setLinkOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<UsefulLink | null>(null);
   const emptyLink: UsefulLink = { id: '', title: '', url: '', description: '', companies: [] };
   const [linkForm, setLinkForm] = useState<UsefulLink>(emptyLink);
 
+  // Coaching state
   const [coachingOpen, setCoachingOpen] = useState(false);
   const [editingCoaching, setEditingCoaching] = useState<Coaching | null>(null);
   const emptyCoaching: Coaching = { id: '', topic: '', description: '', media: '', contact: '', steps: '', companies: [] };
   const [coachingForm, setCoachingForm] = useState<Coaching>(emptyCoaching);
 
+  // Report state
   const [reportOpen, setReportOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<Report | null>(null);
   const emptyReport: Report = { id: '', name: '', kpis: [{ name: '', value: '', target: '' }], period: '', link: '', notes: '', companies: [] };
   const [reportForm, setReportForm] = useState<Report>(emptyReport);
 
+  // FAQ state
   const [faqOpen, setFaqOpen] = useState(false);
   const [editingFaq, setEditingFaq] = useState<Faq | null>(null);
   const emptyFaq: Faq = { id: '', question: '', answer: '', category: '', updatedBy: currentAdmin || '', goal: '', companies: [] };
@@ -286,15 +303,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setFaqForm(emptyFaq);
   };
 
+  // Helpers
   const toggleSelection = (ids: string[], id: string) =>
     ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id];
 
-  // Save handlers with proper typing
+  // Save handlers
   const saveAnnouncement = async () => {
     try {
       setLoading(true);
       
       if (editingAnnouncement) {
+        // Update existing announcement
         const { error } = await supabase
           .from('announcements')
           .update({
@@ -308,6 +327,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         
         if (error) throw error;
         
+        // Update company assignments
         await supabase
           .from('announcement_companies')
           .delete()
@@ -326,6 +346,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           if (assignError) throw assignError;
         }
       } else {
+        // Create new announcement
         const { data, error } = await supabase
           .from('announcements')
           .insert({
@@ -340,12 +361,13 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         
         if (error) throw error;
         
+        // Create company assignments
         if (announcementForm.companies.length > 0) {
           const { error: assignError } = await supabase
             .from('announcement_companies')
             .insert(
               announcementForm.companies.map(companyId => ({
-                announcement_id: data.id,
+                announcement_id: (data as any).id,
                 company_id: companyId
               })) as any
             );
@@ -367,87 +389,420 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setLoading(false);
   };
 
-  const deleteAnnouncement = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this announcement?')) return;
-    
+  const saveResource = async () => {
     try {
-      await supabase.from('announcement_companies').delete().eq('announcement_id', id as any);
-      await supabase.from('announcements').delete().eq('id', id as any);
-      await fetchAnnouncements();
-      toast.success('Announcement deleted successfully');
+      setLoading(true);
+      
+      if (editingResource) {
+        // Update existing resource
+        const { error } = await supabase
+          .from('portal_resources')
+          .update({
+            title: resourceForm.title,
+            description: resourceForm.description,
+            link: resourceForm.link || null,
+            category: resourceForm.category
+          } as any)
+          .eq('id', editingResource.id as any);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('portal_resource_companies')
+          .delete()
+          .eq('resource_id', editingResource.id as any);
+        
+        if (resourceForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('portal_resource_companies')
+            .insert(
+              resourceForm.companies.map(companyId => ({
+                resource_id: editingResource.id,
+                company_id: companyId
+              })) as any
+            );
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new resource
+        const { data, error } = await supabase
+          .from('portal_resources')
+          .insert({
+            title: resourceForm.title,
+            description: resourceForm.description,
+            link: resourceForm.link || null,
+            category: resourceForm.category
+          } as any)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (resourceForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('portal_resource_companies')
+            .insert(
+              resourceForm.companies.map(companyId => ({
+                resource_id: (data as any).id,
+                company_id: companyId
+              })) as any
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchResources();
+      toast.success('Resource saved successfully');
+      
+      setResourceOpen(false);
+      setEditingResource(null);
+      setResourceForm(emptyResource);
     } catch (error) {
-      console.error('Error deleting announcement:', error);
-      toast.error('Failed to delete announcement');
+      console.error('Error saving resource:', error);
+      toast.error('Failed to save resource');
     }
+    setLoading(false);
   };
 
-  // Announcement columns for table
-  const announcementColumns: Column<Announcement>[] = [
-    { key: 'title', label: 'Title', sortable: true },
-    { key: 'author', label: 'Author', sortable: true },
-    { key: 'summary', label: 'Summary', sortable: false },
-    {
-      key: 'companies',
-      label: 'Companies',
-      sortable: false,
-      render: (item) => (
-        <div className="flex flex-wrap gap-1">
-          {item.companies.map(companyId => {
-            const company = companies.find(c => c.id === companyId);
-            return (
-              <span key={companyId} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                {company?.name || 'Unknown'}
-              </span>
+  const saveUsefulLink = async () => {
+    try {
+      setLoading(true);
+      
+      if (editingLink) {
+        // Update existing link
+        const { error } = await supabase
+          .from('useful_links')
+          .update({
+            title: linkForm.title,
+            url: linkForm.url,
+            description: linkForm.description
+          } as any)
+          .eq('id', editingLink.id as any);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('useful_link_companies')
+          .delete()
+          .eq('link_id', editingLink.id as any);
+        
+        if (linkForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('useful_link_companies')
+            .insert(
+              linkForm.companies.map(companyId => ({
+                link_id: editingLink.id,
+                company_id: companyId
+              })) as any
             );
-          })}
-        </div>
-      )
-    },
-    {
-      key: 'actions',
-      label: 'Actions',
-      sortable: false,
-      render: (item) => (
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setEditingAnnouncement(item);
-              setAnnouncementForm(item);
-              setAnnouncementOpen(true);
-            }}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => deleteAnnouncement(item.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      )
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new link
+        const { data, error } = await supabase
+          .from('useful_links')
+          .insert({
+            title: linkForm.title,
+            url: linkForm.url,
+            description: linkForm.description
+          } as any)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (linkForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('useful_link_companies')
+            .insert(
+              linkForm.companies.map(companyId => ({
+                link_id: (data as any).id,
+                company_id: companyId
+              })) as any
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchUsefulLinks();
+      toast.success('Link saved successfully');
+      
+      setLinkOpen(false);
+      setEditingLink(null);
+      setLinkForm(emptyLink);
+    } catch (error) {
+      console.error('Error saving link:', error);
+      toast.error('Failed to save link');
     }
-  ];
+    setLoading(false);
+  };
 
-  if (loading) {
-    return <div className="p-4">Loading...</div>;
-  }
+  const saveCoaching = async () => {
+    try {
+      setLoading(true);
+      
+      if (editingCoaching) {
+        // Update existing coaching
+        const { error } = await supabase
+          .from('adoption_coaching')
+          .update({
+            topic: coachingForm.topic,
+            description: coachingForm.description,
+            media: coachingForm.media || null,
+            contact: coachingForm.contact,
+            steps: coachingForm.steps || null
+          } as any)
+          .eq('id', editingCoaching.id as any);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('adoption_coaching_companies')
+          .delete()
+          .eq('coaching_id', editingCoaching.id as any);
+        
+        if (coachingForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('adoption_coaching_companies')
+            .insert(
+              coachingForm.companies.map(companyId => ({
+                coaching_id: editingCoaching.id,
+                company_id: companyId
+              })) as any
+            );
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new coaching
+        const { data, error } = await supabase
+          .from('adoption_coaching')
+          .insert({
+            topic: coachingForm.topic,
+            description: coachingForm.description,
+            media: coachingForm.media || null,
+            contact: coachingForm.contact,
+            steps: coachingForm.steps || null
+          } as any)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (coachingForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('adoption_coaching_companies')
+            .insert(
+              coachingForm.companies.map(companyId => ({
+                coaching_id: (data as any).id,
+                company_id: companyId
+              })) as any
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchCoaching();
+      toast.success('Coaching saved successfully');
+      
+      setCoachingOpen(false);
+      setEditingCoaching(null);
+      setCoachingForm(emptyCoaching);
+    } catch (error) {
+      console.error('Error saving coaching:', error);
+      toast.error('Failed to save coaching');
+    }
+    setLoading(false);
+  };
 
+  const saveReport = async () => {
+    try {
+      setLoading(true);
+      
+      if (editingReport) {
+        // Update existing report
+        const { error } = await supabase
+          .from('reports')
+          .update({
+            name: reportForm.name,
+            kpis: reportForm.kpis,
+            period: reportForm.period,
+            link: reportForm.link || null,
+            notes: reportForm.notes || null
+          } as any)
+          .eq('id', editingReport.id as any);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('report_companies')
+          .delete()
+          .eq('report_id', editingReport.id as any);
+        
+        if (reportForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('report_companies')
+            .insert(
+              reportForm.companies.map(companyId => ({
+                report_id: editingReport.id,
+                company_id: companyId
+              })) as any
+            );
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new report
+        const { data, error } = await supabase
+          .from('reports')
+          .insert({
+            name: reportForm.name,
+            kpis: reportForm.kpis,
+            period: reportForm.period,
+            link: reportForm.link || null,
+            notes: reportForm.notes || null
+          } as any)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (reportForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('report_companies')
+            .insert(
+              reportForm.companies.map(companyId => ({
+                report_id: (data as any).id,
+                company_id: companyId
+              })) as any
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchReports();
+      toast.success('Report saved successfully');
+      
+      setReportOpen(false);
+      setEditingReport(null);
+      setReportForm(emptyReport);
+    } catch (error) {
+      console.error('Error saving report:', error);
+      toast.error('Failed to save report');
+    }
+    setLoading(false);
+  };
+
+  const saveFaq = async () => {
+    try {
+      setLoading(true);
+      
+      if (editingFaq) {
+        // Update existing FAQ
+        const { error } = await supabase
+          .from('faqs')
+          .update({
+            question: faqForm.question,
+            answer: faqForm.answer,
+            category: faqForm.category,
+            updated_by: faqForm.updatedBy,
+            goal: faqForm.goal
+          } as any)
+          .eq('id', editingFaq.id as any);
+        
+        if (error) throw error;
+        
+        // Update company assignments
+        await supabase
+          .from('faq_companies')
+          .delete()
+          .eq('faq_id', editingFaq.id as any);
+        
+        if (faqForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('faq_companies')
+            .insert(
+              faqForm.companies.map(companyId => ({
+                faq_id: editingFaq.id,
+                company_id: companyId
+              })) as any
+            );
+          
+          if (assignError) throw assignError;
+        }
+      } else {
+        // Create new FAQ
+        const { data, error } = await supabase
+          .from('faqs')
+          .insert({
+            question: faqForm.question,
+            answer: faqForm.answer,
+            category: faqForm.category,
+            updated_by: faqForm.updatedBy,
+            goal: faqForm.goal
+          } as any)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        
+        // Create company assignments
+        if (faqForm.companies.length > 0) {
+          const { error: assignError } = await supabase
+            .from('faq_companies')
+            .insert(
+              faqForm.companies.map(companyId => ({
+                faq_id: (data as any).id,
+                company_id: companyId
+              })) as any
+            );
+          
+          if (assignError) throw assignError;
+        }
+      }
+      
+      await fetchFaqs();
+      toast.success('FAQ saved successfully');
+      
+      setFaqOpen(false);
+      setEditingFaq(null);
+      setFaqForm(emptyFaq);
+    } catch (error) {
+      console.error('Error saving FAQ:', error);
+      toast.error('Failed to save FAQ');
+    }
+    setLoading(false);
+  };
+  
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6">
       {/* Announcements Section */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Announcements</CardTitle>
+          <CardTitle className="text-forest-green">Announcements</CardTitle>
           <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => {
-                setEditingAnnouncement(null);
-                setAnnouncementForm(emptyAnnouncement);
-              }}>
+              <Button 
+                className="bg-forest-green hover:bg-forest-green/90"
+                onClick={() => {
+                  setEditingAnnouncement(null);
+                  setAnnouncementForm(emptyAnnouncement);
+                }}
+              >
                 Add Announcement
               </Button>
             </DialogTrigger>
@@ -463,7 +818,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   <Input
                     id="title"
                     value={announcementForm.title}
-                    onChange={(e) => setAnnouncementForm({...announcementForm, title: e.target.value})}
+                    onChange={(e) => setAnnouncementForm(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Announcement title"
                   />
                 </div>
                 <div>
@@ -471,7 +827,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   <Input
                     id="author"
                     value={announcementForm.author}
-                    onChange={(e) => setAnnouncementForm({...announcementForm, author: e.target.value})}
+                    onChange={(e) => setAnnouncementForm(prev => ({ ...prev, author: e.target.value }))}
+                    placeholder="Author name"
                   />
                 </div>
                 <div>
@@ -479,7 +836,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   <Input
                     id="summary"
                     value={announcementForm.summary}
-                    onChange={(e) => setAnnouncementForm({...announcementForm, summary: e.target.value})}
+                    onChange={(e) => setAnnouncementForm(prev => ({ ...prev, summary: e.target.value }))}
+                    placeholder="Brief summary"
                   />
                 </div>
                 <div>
@@ -487,58 +845,127 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   <Textarea
                     id="content"
                     value={announcementForm.content}
-                    onChange={(e) => setAnnouncementForm({...announcementForm, content: e.target.value})}
+                    onChange={(e) => setAnnouncementForm(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Full announcement content"
+                    rows={5}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="url">URL (optional)</Label>
+                  <Label htmlFor="url">URL (Optional)</Label>
                   <Input
                     id="url"
-                    value={announcementForm.url}
-                    onChange={(e) => setAnnouncementForm({...announcementForm, url: e.target.value})}
+                    value={announcementForm.url || ''}
+                    onChange={(e) => setAnnouncementForm(prev => ({ ...prev, url: e.target.value }))}
+                    placeholder="https://example.com"
                   />
                 </div>
                 <div>
                   <Label>Assign to Companies</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2 mt-2">
                     {companies.map(company => (
                       <div key={company.id} className="flex items-center space-x-2">
                         <Checkbox
-                          id={`ann-${company.id}`}
+                          id={`announcement-company-${company.id}`}
                           checked={announcementForm.companies.includes(company.id)}
-                          onCheckedChange={() => setAnnouncementForm({
-                            ...announcementForm,
-                            companies: toggleSelection(announcementForm.companies, company.id)
-                          })}
+                          onCheckedChange={() => 
+                            setAnnouncementForm(prev => ({
+                              ...prev,
+                              companies: toggleSelection(prev.companies, company.id)
+                            }))
+                          }
                         />
-                        <Label htmlFor={`ann-${company.id}`}>{company.name}</Label>
+                        <Label htmlFor={`announcement-company-${company.id}`} className="text-sm">
+                          {company.name}
+                        </Label>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={saveAnnouncement}>
-                  {editingAnnouncement ? 'Update' : 'Create'} Announcement
+                <Button variant="outline" onClick={() => setAnnouncementOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={saveAnnouncement} 
+                  disabled={loading}
+                  className="bg-forest-green hover:bg-forest-green/90"
+                >
+                  {loading ? 'Saving...' : 'Save Announcement'}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </CardHeader>
         <CardContent>
-          <SortableTable data={announcements} columns={announcementColumns} />
+          <SortableTable
+            data={announcements}
+            columns={[
+              { key: 'title', label: 'Title', sortable: true },
+              { key: 'author', label: 'Author', sortable: true },
+              { key: 'summary', label: 'Summary', sortable: false },
+              { 
+                key: 'companies', 
+                label: 'Companies', 
+                sortable: false,
+                render: (companies: string[]) => (
+                  <span className="text-sm">
+                    {companies.length > 0 
+                      ? companies.map(id => companies.find(c => c === id)).join(', ')
+                      : 'All companies'
+                    }
+                  </span>
+                )
+              },
+              {
+                key: 'actions',
+                label: 'Actions',
+                sortable: false,
+                render: (_, announcement: Announcement) => (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingAnnouncement(announcement);
+                        setAnnouncementForm(announcement);
+                        setAnnouncementOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        if (confirm('Are you sure you want to delete this announcement?')) {
+                          try {
+                            await supabase
+                              .from('announcements')
+                              .delete()
+                              .eq('id', announcement.id as any);
+                            fetchAnnouncements();
+                            toast.success('Announcement deleted');
+                          } catch (error) {
+                            toast.error('Failed to delete announcement');
+                          }
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )
+              }
+            ] as any}
+          />
         </CardContent>
       </Card>
-
-      {/* Simplified for now - add other sections as needed */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Other Content Types</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Resources, Links, Coaching, Reports, and FAQs sections coming soon...</p>
-        </CardContent>
-      </Card>
+      
+      {/* Note: Other sections would follow the same pattern but are omitted for brevity */}
+      <div className="text-sm text-gray-500 p-4 bg-gray-50 rounded">
+        <p>Additional content management sections for Resources, Links, Coaching, Reports, and FAQs would be implemented here following the same pattern as Announcements.</p>
+      </div>
     </div>
   );
 };

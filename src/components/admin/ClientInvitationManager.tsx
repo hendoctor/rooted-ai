@@ -52,21 +52,21 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
 
       if (error) throw error;
       
-      if (data) {
-        const transformedData: Invitation[] = data.map((item: any) => ({
-          id: item.id,
-          email: item.email,
-          full_name: item.full_name,
-          client_name: item.client_name,
-          role: item.role,
-          status: item.status,
-          created_at: item.created_at,
-          expires_at: item.expires_at,
-          invitation_token: item.invitation_token
+      const transformedData: Invitation[] = (data || [])
+        .filter((item: any) => item && typeof item === 'object')
+        .map((item: any) => ({
+          id: item.id || '',
+          email: item.email || '',
+          full_name: item.full_name || '',
+          client_name: item.client_name || null,
+          role: item.role || '',
+          status: item.status || '',
+          created_at: item.created_at || '',
+          expires_at: item.expires_at || '',
+          invitation_token: item.invitation_token || ''
         }));
-        
-        setInvitations(transformedData);
-      }
+      
+      setInvitations(transformedData);
     } catch (error) {
       console.error('Error fetching invitations:', error);
       toast({
@@ -112,9 +112,17 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
 
     } catch (error: any) {
       console.error('Failed to send invitation:', error);
+      let description = 'Failed to send invitation';
+      
+      if (error?.message?.includes('rate limit')) {
+        description = 'Rate limit exceeded. Please wait before sending more invitations.';
+      } else if (error?.message) {
+        description = error.message;
+      }
+
       toast({
         title: 'Error',
-        description: error?.message || 'Failed to send invitation',
+        description,
         variant: 'destructive',
       });
     } finally {
