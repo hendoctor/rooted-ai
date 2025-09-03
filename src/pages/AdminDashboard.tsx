@@ -74,6 +74,9 @@ const AdminDashboard: React.FC = () => {
   const [companyForm, setCompanyForm] = useState({ name: '', slug: '' });
   const [isNewsletterDialogOpen, setIsNewsletterDialogOpen] = useState(false);
   const [newsletterForm, setNewsletterForm] = useState({ email: '' });
+  const [isCompanyUsersDialogOpen, setIsCompanyUsersDialogOpen] = useState(false);
+  const [selectedCompanyUsers, setSelectedCompanyUsers] = useState<UserWithRole[]>([]);
+  const [selectedCompanyName, setSelectedCompanyName] = useState('');
   const { toast } = useToast();
 
   // Fetch data with timeout protection
@@ -276,6 +279,15 @@ const AdminDashboard: React.FC = () => {
       setCompanyForm({ name: '', slug: '' });
     }
     setIsCompanyDialogOpen(true);
+  };
+
+  const openCompanyUsersDialog = (company: CompanyWithCount) => {
+    const usersForCompany = usersWithRoles.filter((u) =>
+      u.companies?.some((c) => c.id === company.id)
+    );
+    setSelectedCompanyUsers(usersForCompany);
+    setSelectedCompanyName(company.name);
+    setIsCompanyUsersDialogOpen(true);
   };
 
   const saveCompany = async () => {
@@ -610,7 +622,7 @@ const AdminDashboard: React.FC = () => {
             ) : allCompanies.length === 0 ? (
               <p className="text-muted-foreground text-center py-4">No companies found.</p>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {allCompanies.map((company) => (
                   <Card key={company.id} className="border border-border/50">
                     <CardHeader className="pb-3">
@@ -631,6 +643,10 @@ const AdminDashboard: React.FC = () => {
                               <ExternalLink className="h-3 w-3 mr-1" />
                               View Portal
                             </Link>
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => openCompanyUsersDialog(company)}>
+                            <Users className="h-3 w-3 mr-1" />
+                            Users
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => openCompanyDialog(company)}>
                             <Edit2 className="h-3 w-3 mr-1" />
@@ -676,6 +692,26 @@ const AdminDashboard: React.FC = () => {
               <Button variant="outline" onClick={() => setIsCompanyDialogOpen(false)}>Cancel</Button>
               <Button onClick={saveCompany}>{editingCompany ? 'Save Changes' : 'Create Company'}</Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isCompanyUsersDialogOpen} onOpenChange={setIsCompanyUsersDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Users in {selectedCompanyName}</DialogTitle>
+            </DialogHeader>
+            {selectedCompanyUsers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No users associated with this company.</p>
+            ) : (
+              <ul className="space-y-2">
+                {selectedCompanyUsers.map((u) => (
+                  <li key={u.id} className="flex items-center gap-2">
+                    <Badge variant="secondary">{u.role}</Badge>
+                    <span>{u.display_name || u.email}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </DialogContent>
         </Dialog>
 
