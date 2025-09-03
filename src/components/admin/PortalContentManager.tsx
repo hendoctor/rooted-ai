@@ -624,7 +624,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           .from('reports')
           .update({
             name: reportForm.name,
-            kpis: reportForm.kpis as any,
+            kpis: reportForm.kpis as unknown,
             period: reportForm.period || null,
             link: reportForm.link || null,
             notes: reportForm.notes || null
@@ -657,7 +657,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           .from('reports')
           .insert({
             name: reportForm.name,
-            kpis: reportForm.kpis as any,
+            kpis: reportForm.kpis as unknown,
             period: reportForm.period || null,
             link: reportForm.link || null,
             notes: reportForm.notes || null
@@ -1044,9 +1044,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     <div className="space-y-8">
       {/* Announcements */}
       <Card>
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle>Announcements</CardTitle>
-          <Button size="sm" onClick={() => { resetForms(); setEditingAnnouncement(null); setAnnouncementOpen(true); }}>Add</Button>
+        <CardHeader className="space-y-4">
+          <CardTitle className="text-forest-green">Announcements</CardTitle>
+          <Button
+            size="sm"
+            onClick={() => { resetForms(); setEditingAnnouncement(null); setAnnouncementOpen(true); }}
+            className="bg-forest-green hover:bg-forest-green/90 mt-4 w-fit"
+          >
+            Add
+          </Button>
         </CardHeader>
         <CardContent>
           {announcements.length ? (
@@ -1059,9 +1065,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
 
       {/* Resources */}
       <Card>
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle>Training & Resources</CardTitle>
-          <Button size="sm" onClick={() => { resetForms(); setEditingResource(null); setResourceOpen(true); }}>Add</Button>
+        <CardHeader className="space-y-4">
+          <CardTitle className="text-forest-green">Training & Resources</CardTitle>
+          <Button
+            size="sm"
+            onClick={() => { resetForms(); setEditingResource(null); setResourceOpen(true); }}
+            className="bg-forest-green hover:bg-forest-green/90 mt-4 w-fit"
+          >
+            Add
+          </Button>
         </CardHeader>
         <CardContent>
           {resources.length ? (
@@ -1074,9 +1086,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
 
       {/* Useful Links */}
       <Card>
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle>Useful Links</CardTitle>
-          <Button size="sm" onClick={() => { resetForms(); setEditingLink(null); setLinkOpen(true); }}>Add</Button>
+        <CardHeader className="space-y-4">
+          <CardTitle className="text-forest-green">Useful Links</CardTitle>
+          <Button
+            size="sm"
+            onClick={() => { resetForms(); setEditingLink(null); setLinkOpen(true); }}
+            className="bg-forest-green hover:bg-forest-green/90 mt-4 w-fit"
+          >
+            Add
+          </Button>
         </CardHeader>
         <CardContent>
           {links.length ? (
@@ -1089,9 +1107,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
 
       {/* Adoption Coaching */}
       <Card>
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle>Adoption Coaching</CardTitle>
-          <Button size="sm" onClick={() => { resetForms(); setEditingCoaching(null); setCoachingOpen(true); }}>Add</Button>
+        <CardHeader className="space-y-4">
+          <CardTitle className="text-forest-green">Adoption Coaching</CardTitle>
+          <Button
+            size="sm"
+            onClick={() => { resetForms(); setEditingCoaching(null); setCoachingOpen(true); }}
+            className="bg-forest-green hover:bg-forest-green/90 mt-4 w-fit"
+          >
+            Add
+          </Button>
         </CardHeader>
         <CardContent>
           {coachings.length ? (
@@ -1104,9 +1128,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
 
       {/* Reports & KPIs */}
       <Card>
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle>Reports & KPIs</CardTitle>
-          <Button size="sm" onClick={() => { resetForms(); setEditingReport(null); setReportOpen(true); }}>Add</Button>
+        <CardHeader className="space-y-4">
+          <CardTitle className="text-forest-green">Reports & KPIs</CardTitle>
+          <Button
+            size="sm"
+            onClick={() => { resetForms(); setEditingReport(null); setReportOpen(true); }}
+            className="bg-forest-green hover:bg-forest-green/90 mt-4 w-fit"
+          >
+            Add
+          </Button>
         </CardHeader>
         <CardContent>
           {reports.length ? (
@@ -1119,9 +1149,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
 
       {/* FAQs */}
       <Card>
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle>FAQs</CardTitle>
-          <Button size="sm" onClick={() => { resetForms(); setEditingFaq(null); setFaqOpen(true); }}>Add</Button>
+        <CardHeader className="space-y-4">
+          <CardTitle className="text-forest-green">FAQs</CardTitle>
+          <Button
+            size="sm"
+            onClick={() => { resetForms(); setEditingFaq(null); setFaqOpen(true); }}
+            className="bg-forest-green hover:bg-forest-green/90 mt-4 w-fit"
+          >
+            Add
+          </Button>
         </CardHeader>
         <CardContent>
           {faqs.length ? (

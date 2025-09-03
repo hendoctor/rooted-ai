@@ -601,17 +601,19 @@ const AdminDashboard: React.FC = () => {
 
         {/* Company Portals Section */}
         <Card>
-          <CardHeader className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Company Portals
-              </CardTitle>
-              <CardDescription>
-                Access and manage all registered company portals and their user counts.
-              </CardDescription>
-            </div>
-            <Button size="sm" onClick={() => openCompanyDialog()}>
+          <CardHeader className="space-y-4">
+            <CardTitle className="flex items-center gap-2 text-forest-green">
+              <Building2 className="h-5 w-5" />
+              Company Portals
+            </CardTitle>
+            <CardDescription>
+              Access and manage all registered company portals and their user counts.
+            </CardDescription>
+            <Button
+              size="sm"
+              onClick={() => openCompanyDialog()}
+              className="bg-forest-green hover:bg-forest-green/90 mt-4 w-fit"
+            >
               <Plus className="h-4 w-4 mr-1" />
               Add Company
             </Button>
@@ -737,7 +739,7 @@ const AdminDashboard: React.FC = () => {
         {/* User Management Section */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-forest-green">
               <Users className="h-5 w-5" />
               User Management
             </CardTitle>
@@ -907,17 +909,19 @@ const AdminDashboard: React.FC = () => {
 
         {/* Newsletter Subscriptions Section */}
         <Card>
-          <CardHeader className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Newsletter Subscriptions
-              </CardTitle>
-              <CardDescription>
-                Manage newsletter subscriptions and subscriber status.
-              </CardDescription>
-            </div>
-            <Button size="sm" onClick={openNewsletterDialog}>
+          <CardHeader className="space-y-4">
+            <CardTitle className="flex items-center gap-2 text-forest-green">
+              <MessageSquare className="h-5 w-5" />
+              Newsletter Subscriptions
+            </CardTitle>
+            <CardDescription>
+              Manage newsletter subscriptions and subscriber status.
+            </CardDescription>
+            <Button
+              size="sm"
+              onClick={openNewsletterDialog}
+              className="bg-forest-green hover:bg-forest-green/90 mt-4 w-fit"
+            >
               <Plus className="h-4 w-4 mr-1" />
               Add Subscriber
             </Button>
