@@ -73,13 +73,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { data, error } = await supabase.rpc('get_user_companies');
 
       if (!error && data && Array.isArray(data)) {
-        return (data as any[]).map((company) => ({
-          id: company.company_id,
-          name: company.company_name,
-          slug: company.company_slug,
-          userRole: company.user_role,
-          isAdmin: company.is_admin
-        }));
+        return (data as any[])
+          .filter((company: any) => company && typeof company === 'object')
+          .map((company: any) => ({
+            id: company.company_id || '',
+            name: company.company_name || '',
+            slug: company.company_slug || '',
+            userRole: company.user_role || '',
+            isAdmin: company.is_admin || false
+          }));
       }
 
       // Fallback for admin users to ensure access to all companies
@@ -94,13 +96,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         if (allCompanies && Array.isArray(allCompanies)) {
-          return allCompanies.map((company) => ({
-            id: company.id,
-            name: company.name,
-            slug: company.slug,
-            userRole: 'Admin',
-            isAdmin: true
-          }));
+          return (allCompanies as any[])
+            .filter((company: any) => company && typeof company === 'object')
+            .map((company: any) => ({
+              id: company.id || '',
+              name: company.name || '',
+              slug: company.slug || '',
+              userRole: 'Admin',
+              isAdmin: true
+            }));
         }
       }
 
