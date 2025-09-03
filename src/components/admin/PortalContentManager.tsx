@@ -121,15 +121,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = data?.map(item => ({
+    const transformedData = (data || []).map((item: any) => ({
       id: item.id,
       title: item.title || '',
       author: item.author || '',
       summary: item.summary || '',
       content: item.content || '',
       url: item.url || '',
-      companies: item.announcement_companies?.map(ac => ac.company_id) || []
-    })) || [];
+      companies: (item.announcement_companies || []).map((ac: any) => ac.company_id)
+    }));
     
     setAnnouncements(transformedData);
   };
@@ -144,14 +144,14 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = data?.map(item => ({
+    const transformedData = (data || []).map((item: any) => ({
       id: item.id,
       title: item.title || '',
       description: item.description || '',
       link: item.link || '',
       category: item.category || '',
-      companies: item.portal_resource_companies?.map(prc => prc.company_id) || []
-    })) || [];
+      companies: (item.portal_resource_companies || []).map((prc: any) => prc.company_id)
+    }));
     
     setResources(transformedData);
   };
@@ -166,13 +166,13 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = data?.map(item => ({
+    const transformedData = (data || []).map((item: any) => ({
       id: item.id,
       title: item.title || '',
       url: item.url || '',
       description: item.description || '',
-      companies: item.useful_link_companies?.map(ulc => ulc.company_id) || []
-    })) || [];
+      companies: (item.useful_link_companies || []).map((ulc: any) => ulc.company_id)
+    }));
     
     setLinks(transformedData);
   };
@@ -187,15 +187,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = data?.map(item => ({
+    const transformedData = (data || []).map((item: any) => ({
       id: item.id,
       topic: item.topic || '',
       description: item.description || '',
       media: item.media || '',
       contact: item.contact || '',
       steps: item.steps || '',
-      companies: item.adoption_coaching_companies?.map(acc => acc.company_id) || []
-    })) || [];
+      companies: (item.adoption_coaching_companies || []).map((acc: any) => acc.company_id)
+    }));
     
     setCoachings(transformedData);
   };
@@ -210,15 +210,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = data?.map(item => ({
+    const transformedData = (data || []).map((item: any) => ({
       id: item.id,
       name: item.name || '',
       kpis: Array.isArray(item.kpis) ? (item.kpis as unknown as KPI[]) : [{ name: '', value: '', target: '' }],
       period: item.period || '',
       link: item.link || '',
       notes: item.notes || '',
-      companies: item.report_companies?.map(rc => rc.company_id) || []
-    })) || [];
+      companies: (item.report_companies || []).map((rc: any) => rc.company_id)
+    }));
     
     setReports(transformedData);
   };
@@ -233,15 +233,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     
     if (error) throw error;
     
-    const transformedData = data?.map(item => ({
+    const transformedData = (data || []).map((item: any) => ({
       id: item.id,
       question: item.question || '',
       answer: item.answer || '',
       category: item.category || '',
       updatedBy: item.updated_by || '',
       goal: item.goal || '',
-      companies: item.faq_companies?.map(fc => fc.company_id) || []
-    })) || [];
+      companies: (item.faq_companies || []).map((fc: any) => fc.company_id)
+    }));
     
     setFaqs(transformedData);
   };

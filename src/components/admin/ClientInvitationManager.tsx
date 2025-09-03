@@ -51,7 +51,20 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setInvitations(data || []);
+      
+      const transformedData: Invitation[] = (data || []).map(item => ({
+        id: item.id,
+        email: item.email,
+        full_name: item.full_name,
+        client_name: item.client_name,
+        role: item.role,
+        status: item.status,
+        created_at: item.created_at,
+        expires_at: item.expires_at,
+        invitation_token: item.invitation_token
+      }));
+      
+      setInvitations(transformedData);
     } catch (error) {
       console.error('Error fetching invitations:', error);
       toast({
@@ -119,7 +132,7 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
     try {
       const { error } = await supabase
         .from('user_invitations')
-        .update({ status: 'cancelled' })
+        .update({ status: 'cancelled' } as any)
         .eq('id', invitationId);
 
       if (error) throw error;
