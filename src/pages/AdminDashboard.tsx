@@ -957,7 +957,7 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        <ClientInvitationManager />
+        <ClientInvitationManager companies={allCompanies} />
         
         <PortalContentManager companies={allCompanies} currentAdmin={user?.email || ""} />
       </div>
