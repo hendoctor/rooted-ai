@@ -628,8 +628,12 @@ const AdminDashboard: React.FC = () => {
                 {allCompanies.map((company) => (
                   <Card key={company.id} className="border border-border/50">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg">{company.name}</CardTitle>
-                      <CardDescription>/{company.slug}</CardDescription>
+                      <CardTitle className="text-lg break-words">
+                        {company.name}
+                      </CardTitle>
+                      <CardDescription className="break-words">
+                        /{company.slug}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="flex items-center gap-2 mb-4">
@@ -638,15 +642,17 @@ const AdminDashboard: React.FC = () => {
                           {company.userCount} user{company.userCount !== 1 ? 's' : ''}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
                         <Button
                           variant="outline"
                           size="sm"
                           asChild
-                          className="w-full"
+                          className="w-full text-xs sm:text-sm"
                         >
-                          <Link to={`/client-portal?company=${company.slug}`}
-                            className="flex items-center justify-center">
+                          <Link
+                            to={`/client-portal?company=${company.slug}`}
+                            className="flex items-center justify-center"
+                          >
                             <ExternalLink className="h-3 w-3 mr-1" />
                             View Portal
                           </Link>
@@ -655,7 +661,7 @@ const AdminDashboard: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => openCompanyUsersDialog(company)}
-                          className="w-full"
+                          className="w-full text-xs sm:text-sm"
                         >
                           <Users className="h-3 w-3 mr-1" />
                           Users
@@ -664,7 +670,7 @@ const AdminDashboard: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => openCompanyDialog(company)}
-                          className="w-full"
+                          className="w-full text-xs sm:text-sm"
                         >
                           <Edit2 className="h-3 w-3 mr-1" />
                           Edit
@@ -673,7 +679,7 @@ const AdminDashboard: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={() => deleteCompany(company.id)}
-                          className="w-full"
+                          className="w-full text-xs sm:text-sm"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
