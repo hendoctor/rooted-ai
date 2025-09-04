@@ -628,7 +628,7 @@ const AdminDashboard: React.FC = () => {
                 {allCompanies.map((company) => (
                   <Card key={company.id} className="border border-border/50">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg break-words">
+                      <CardTitle className="text-lg break-words text-forest-green">
                         {company.name}
                       </CardTitle>
                       <CardDescription className="break-words">
