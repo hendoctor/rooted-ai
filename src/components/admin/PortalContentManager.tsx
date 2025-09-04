@@ -631,7 +631,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             {/* Announcements */}
             <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full">Add Announcement</Button>
+                <Button className="bg-forest-green hover:bg-forest-green/90 w-full">Add Announcement</Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
@@ -710,7 +710,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             {/* Training & Resources */}
             <Dialog open={resourceOpen} onOpenChange={setResourceOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full">Add Training & Resources</Button>
+                <Button className="bg-forest-green hover:bg-forest-green/90 w-full">Add Training & Resources</Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
@@ -781,7 +781,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             {/* Useful Links */}
             <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full">Add Useful Links</Button>
+                <Button className="bg-forest-green hover:bg-forest-green/90 w-full">Add Useful Links</Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
@@ -844,7 +844,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             {/* Adoption Coaching */}
             <Dialog open={coachingOpen} onOpenChange={setCoachingOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full">Add Adoption Coaching</Button>
+                <Button className="bg-forest-green hover:bg-forest-green/90 w-full">Add Adoption Coaching</Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
@@ -923,7 +923,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             {/* Reports & KPIs */}
             <Dialog open={reportOpen} onOpenChange={setReportOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full">Add Reports & KPIs</Button>
+                <Button className="bg-forest-green hover:bg-forest-green/90 w-full">Add Reports & KPIs</Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
@@ -1038,7 +1038,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             {/* FAQs */}
             <Dialog open={faqOpen} onOpenChange={setFaqOpen}>
               <DialogTrigger asChild>
-                <Button className="w-full">Add FAQs</Button>
+                <Button className="bg-forest-green hover:bg-forest-green/90 w-full">Add FAQs</Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
