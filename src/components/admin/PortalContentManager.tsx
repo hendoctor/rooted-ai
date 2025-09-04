@@ -286,6 +286,32 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const toggleSelection = (ids: string[], id: string) =>
     ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id];
 
+  const renderCompanies = (companyIds: string[]) => {
+    const names = companyIds.map(id => companies.find(c => c.id === id)?.name || id);
+    if (names.length <= 1) {
+      return names[0] || 'None';
+    }
+    return (
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            View ({names.length})
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Companies</DialogTitle>
+          </DialogHeader>
+          <ul className="list-disc pl-4">
+            {names.map((name, idx) => (
+              <li key={idx}>{name}</li>
+            ))}
+          </ul>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   // Save handlers - Simplified with any types to avoid TypeScript issues
   const saveAnnouncement = async () => {
     try {
@@ -633,13 +659,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const announcementColumns: Column<Announcement>[] = [
-    { key: 'id', label: 'ID', initialWidth: 80 },
     { key: 'title', label: 'Title', initialWidth: 150 },
     { key: 'author', label: 'Author', initialWidth: 120 },
     { key: 'summary', label: 'Summary', initialWidth: 200 },
     { key: 'content', label: 'Content', initialWidth: 200 },
     { key: 'url', label: 'URL', initialWidth: 150 },
-    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
       label: 'Actions',
@@ -673,12 +698,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const resourceColumns: Column<Resource>[] = [
-    { key: 'id', label: 'ID', initialWidth: 80 },
     { key: 'title', label: 'Title', initialWidth: 150 },
     { key: 'description', label: 'Description', initialWidth: 200 },
     { key: 'link', label: 'Link', initialWidth: 150 },
     { key: 'category', label: 'Category', initialWidth: 120 },
-    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
       label: 'Actions',
@@ -712,7 +736,6 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const linkColumns: Column<UsefulLink>[] = [
-    { key: 'id', label: 'ID', initialWidth: 80 },
     { key: 'title', label: 'Title', initialWidth: 150 },
     {
       key: 'url',
@@ -725,7 +748,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       )
     },
     { key: 'description', label: 'Description', initialWidth: 200 },
-    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
       label: 'Actions',
@@ -759,13 +782,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const coachingColumns: Column<Coaching>[] = [
-    { key: 'id', label: 'ID', initialWidth: 80 },
     { key: 'topic', label: 'Topic', initialWidth: 150 },
     { key: 'description', label: 'Description', initialWidth: 200 },
     { key: 'media', label: 'Media', initialWidth: 120 },
     { key: 'contact', label: 'Contact', initialWidth: 120 },
     { key: 'steps', label: 'Steps', initialWidth: 200 },
-    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
       label: 'Actions',
@@ -799,13 +821,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const reportColumns: Column<Report>[] = [
-    { key: 'id', label: 'ID', initialWidth: 80 },
     { key: 'name', label: 'Name', initialWidth: 150 },
     { key: 'period', label: 'Period', initialWidth: 120 },
     { key: 'kpis', label: 'KPIs', initialWidth: 200, render: (item) => item.kpis.map(k => `${k.name}:${k.value}`).join(', ') },
     { key: 'link', label: 'Link', initialWidth: 150 },
     { key: 'notes', label: 'Notes', initialWidth: 200 },
-    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
       label: 'Actions',
@@ -839,13 +860,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const faqColumns: Column<Faq>[] = [
-    { key: 'id', label: 'ID', initialWidth: 80 },
     { key: 'question', label: 'Question', initialWidth: 200 },
     { key: 'answer', label: 'Answer', initialWidth: 200 },
     { key: 'category', label: 'Category', initialWidth: 120 },
     { key: 'updatedBy', label: 'Updated By', initialWidth: 120 },
     { key: 'goal', label: 'Goal', initialWidth: 150 },
-    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
       label: 'Actions',

@@ -114,7 +114,10 @@ export function SortableTable<T extends { id: string }>({ data, columns }: Sorta
                 <TableHead
                   key={col.key}
                   onClick={() => col.sortable !== false && handleSort(col.key)}
-                  className={col.sortable === false ? '' : 'cursor-pointer select-none relative'}
+                  className={
+                    (col.sortable === false ? '' : 'cursor-pointer select-none relative') +
+                    ' border border-border'
+                  }
                   style={{ width: widths[col.key] }}
                 >
                   {col.label}{sortKey === col.key && (asc ? ' ▲' : ' ▼')}
@@ -130,7 +133,7 @@ export function SortableTable<T extends { id: string }>({ data, columns }: Sorta
             {sorted.map(item => (
               <TableRow key={item.id}>
                 {visibleCols.map(col => (
-                  <TableCell key={col.key} style={{ width: widths[col.key] }}>
+                  <TableCell key={col.key} style={{ width: widths[col.key] }} className="border border-border">
                     {col.render ? col.render(item) : String(get(item, col.key))}
                   </TableCell>
                 ))}
