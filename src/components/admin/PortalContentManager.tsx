@@ -368,6 +368,255 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setLoading(false);
   };
 
+  const saveResource = async () => {
+    try {
+      setLoading(true);
+      if (editingResource) {
+        await supabase.from('portal_resources').update({
+          title: resourceForm.title,
+          description: resourceForm.description,
+          link: resourceForm.link || null,
+          category: resourceForm.category
+        }).eq('id', editingResource.id);
+
+        await supabase.from('portal_resource_companies').delete().eq('resource_id', editingResource.id);
+        if (resourceForm.companies.length > 0) {
+          await supabase.from('portal_resource_companies').insert(
+            resourceForm.companies.map(companyId => ({
+              resource_id: editingResource.id,
+              company_id: companyId
+            }))
+          );
+        }
+      } else {
+        const { data } = await supabase.from('portal_resources').insert({
+          title: resourceForm.title,
+          description: resourceForm.description,
+          link: resourceForm.link || null,
+          category: resourceForm.category
+        }).select().single();
+
+        if (resourceForm.companies.length > 0 && data) {
+          await supabase.from('portal_resource_companies').insert(
+            resourceForm.companies.map(companyId => ({
+              resource_id: data.id,
+              company_id: companyId
+            }))
+          );
+        }
+      }
+      
+      await fetchResources();
+      toast.success('Resource saved successfully');
+      setResourceOpen(false);
+      setEditingResource(null);
+      setResourceForm(emptyResource);
+    } catch (error) {
+      toast.error('Failed to save resource');
+    }
+    setLoading(false);
+  };
+
+  const saveLink = async () => {
+    try {
+      setLoading(true);
+      if (editingLink) {
+        await supabase.from('useful_links').update({
+          title: linkForm.title,
+          url: linkForm.url,
+          description: linkForm.description
+        }).eq('id', editingLink.id);
+
+        await supabase.from('useful_link_companies').delete().eq('link_id', editingLink.id);
+        if (linkForm.companies.length > 0) {
+          await supabase.from('useful_link_companies').insert(
+            linkForm.companies.map(companyId => ({
+              link_id: editingLink.id,
+              company_id: companyId
+            }))
+          );
+        }
+      } else {
+        const { data } = await supabase.from('useful_links').insert({
+          title: linkForm.title,
+          url: linkForm.url,
+          description: linkForm.description
+        }).select().single();
+
+        if (linkForm.companies.length > 0 && data) {
+          await supabase.from('useful_link_companies').insert(
+            linkForm.companies.map(companyId => ({
+              link_id: data.id,
+              company_id: companyId
+            }))
+          );
+        }
+      }
+      
+      await fetchUsefulLinks();
+      toast.success('Link saved successfully');
+      setLinkOpen(false);
+      setEditingLink(null);
+      setLinkForm(emptyLink);
+    } catch (error) {
+      toast.error('Failed to save link');
+    }
+    setLoading(false);
+  };
+
+  const saveCoaching = async () => {
+    try {
+      setLoading(true);
+      if (editingCoaching) {
+        await supabase.from('adoption_coaching').update({
+          topic: coachingForm.topic,
+          description: coachingForm.description,
+          media: coachingForm.media || null,
+          contact: coachingForm.contact,
+          steps: coachingForm.steps || null
+        }).eq('id', editingCoaching.id);
+
+        await supabase.from('adoption_coaching_companies').delete().eq('coaching_id', editingCoaching.id);
+        if (coachingForm.companies.length > 0) {
+          await supabase.from('adoption_coaching_companies').insert(
+            coachingForm.companies.map(companyId => ({
+              coaching_id: editingCoaching.id,
+              company_id: companyId
+            }))
+          );
+        }
+      } else {
+        const { data } = await supabase.from('adoption_coaching').insert({
+          topic: coachingForm.topic,
+          description: coachingForm.description,
+          media: coachingForm.media || null,
+          contact: coachingForm.contact,
+          steps: coachingForm.steps || null
+        }).select().single();
+
+        if (coachingForm.companies.length > 0 && data) {
+          await supabase.from('adoption_coaching_companies').insert(
+            coachingForm.companies.map(companyId => ({
+              coaching_id: data.id,
+              company_id: companyId
+            }))
+          );
+        }
+      }
+      
+      await fetchCoaching();
+      toast.success('Coaching saved successfully');
+      setCoachingOpen(false);
+      setEditingCoaching(null);
+      setCoachingForm(emptyCoaching);
+    } catch (error) {
+      toast.error('Failed to save coaching');
+    }
+    setLoading(false);
+  };
+
+  const saveReport = async () => {
+    try {
+      setLoading(true);
+      if (editingReport) {
+        await supabase.from('reports').update({
+          name: reportForm.name,
+          kpis: reportForm.kpis as any,
+          period: reportForm.period,
+          link: reportForm.link || null,
+          notes: reportForm.notes || null
+        }).eq('id', editingReport.id);
+
+        await supabase.from('report_companies').delete().eq('report_id', editingReport.id);
+        if (reportForm.companies.length > 0) {
+          await supabase.from('report_companies').insert(
+            reportForm.companies.map(companyId => ({
+              report_id: editingReport.id,
+              company_id: companyId
+            }))
+          );
+        }
+      } else {
+        const { data } = await supabase.from('reports').insert({
+          name: reportForm.name,
+          kpis: reportForm.kpis as any,
+          period: reportForm.period,
+          link: reportForm.link || null,
+          notes: reportForm.notes || null
+        }).select().single();
+
+        if (reportForm.companies.length > 0 && data) {
+          await supabase.from('report_companies').insert(
+            reportForm.companies.map(companyId => ({
+              report_id: data.id,
+              company_id: companyId
+            }))
+          );
+        }
+      }
+      
+      await fetchReports();
+      toast.success('Report saved successfully');
+      setReportOpen(false);
+      setEditingReport(null);
+      setReportForm(emptyReport);
+    } catch (error) {
+      toast.error('Failed to save report');
+    }
+    setLoading(false);
+  };
+
+  const saveFaq = async () => {
+    try {
+      setLoading(true);
+      if (editingFaq) {
+        await supabase.from('faqs').update({
+          question: faqForm.question,
+          answer: faqForm.answer,
+          category: faqForm.category,
+          updated_by: faqForm.updatedBy,
+          goal: faqForm.goal
+        }).eq('id', editingFaq.id);
+
+        await supabase.from('faq_companies').delete().eq('faq_id', editingFaq.id);
+        if (faqForm.companies.length > 0) {
+          await supabase.from('faq_companies').insert(
+            faqForm.companies.map(companyId => ({
+              faq_id: editingFaq.id,
+              company_id: companyId
+            }))
+          );
+        }
+      } else {
+        const { data } = await supabase.from('faqs').insert({
+          question: faqForm.question,
+          answer: faqForm.answer,
+          category: faqForm.category,
+          updated_by: faqForm.updatedBy,
+          goal: faqForm.goal
+        }).select().single();
+
+        if (faqForm.companies.length > 0 && data) {
+          await supabase.from('faq_companies').insert(
+            faqForm.companies.map(companyId => ({
+              faq_id: data.id,
+              company_id: companyId
+            }))
+          );
+        }
+      }
+      
+      await fetchFaqs();
+      toast.success('FAQ saved successfully');
+      setFaqOpen(false);
+      setEditingFaq(null);
+      setFaqForm(emptyFaq);
+    } catch (error) {
+      toast.error('Failed to save FAQ');
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="space-y-8">
       <Card>
@@ -378,16 +627,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           <p className="text-muted-foreground mb-4">
             Manage portal content for client companies.
           </p>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Announcements */}
             <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
               <DialogTrigger asChild>
                 <Button className="w-full">Add Announcement</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>
-                    {editingAnnouncement ? 'Edit Announcement' : 'Add Announcement'}
-                  </DialogTitle>
+                  <DialogTitle>{editingAnnouncement ? 'Edit Announcement' : 'Add Announcement'}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
@@ -432,11 +680,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </div>
                   <div>
                     <Label>Assign to Companies</Label>
-                    <div className="space-y-2 mt-2">
+                    <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
                       {companies.map((company) => (
                         <div key={company.id} className="flex items-center space-x-2">
                           <Checkbox
-                            id={`company-${company.id}`}
+                            id={`ann-company-${company.id}`}
                             checked={announcementForm.companies.includes(company.id)}
                             onCheckedChange={() =>
                               setAnnouncementForm({
@@ -445,7 +693,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                               })
                             }
                           />
-                          <Label htmlFor={`company-${company.id}`}>{company.name}</Label>
+                          <Label htmlFor={`ann-company-${company.id}`}>{company.name}</Label>
                         </div>
                       ))}
                     </div>
@@ -453,6 +701,405 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                 </div>
                 <DialogFooter>
                   <Button onClick={saveAnnouncement} disabled={loading}>
+                    {loading ? 'Saving...' : 'Save'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Training & Resources */}
+            <Dialog open={resourceOpen} onOpenChange={setResourceOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full">Add Training & Resources</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingResource ? 'Edit Resource' : 'Add Training & Resource'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="res-title">Title</Label>
+                    <Input
+                      id="res-title"
+                      value={resourceForm.title}
+                      onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="res-description">Description</Label>
+                    <Textarea
+                      id="res-description"
+                      value={resourceForm.description}
+                      onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="res-link">Link (optional)</Label>
+                    <Input
+                      id="res-link"
+                      value={resourceForm.link || ''}
+                      onChange={(e) => setResourceForm({ ...resourceForm, link: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="res-category">Category</Label>
+                    <Input
+                      id="res-category"
+                      value={resourceForm.category}
+                      onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Assign to Companies</Label>
+                    <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                      {companies.map((company) => (
+                        <div key={company.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`res-company-${company.id}`}
+                            checked={resourceForm.companies.includes(company.id)}
+                            onCheckedChange={() =>
+                              setResourceForm({
+                                ...resourceForm,
+                                companies: toggleSelection(resourceForm.companies, company.id)
+                              })
+                            }
+                          />
+                          <Label htmlFor={`res-company-${company.id}`}>{company.name}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={saveResource} disabled={loading}>
+                    {loading ? 'Saving...' : 'Save'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Useful Links */}
+            <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full">Add Useful Links</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingLink ? 'Edit Useful Link' : 'Add Useful Link'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="link-title">Title</Label>
+                    <Input
+                      id="link-title"
+                      value={linkForm.title}
+                      onChange={(e) => setLinkForm({ ...linkForm, title: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="link-url">URL</Label>
+                    <Input
+                      id="link-url"
+                      value={linkForm.url}
+                      onChange={(e) => setLinkForm({ ...linkForm, url: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="link-description">Description</Label>
+                    <Textarea
+                      id="link-description"
+                      value={linkForm.description}
+                      onChange={(e) => setLinkForm({ ...linkForm, description: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Assign to Companies</Label>
+                    <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                      {companies.map((company) => (
+                        <div key={company.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`link-company-${company.id}`}
+                            checked={linkForm.companies.includes(company.id)}
+                            onCheckedChange={() =>
+                              setLinkForm({
+                                ...linkForm,
+                                companies: toggleSelection(linkForm.companies, company.id)
+                              })
+                            }
+                          />
+                          <Label htmlFor={`link-company-${company.id}`}>{company.name}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={saveLink} disabled={loading}>
+                    {loading ? 'Saving...' : 'Save'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Adoption Coaching */}
+            <Dialog open={coachingOpen} onOpenChange={setCoachingOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full">Add Adoption Coaching</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingCoaching ? 'Edit Coaching' : 'Add Adoption Coaching'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="coaching-topic">Topic</Label>
+                    <Input
+                      id="coaching-topic"
+                      value={coachingForm.topic}
+                      onChange={(e) => setCoachingForm({ ...coachingForm, topic: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="coaching-description">Description</Label>
+                    <Textarea
+                      id="coaching-description"
+                      value={coachingForm.description}
+                      onChange={(e) => setCoachingForm({ ...coachingForm, description: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="coaching-media">Media (optional)</Label>
+                    <Input
+                      id="coaching-media"
+                      value={coachingForm.media || ''}
+                      onChange={(e) => setCoachingForm({ ...coachingForm, media: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="coaching-contact">Contact</Label>
+                    <Input
+                      id="coaching-contact"
+                      value={coachingForm.contact}
+                      onChange={(e) => setCoachingForm({ ...coachingForm, contact: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="coaching-steps">Steps (optional)</Label>
+                    <Textarea
+                      id="coaching-steps"
+                      value={coachingForm.steps || ''}
+                      onChange={(e) => setCoachingForm({ ...coachingForm, steps: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Assign to Companies</Label>
+                    <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                      {companies.map((company) => (
+                        <div key={company.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`coaching-company-${company.id}`}
+                            checked={coachingForm.companies.includes(company.id)}
+                            onCheckedChange={() =>
+                              setCoachingForm({
+                                ...coachingForm,
+                                companies: toggleSelection(coachingForm.companies, company.id)
+                              })
+                            }
+                          />
+                          <Label htmlFor={`coaching-company-${company.id}`}>{company.name}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={saveCoaching} disabled={loading}>
+                    {loading ? 'Saving...' : 'Save'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Reports & KPIs */}
+            <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full">Add Reports & KPIs</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingReport ? 'Edit Report' : 'Add Report & KPIs'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="report-name">Report Name</Label>
+                    <Input
+                      id="report-name"
+                      value={reportForm.name}
+                      onChange={(e) => setReportForm({ ...reportForm, name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="report-period">Period</Label>
+                    <Input
+                      id="report-period"
+                      value={reportForm.period}
+                      onChange={(e) => setReportForm({ ...reportForm, period: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="report-link">Link (optional)</Label>
+                    <Input
+                      id="report-link"
+                      value={reportForm.link || ''}
+                      onChange={(e) => setReportForm({ ...reportForm, link: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="report-notes">Notes (optional)</Label>
+                    <Textarea
+                      id="report-notes"
+                      value={reportForm.notes || ''}
+                      onChange={(e) => setReportForm({ ...reportForm, notes: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>KPIs</Label>
+                    {reportForm.kpis.map((kpi, index) => (
+                      <div key={index} className="grid grid-cols-3 gap-2 mt-2">
+                        <Input
+                          placeholder="KPI Name"
+                          value={kpi.name}
+                          onChange={(e) => {
+                            const newKpis = [...reportForm.kpis];
+                            newKpis[index] = { ...kpi, name: e.target.value };
+                            setReportForm({ ...reportForm, kpis: newKpis });
+                          }}
+                        />
+                        <Input
+                          placeholder="Value"
+                          value={kpi.value}
+                          onChange={(e) => {
+                            const newKpis = [...reportForm.kpis];
+                            newKpis[index] = { ...kpi, value: e.target.value };
+                            setReportForm({ ...reportForm, kpis: newKpis });
+                          }}
+                        />
+                        <Input
+                          placeholder="Target"
+                          value={kpi.target}
+                          onChange={(e) => {
+                            const newKpis = [...reportForm.kpis];
+                            newKpis[index] = { ...kpi, target: e.target.value };
+                            setReportForm({ ...reportForm, kpis: newKpis });
+                          }}
+                        />
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setReportForm({
+                        ...reportForm,
+                        kpis: [...reportForm.kpis, { name: '', value: '', target: '' }]
+                      })}
+                    >
+                      Add KPI
+                    </Button>
+                  </div>
+                  <div>
+                    <Label>Assign to Companies</Label>
+                    <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                      {companies.map((company) => (
+                        <div key={company.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`report-company-${company.id}`}
+                            checked={reportForm.companies.includes(company.id)}
+                            onCheckedChange={() =>
+                              setReportForm({
+                                ...reportForm,
+                                companies: toggleSelection(reportForm.companies, company.id)
+                              })
+                            }
+                          />
+                          <Label htmlFor={`report-company-${company.id}`}>{company.name}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={saveReport} disabled={loading}>
+                    {loading ? 'Saving...' : 'Save'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* FAQs */}
+            <Dialog open={faqOpen} onOpenChange={setFaqOpen}>
+              <DialogTrigger asChild>
+                <Button className="w-full">Add FAQs</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingFaq ? 'Edit FAQ' : 'Add FAQ'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="faq-question">Question</Label>
+                    <Input
+                      id="faq-question"
+                      value={faqForm.question}
+                      onChange={(e) => setFaqForm({ ...faqForm, question: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="faq-answer">Answer</Label>
+                    <Textarea
+                      id="faq-answer"
+                      value={faqForm.answer}
+                      onChange={(e) => setFaqForm({ ...faqForm, answer: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="faq-category">Category</Label>
+                    <Input
+                      id="faq-category"
+                      value={faqForm.category}
+                      onChange={(e) => setFaqForm({ ...faqForm, category: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="faq-goal">Goal</Label>
+                    <Input
+                      id="faq-goal"
+                      value={faqForm.goal}
+                      onChange={(e) => setFaqForm({ ...faqForm, goal: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Assign to Companies</Label>
+                    <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                      {companies.map((company) => (
+                        <div key={company.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`faq-company-${company.id}`}
+                            checked={faqForm.companies.includes(company.id)}
+                            onCheckedChange={() =>
+                              setFaqForm({
+                                ...faqForm,
+                                companies: toggleSelection(faqForm.companies, company.id)
+                              })
+                            }
+                          />
+                          <Label htmlFor={`faq-company-${company.id}`}>{company.name}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={saveFaq} disabled={loading}>
                     {loading ? 'Saving...' : 'Save'}
                   </Button>
                 </DialogFooter>
