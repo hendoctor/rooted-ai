@@ -15,7 +15,8 @@ import {
   Users,
   BarChart2,
   HelpCircle,
-  Plus
+  Plus,
+  FileText
 } from 'lucide-react';
 import SortableTable, { Column } from './SortableTable';
 import { supabase } from '@/integrations/supabase/client';
@@ -299,7 +300,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const renderCompanies = (companyIds: string[]) => {
     const names = companyIds.map(id => companies.find(c => c.id === id)?.name || id);
     if (names.length <= 1) {
-      return names[0] || 'None';
+      return names[0] ? <span className="text-forest-green">{names[0]}</span> : 'None';
     }
     return (
       <Dialog>
@@ -314,7 +315,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           </DialogHeader>
           <ul className="list-disc pl-4">
             {names.map((name, idx) => (
-              <li key={idx}>{name}</li>
+              <li key={idx} className="text-forest-green">{name}</li>
             ))}
           </ul>
         </DialogContent>
@@ -898,7 +899,10 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle>Content Management</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-forest-green">
+            <FileText className="h-5 w-5" />
+            Content Management
+          </CardTitle>
           <CardDescription>Manage portal content for client companies.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
