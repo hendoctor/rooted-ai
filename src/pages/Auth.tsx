@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -32,48 +32,6 @@ const [searchParams] = useSearchParams();
 const { toast } = useToast();
 const { refreshAuth } = useAuth();
 
-// Track whether we've already attempted to finalize this invitation to avoid duplicate calls
-const finalizeAttemptedRef = useRef(false);
-
-  // Helper: finalize invitation after the user is authenticated
-  const finalizeInvitation = async (token: string) => {
-    console.log('Finalizing invitation via RPC for token:', token.substring(0, 8));
-    const { data, error } = await supabase.rpc('accept_invitation_finalize', {
-      token_input: token,
-    });
-
-    if (error) {
-      console.error('Invitation finalization failed:', error);
-      toast({
-        title: 'Invitation Finalization Failed',
-        description: error.message || 'Could not finalize your invitation. Please try again.',
-        variant: 'destructive',
-      });
-      return { success: false, error };
-    }
-
-    // Type cast the response to the expected structure
-    const result = data as { success: boolean; error?: string; user_id?: string; email?: string; role?: string; company_id?: string };
-
-    if (!result?.success) {
-      console.warn('Invitation finalization returned unsuccessful:', result);
-      toast({
-        title: 'Invitation Finalization',
-        description: result?.error || 'Could not finalize your invitation.',
-        variant: 'destructive',
-      });
-      return { success: false, error: result?.error };
-    }
-
-    console.log('Invitation finalized successfully:', result);
-    toast({
-      title: 'Invitation Accepted',
-      description: 'Your account has been linked and access has been granted.',
-    });
-
-    return { success: true, data: result };
-  };
-
   useEffect(() => {
     // Check if this is a password recovery flow
     const type = searchParams.get('type');
@@ -98,14 +56,8 @@ const finalizeAttemptedRef = useRef(false);
         if (event === 'SIGNED_IN' && session?.user && type !== 'recovery') {
           setTimeout(async () => {
             try {
-              // If this is an invitation flow, finalize it first (idempotent)
-              const inviteParam = searchParams.get('invite');
-              if (inviteParam && !finalizeAttemptedRef.current) {
-                finalizeAttemptedRef.current = true;
-                await finalizeInvitation(inviteParam);
-                // Refresh auth context after finalization
-                try { await refreshAuth(); } catch {}
-              }
+              // Refresh auth context after sign-in
+              try { await refreshAuth(); } catch {}
 
               const [roleResult, companiesResult] = await Promise.all([
                 supabase.rpc('get_user_role_by_auth_id', { auth_user_id: session.user.id }),
@@ -126,7 +78,12 @@ const finalizeAttemptedRef = useRef(false);
                   const companySlug = companiesArr[0]?.company_slug;
                   navigate(`/client-portal?company=${companySlug}`);
                 } else {
-                  navigate('/client-portal');
+                  toast({
+                    title: 'No Company Found',
+                    description: 'Your account is not associated with a company. Please contact support.',
+                    variant: 'destructive',
+                  });
+                  navigate('/');
                 }
                 return;
               }
@@ -281,7 +238,7 @@ const finalizeAttemptedRef = useRef(false);
         // Invitation flow: create account and auto-finalize invitation
         console.log('Starting invitation signup flow for:', invitation.email);
 
-        const redirectUrl = `${window.location.origin}/client-portal`;
+        const redirectUrl = `${window.location.origin}/auth?invite=${invitation.invitation_token}`;
 
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: invitation.email,
@@ -298,7 +255,7 @@ const finalizeAttemptedRef = useRef(false);
         if (signUpError) {
           const msg = signUpError.message?.toLowerCase() || '';
           if (msg.includes('already registered') || msg.includes('user already registered')) {
-            // Try to sign in 
+            // Try to sign in
             const { error: signInErr } = await supabase.auth.signInWithPassword({
               email: invitation.email,
               password
@@ -318,17 +275,19 @@ const finalizeAttemptedRef = useRef(false);
               }
               return;
             }
-            // Signed in successfully - finalize invitation and redirect
-            const result = await finalizeInvitation(invitation.invitation_token);
-            if (result.success) {
-              try { await refreshAuth(); } catch {}
-              const { data: comps } = await supabase.rpc('get_user_companies');
-              if (Array.isArray(comps) && comps.length > 0) {
-                const companySlug = (comps as any[])[0]?.company_slug;
-                navigate(`/client-portal?company=${companySlug}`);
-              } else {
-                navigate('/client-portal');
-              }
+            // Signed in successfully - fetch companies and redirect
+            try { await refreshAuth(); } catch {}
+            const { data: comps } = await supabase.rpc('get_user_companies');
+            if (Array.isArray(comps) && comps.length > 0) {
+              const companySlug = (comps as any[])[0]?.company_slug;
+              navigate(`/client-portal?company=${companySlug}`);
+            } else {
+              toast({
+                title: 'No Company Found',
+                description: 'Your account is not associated with a company. Please contact support.',
+                variant: 'destructive',
+              });
+              navigate('/');
             }
             return;
           }

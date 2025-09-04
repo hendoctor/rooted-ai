@@ -210,9 +210,9 @@ export default function CompanyPage() {
               <p className="text-muted-foreground">Company Dashboard</p>
             </div>
             <div className="flex gap-2">
-              <Link to="/client-portal">
-                <Button variant="outline">Back to Client Portal</Button>
-              </Link>
+                <Link to={`/client-portal?company=${company.slug}`}>
+                  <Button variant="outline">Back to Client Portal</Button>
+                </Link>
               <Button
                 onClick={() => (editing ? handleSave() : setEditing(true))}
                 variant={editing ? 'default' : 'outline'}

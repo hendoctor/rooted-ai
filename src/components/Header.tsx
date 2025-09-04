@@ -102,16 +102,16 @@ const Header = () => {
               {companyName && (
                 <>
                   <span className="text-slate-gray">•</span>
-                  {userRole === 'Client' ? (
-                    <Link
-                      to="/client-portal"
-                      className="text-slate-gray hover:text-forest-green transition-colors duration-200"
-                    >
-                      {companyName}
-                    </Link>
-                  ) : (
-                    <span className="text-slate-gray">{companyName}</span>
-                  )}
+                    {userRole === 'Client' ? (
+                      <Link
+                        to={`/client-portal?company=${companies[0]?.slug}`}
+                        className="text-slate-gray hover:text-forest-green transition-colors duration-200"
+                      >
+                        {companyName}
+                      </Link>
+                    ) : (
+                      <span className="text-slate-gray">{companyName}</span>
+                    )}
                 </>
               )}
             </div>
@@ -239,15 +239,17 @@ const Header = () => {
                     </div>
                      {userRole === 'Client' && (
                        <>
-                         <Link to="/client-portal">
-                           <Button 
-                             variant="outline" 
-                             className="w-full border-sage hover:bg-sage/20 mb-2"
-                             onClick={() => setIsMobileMenuOpen(false)}
-                           >
-                             Client Portal
-                           </Button>
-                         </Link>
+                         {companies && companies.length > 0 && (
+                           <Link to={`/client-portal?company=${companies[0].slug}`}>
+                             <Button
+                               variant="outline"
+                               className="w-full border-sage hover:bg-sage/20 mb-2"
+                               onClick={() => setIsMobileMenuOpen(false)}
+                             >
+                               Client Portal
+                             </Button>
+                           </Link>
+                         )}
                          <Link to="/profile">
                            <Button 
                              variant="outline" 
