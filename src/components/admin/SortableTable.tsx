@@ -20,6 +20,7 @@ export interface Column<T> {
 interface SortableTableProps<T> {
   data: T[];
   columns: Column<T>[];
+  toolbar?: (columnsButton: React.ReactNode) => React.ReactNode;
 }
 
 function get(obj: unknown, path: string) {
@@ -28,7 +29,7 @@ function get(obj: unknown, path: string) {
     .reduce<unknown>((o, p) => (typeof o === 'object' && o !== null ? (o as Record<string, unknown>)[p] : undefined), obj) ?? '';
 }
 
-export function SortableTable<T extends { id: string }>({ data, columns }: SortableTableProps<T>) {
+export function SortableTable<T extends { id: string }>({ data, columns, toolbar }: SortableTableProps<T>) {
   const [sortKey, setSortKey] = useState<string>(columns[0]?.key);
   const [asc, setAsc] = useState(true);
   const [visible, setVisible] = useState<string[]>(columns.map(c => c.key));
@@ -82,30 +83,42 @@ export function SortableTable<T extends { id: string }>({ data, columns }: Sorta
 
   const visibleCols = columns.filter(c => visible.includes(c.key));
 
+  const columnsButton = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full sm:w-auto border-forest-green text-forest-green hover:bg-forest-green/10 transition-colors"
+        >
+          Columns
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {columns.map(col => (
+          <DropdownMenuCheckboxItem
+            key={col.key}
+            checked={visible.includes(col.key)}
+            onCheckedChange={(checked) =>
+              setVisible(v =>
+                checked ? [...v, col.key] : v.filter(k => k !== col.key)
+              )
+            }
+          >
+            {col.label}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <div>
-      <div className="flex justify-end mb-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">Columns</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {columns.map(col => (
-              <DropdownMenuCheckboxItem
-                key={col.key}
-                checked={visible.includes(col.key)}
-                onCheckedChange={(checked) =>
-                  setVisible(v =>
-                    checked ? [...v, col.key] : v.filter(k => k !== col.key)
-                  )
-                }
-              >
-                {col.label}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      {toolbar ? (
+        toolbar(columnsButton)
+      ) : (
+        <div className="flex justify-end mb-2">{columnsButton}</div>
+      )}
       <ScrollArea className="h-52">
         <Table className="min-w-max">
           <TableHeader>
