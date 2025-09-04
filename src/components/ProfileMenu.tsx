@@ -53,30 +53,32 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
         </div>
         <DropdownMenuSeparator />
         {userRole === 'Client' && (
-          <>
-            <DropdownMenuItem asChild>
-              <Link to="/client-portal" className="cursor-pointer">
-                <Building className="mr-2 h-4 w-4" />
-                <span>Client Portal</span>
-              </Link>
-            </DropdownMenuItem>
-            {companies && companies.length > 0 && (
+            <>
+              {companies && companies.length > 0 && (
+                <DropdownMenuItem asChild>
+                  <Link to={`/client-portal?company=${companies[0].slug}`} className="cursor-pointer">
+                    <Building className="mr-2 h-4 w-4" />
+                    <span>Client Portal</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              {companies && companies.length > 0 && (
+                <DropdownMenuItem asChild>
+                  <Link to={`/${companies[0].slug}`} className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Company Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem asChild>
-                <Link to={`/${companies[0].slug}`} className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Company Settings</span>
+                <Link to="/profile" className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
                 </Link>
               </DropdownMenuItem>
-            )}
-            <DropdownMenuItem asChild>
-              <Link to="/profile" className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )}
+              <DropdownMenuSeparator />
+            </>
+          )}
         {userRole === 'Admin' && (
           <>
             {/* Admins see RootedAI admin link and their profile */}
