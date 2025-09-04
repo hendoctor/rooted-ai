@@ -6,7 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Pencil, Trash2 } from 'lucide-react';
+import {
+  Pencil,
+  Trash2,
+  Megaphone,
+  BookOpen,
+  Link as LinkIcon,
+  Users,
+  BarChart2,
+  HelpCircle,
+  Plus
+} from 'lucide-react';
 import SortableTable, { Column } from './SortableTable';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -894,13 +904,30 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         <CardContent className="space-y-8">
           {/* Announcements */}
           <section>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">Announcements</h3>
-              <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">Add Announcement</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <h3 className="text-forest-green font-semibold flex items-center gap-2">
+              <Megaphone className="h-5 w-5" />
+              Announcements
+            </h3>
+            <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
+              <SortableTable
+                data={announcements}
+                columns={announcementColumns}
+                toolbar={(columnsButton) => (
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Announcement
+                      </Button>
+                    </DialogTrigger>
+                    {columnsButton}
+                  </div>
+                )}
+              />
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingAnnouncement ? 'Edit Announcement' : 'Add Announcement'}</DialogTitle>
                   </DialogHeader>
@@ -973,23 +1000,38 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
-            <SortableTable data={announcements} columns={announcementColumns} />
           </section>
 
           {/* Training & Resources */}
           <section>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">Training & Resources</h3>
-              <Dialog open={resourceOpen} onOpenChange={setResourceOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">Add Resource</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{editingResource ? 'Edit Resource' : 'Add Training & Resource'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
+            <h3 className="text-forest-green font-semibold flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Training & Resources
+            </h3>
+            <Dialog open={resourceOpen} onOpenChange={setResourceOpen}>
+              <SortableTable
+                data={resources}
+                columns={resourceColumns}
+                toolbar={(columnsButton) => (
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Resource
+                      </Button>
+                    </DialogTrigger>
+                    {columnsButton}
+                  </div>
+                )}
+              />
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingResource ? 'Edit Resource' : 'Add Training & Resource'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
                     <div>
                       <Label htmlFor="res-title">Title</Label>
                       <Input
@@ -1050,23 +1092,38 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
-            <SortableTable data={resources} columns={resourceColumns} />
           </section>
 
           {/* Useful Links */}
           <section>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">Useful Links</h3>
-              <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">Add Link</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{editingLink ? 'Edit Useful Link' : 'Add Useful Link'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
+            <h3 className="text-forest-green font-semibold flex items-center gap-2">
+              <LinkIcon className="h-5 w-5" />
+              Useful Links
+            </h3>
+            <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+              <SortableTable
+                data={links}
+                columns={linkColumns}
+                toolbar={(columnsButton) => (
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Link
+                      </Button>
+                    </DialogTrigger>
+                    {columnsButton}
+                  </div>
+                )}
+              />
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingLink ? 'Edit Useful Link' : 'Add Useful Link'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
                     <div>
                       <Label htmlFor="link-title">Title</Label>
                       <Input
@@ -1119,23 +1176,38 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
-            <SortableTable data={links} columns={linkColumns} />
           </section>
 
           {/* Adoption Coaching */}
           <section>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">Adoption Coaching</h3>
-              <Dialog open={coachingOpen} onOpenChange={setCoachingOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">Add Coaching</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{editingCoaching ? 'Edit Coaching' : 'Add Adoption Coaching'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
+            <h3 className="text-forest-green font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Adoption Coaching
+            </h3>
+            <Dialog open={coachingOpen} onOpenChange={setCoachingOpen}>
+              <SortableTable
+                data={coachings}
+                columns={coachingColumns}
+                toolbar={(columnsButton) => (
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Coaching
+                      </Button>
+                    </DialogTrigger>
+                    {columnsButton}
+                  </div>
+                )}
+              />
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingCoaching ? 'Edit Coaching' : 'Add Adoption Coaching'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
                     <div>
                       <Label htmlFor="coaching-topic">Topic</Label>
                       <Input
@@ -1204,23 +1276,38 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
-            <SortableTable data={coachings} columns={coachingColumns} />
           </section>
 
           {/* Reports & KPIs */}
           <section>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">Reports & KPIs</h3>
-              <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">Add Report</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{editingReport ? 'Edit Report' : 'Add Report & KPIs'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
+            <h3 className="text-forest-green font-semibold flex items-center gap-2">
+              <BarChart2 className="h-5 w-5" />
+              Reports & KPIs
+            </h3>
+            <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+              <SortableTable
+                data={reports}
+                columns={reportColumns}
+                toolbar={(columnsButton) => (
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Report
+                      </Button>
+                    </DialogTrigger>
+                    {columnsButton}
+                  </div>
+                )}
+              />
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingReport ? 'Edit Report' : 'Add Report & KPIs'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
                     <div>
                       <Label htmlFor="report-name">Report Name</Label>
                       <Input
@@ -1327,23 +1414,38 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
-            <SortableTable data={reports} columns={reportColumns} />
           </section>
 
           {/* FAQs */}
           <section>
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">FAQs</h3>
-              <Dialog open={faqOpen} onOpenChange={setFaqOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">Add FAQ</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{editingFaq ? 'Edit FAQ' : 'Add FAQ'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
+            <h3 className="text-forest-green font-semibold flex items-center gap-2">
+              <HelpCircle className="h-5 w-5" />
+              FAQs
+            </h3>
+            <Dialog open={faqOpen} onOpenChange={setFaqOpen}>
+              <SortableTable
+                data={faqs}
+                columns={faqColumns}
+                toolbar={(columnsButton) => (
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add FAQ
+                      </Button>
+                    </DialogTrigger>
+                    {columnsButton}
+                  </div>
+                )}
+              />
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingFaq ? 'Edit FAQ' : 'Add FAQ'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
                     <div>
                       <Label htmlFor="faq-question">Question</Label>
                       <Input
@@ -1404,8 +1506,6 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-            </div>
-            <SortableTable data={faqs} columns={faqColumns} />
           </section>
         </CardContent>
       </Card>
