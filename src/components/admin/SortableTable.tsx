@@ -1,12 +1,20 @@
 import React, { useState, useMemo } from 'react';
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem
+} from '@/components/ui/dropdown-menu';
 
 export interface Column<T> {
   key: string;
   label: string;
   render?: (item: T) => React.ReactNode;
   sortable?: boolean;
+  initialWidth?: number;
 }
 
 interface SortableTableProps<T> {
@@ -23,6 +31,14 @@ function get(obj: unknown, path: string) {
 export function SortableTable<T extends { id: string }>({ data, columns }: SortableTableProps<T>) {
   const [sortKey, setSortKey] = useState<string>(columns[0]?.key);
   const [asc, setAsc] = useState(true);
+  const [visible, setVisible] = useState<string[]>(columns.map(c => c.key));
+  const [widths, setWidths] = useState<Record<string, number>>(() => {
+    const init: Record<string, number> = {};
+    columns.forEach(c => {
+      init[c.key] = c.initialWidth ?? 150;
+    });
+    return init;
+  });
 
   const sorted = useMemo(() => {
     const items = [...data];
@@ -47,35 +63,83 @@ export function SortableTable<T extends { id: string }>({ data, columns }: Sorta
     }
   };
 
+  const startResize = (e: React.MouseEvent, key: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startWidth = widths[key];
+    const onMouseMove = (eMove: MouseEvent) => {
+      const newWidth = Math.max(50, startWidth + (eMove.clientX - startX));
+      setWidths(w => ({ ...w, [key]: newWidth }));
+    };
+    const onMouseUp = () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const visibleCols = columns.filter(c => visible.includes(c.key));
+
   return (
-    <ScrollArea className="h-52">
-      <Table>
-        <TableHeader>
-          <TableRow>
+    <div>
+      <div className="flex justify-end mb-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">Columns</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
             {columns.map(col => (
-              <TableHead
+              <DropdownMenuCheckboxItem
                 key={col.key}
-                onClick={() => col.sortable !== false && handleSort(col.key)}
-                className={col.sortable === false ? '' : 'cursor-pointer select-none'}
+                checked={visible.includes(col.key)}
+                onCheckedChange={(checked) =>
+                  setVisible(v =>
+                    checked ? [...v, col.key] : v.filter(k => k !== col.key)
+                  )
+                }
               >
-                {col.label}{sortKey === col.key && (asc ? ' ▲' : ' ▼')}
-              </TableHead>
+                {col.label}
+              </DropdownMenuCheckboxItem>
             ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sorted.map(item => (
-            <TableRow key={item.id}>
-              {columns.map(col => (
-                <TableCell key={col.key}>
-                  {col.render ? col.render(item) : String(get(item, col.key))}
-                </TableCell>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <ScrollArea className="h-52">
+        <Table className="min-w-max">
+          <TableHeader>
+            <TableRow>
+              {visibleCols.map(col => (
+                <TableHead
+                  key={col.key}
+                  onClick={() => col.sortable !== false && handleSort(col.key)}
+                  className={col.sortable === false ? '' : 'cursor-pointer select-none relative'}
+                  style={{ width: widths[col.key] }}
+                >
+                  {col.label}{sortKey === col.key && (asc ? ' ▲' : ' ▼')}
+                  <span
+                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize"
+                    onMouseDown={(e) => startResize(e, col.key)}
+                  />
+                </TableHead>
               ))}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </ScrollArea>
+          </TableHeader>
+          <TableBody>
+            {sorted.map(item => (
+              <TableRow key={item.id}>
+                {visibleCols.map(col => (
+                  <TableCell key={col.key} style={{ width: widths[col.key] }}>
+                    {col.render ? col.render(item) : String(get(item, col.key))}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </ScrollArea>
+    </div>
   );
 }
 

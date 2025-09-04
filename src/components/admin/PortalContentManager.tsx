@@ -633,13 +633,18 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const announcementColumns: Column<Announcement>[] = [
-    { key: 'title', label: 'Title' },
-    { key: 'author', label: 'Author' },
-    { key: 'summary', label: 'Summary' },
+    { key: 'id', label: 'ID', initialWidth: 80 },
+    { key: 'title', label: 'Title', initialWidth: 150 },
+    { key: 'author', label: 'Author', initialWidth: 120 },
+    { key: 'summary', label: 'Summary', initialWidth: 200 },
+    { key: 'content', label: 'Content', initialWidth: 200 },
+    { key: 'url', label: 'URL', initialWidth: 150 },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
     {
       key: 'actions',
       label: 'Actions',
       sortable: false,
+      initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditAnnouncement(item)}>
@@ -668,13 +673,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const resourceColumns: Column<Resource>[] = [
-    { key: 'title', label: 'Title' },
-    { key: 'category', label: 'Category' },
-    { key: 'description', label: 'Description' },
+    { key: 'id', label: 'ID', initialWidth: 80 },
+    { key: 'title', label: 'Title', initialWidth: 150 },
+    { key: 'description', label: 'Description', initialWidth: 200 },
+    { key: 'link', label: 'Link', initialWidth: 150 },
+    { key: 'category', label: 'Category', initialWidth: 120 },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
     {
       key: 'actions',
       label: 'Actions',
       sortable: false,
+      initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditResource(item)}>
@@ -703,21 +712,25 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const linkColumns: Column<UsefulLink>[] = [
-    { key: 'title', label: 'Title' },
+    { key: 'id', label: 'ID', initialWidth: 80 },
+    { key: 'title', label: 'Title', initialWidth: 150 },
     {
       key: 'url',
       label: 'URL',
+      initialWidth: 150,
       render: (item) => (
         <a href={item.url} className="text-blue-600" target="_blank" rel="noreferrer">
           {item.url}
         </a>
       )
     },
-    { key: 'description', label: 'Description' },
+    { key: 'description', label: 'Description', initialWidth: 200 },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
     {
       key: 'actions',
       label: 'Actions',
       sortable: false,
+      initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditLink(item)}>
@@ -746,13 +759,18 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const coachingColumns: Column<Coaching>[] = [
-    { key: 'topic', label: 'Topic' },
-    { key: 'contact', label: 'Contact' },
-    { key: 'description', label: 'Description' },
+    { key: 'id', label: 'ID', initialWidth: 80 },
+    { key: 'topic', label: 'Topic', initialWidth: 150 },
+    { key: 'description', label: 'Description', initialWidth: 200 },
+    { key: 'media', label: 'Media', initialWidth: 120 },
+    { key: 'contact', label: 'Contact', initialWidth: 120 },
+    { key: 'steps', label: 'Steps', initialWidth: 200 },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
     {
       key: 'actions',
       label: 'Actions',
       sortable: false,
+      initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditCoaching(item)}>
@@ -781,13 +799,18 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const reportColumns: Column<Report>[] = [
-    { key: 'name', label: 'Name' },
-    { key: 'period', label: 'Period' },
-    { key: 'notes', label: 'Notes' },
+    { key: 'id', label: 'ID', initialWidth: 80 },
+    { key: 'name', label: 'Name', initialWidth: 150 },
+    { key: 'period', label: 'Period', initialWidth: 120 },
+    { key: 'kpis', label: 'KPIs', initialWidth: 200, render: (item) => item.kpis.map(k => `${k.name}:${k.value}`).join(', ') },
+    { key: 'link', label: 'Link', initialWidth: 150 },
+    { key: 'notes', label: 'Notes', initialWidth: 200 },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
     {
       key: 'actions',
       label: 'Actions',
       sortable: false,
+      initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditReport(item)}>
@@ -816,13 +839,18 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const faqColumns: Column<Faq>[] = [
-    { key: 'question', label: 'Question' },
-    { key: 'category', label: 'Category' },
-    { key: 'updatedBy', label: 'Updated By' },
+    { key: 'id', label: 'ID', initialWidth: 80 },
+    { key: 'question', label: 'Question', initialWidth: 200 },
+    { key: 'answer', label: 'Answer', initialWidth: 200 },
+    { key: 'category', label: 'Category', initialWidth: 120 },
+    { key: 'updatedBy', label: 'Updated By', initialWidth: 120 },
+    { key: 'goal', label: 'Goal', initialWidth: 150 },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => item.companies.join(', ') },
     {
       key: 'actions',
       label: 'Actions',
       sortable: false,
+      initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditFaq(item)}>
