@@ -77,6 +77,8 @@ const AdminDashboard: React.FC = () => {
   const [isCompanyUsersDialogOpen, setIsCompanyUsersDialogOpen] = useState(false);
   const [selectedCompanyUsers, setSelectedCompanyUsers] = useState<UserWithRole[]>([]);
   const [selectedCompanyName, setSelectedCompanyName] = useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [userToAdd, setUserToAdd] = useState('');
   const { toast } = useToast();
 
   // Fetch data with timeout protection
@@ -287,6 +289,8 @@ const AdminDashboard: React.FC = () => {
     );
     setSelectedCompanyUsers(usersForCompany);
     setSelectedCompanyName(company.name);
+    setSelectedCompanyId(company.id);
+    setUserToAdd('');
     setIsCompanyUsersDialogOpen(true);
   };
 
@@ -524,13 +528,47 @@ const AdminDashboard: React.FC = () => {
         title: "Success",
         description: "User removed from company"
       });
-      
+
+      setSelectedCompanyUsers((prev) =>
+        prev.filter((u) => u.auth_user_id !== userId)
+      );
       fetchUsersWithRoles();
     } catch (error) {
       console.error('Error removing user from company:', error);
       toast({
         title: "Error",
         description: "Failed to remove user from company",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const addUserToCompany = async (userId: string, companyId: string) => {
+    try {
+      const { error } = await supabase.from('company_memberships').insert({
+        user_id: userId,
+        company_id: companyId,
+        role: 'Member'
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "User added to company"
+      });
+
+      const addedUser = usersWithRoles.find((u) => u.auth_user_id === userId);
+      if (addedUser) {
+        setSelectedCompanyUsers((prev) => [...prev, addedUser]);
+      }
+      setUserToAdd('');
+      fetchUsersWithRoles();
+    } catch (error) {
+      console.error('Error adding user to company:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add user to company",
         variant: "destructive"
       });
     }
@@ -722,7 +760,17 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={isCompanyUsersDialogOpen} onOpenChange={setIsCompanyUsersDialogOpen}>
+        <Dialog
+          open={isCompanyUsersDialogOpen}
+          onOpenChange={(open) => {
+            setIsCompanyUsersDialogOpen(open);
+            if (!open) {
+              setSelectedCompanyId(null);
+              setSelectedCompanyUsers([]);
+              setUserToAdd('');
+            }
+          }}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Users in {selectedCompanyName}</DialogTitle>
@@ -735,10 +783,49 @@ const AdminDashboard: React.FC = () => {
                   <li key={u.id} className="flex items-center gap-2">
                     <Badge variant="secondary">{u.role}</Badge>
                     <span>{u.display_name || u.email}</span>
+                    {selectedCompanyId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-1"
+                        onClick={() => removeUserFromCompany(u.auth_user_id, selectedCompanyId)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
+            <div className="mt-4 space-y-2">
+              <Label htmlFor="add-user">Add User</Label>
+              <div className="flex items-center gap-2">
+                <Select value={userToAdd} onValueChange={setUserToAdd}>
+                  <SelectTrigger id="add-user" className="w-[200px]">
+                    <SelectValue placeholder="Select user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {usersWithRoles
+                      .filter((u) =>
+                        !selectedCompanyUsers.some((sc) => sc.id === u.id)
+                      )
+                      .map((u) => (
+                        <SelectItem key={u.id} value={u.auth_user_id}>
+                          {u.display_name || u.email}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() =>
+                    selectedCompanyId && userToAdd && addUserToCompany(userToAdd, selectedCompanyId)
+                  }
+                  disabled={!userToAdd}
+                >
+                  Add
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
 
