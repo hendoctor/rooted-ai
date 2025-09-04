@@ -28,7 +28,6 @@ export const supabase = createClient<Database>(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      multiTab: true,
       storage: authStorage,
     },
     realtime: {

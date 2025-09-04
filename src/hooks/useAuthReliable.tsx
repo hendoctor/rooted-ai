@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
 
         if (allCompanies && Array.isArray(allCompanies)) {
-          return allCompanies.map((company) => ({
+          return allCompanies.map((company: any) => ({
             id: company.id,
             name: company.name,
             slug: company.slug,

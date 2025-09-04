@@ -55,10 +55,10 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
         .from('user_invitations')
         .select('*')
         .eq('role', 'Client')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as any;
 
       if (error) throw error;
-      setInvitations(data || []);
+      setInvitations(data as any || []);
     } catch (error) {
       console.error('Error fetching invitations:', error);
       toast({
@@ -135,7 +135,7 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
       const { error } = await supabase
         .from('user_invitations')
         .update({ status: 'cancelled' })
-        .eq('id', invitationId);
+        .eq('id', invitationId) as any;
 
       if (error) throw error;
 
