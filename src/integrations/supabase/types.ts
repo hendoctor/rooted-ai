@@ -863,6 +863,33 @@ export type Database = {
         }
         Relationships: []
       }
+      users_safe: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string | null
+          display_name: string | null
+          email_domain: string | null
+          id: string | null
+          role: string | null
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email_domain?: never
+          id?: string | null
+          role?: string | null
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          email_domain?: never
+          id?: string | null
+          role?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_invitation_finalize: {
@@ -968,11 +995,29 @@ export type Database = {
         Args: { check_company_id: string }
         Returns: boolean
       }
+      validate_admin_reset_request: {
+        Args: {
+          admin_user_id: string
+          client_ip?: unknown
+          reset_token: string
+        }
+        Returns: Json
+      }
       validate_contact_submission: {
         Args: {
           p_fingerprint_data?: Json
           p_honeypot_field?: string
           p_ip_address: unknown
+          p_user_agent: string
+        }
+        Returns: Json
+      }
+      validate_contact_submission_enhanced: {
+        Args: {
+          p_fingerprint_data?: Json
+          p_honeypot_field?: string
+          p_ip_address: unknown
+          p_origin?: string
           p_user_agent: string
         }
         Returns: Json

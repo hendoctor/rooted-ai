@@ -1,23 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
-// Generate CORS headers based on origin
+// Generate CORS headers based on origin - HARDENED
 const generateCorsHeaders = (origin?: string) => {
   const allowedOrigins = [
+    'https://rootedai.tech',
+    'https://rooted-ai.lovable.app',
     'https://lovable.dev',
     'https://app.lovable.dev'
   ];
   
-  // Check if origin is allowed or if it's a Lovable subdomain
+  // Check if origin is allowed (stricter validation)
   const isAllowed = origin && (
     allowedOrigins.includes(origin) || 
     origin.endsWith('.lovable.dev') ||
-    origin === 'http://localhost:3000' ||
-    origin === 'http://localhost:5173'
+    (origin.startsWith('http://localhost:') && (origin.includes(':3000') || origin.includes(':5173')))
   );
   
   return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : '*',
+    'Access-Control-Allow-Origin': isAllowed ? origin : 'https://rootedai.tech',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Max-Age': '86400',
@@ -166,7 +167,7 @@ serve(async (req) => {
       });
     }
 
-    // Advanced server-side validation via DB function (honeypot + fingerprint + rate limits)
+    // Enhanced server-side validation via DB function (origin + honeypot + fingerprint + rate limits)
     const honeypot: string = (body?.website || body?.honeypot || '').toString();
     const fingerprint = body?.fingerprint && typeof body.fingerprint === 'object'
       ? {
@@ -176,9 +177,10 @@ serve(async (req) => {
         }
       : null;
 
-    const { data: validationResult, error: validationError } = await supabase.rpc('validate_contact_submission', {
+    const { data: validationResult, error: validationError } = await supabase.rpc('validate_contact_submission_enhanced', {
       p_ip_address: clientIP,
       p_user_agent: userAgent,
+      p_origin: origin,
       p_honeypot_field: honeypot || null,
       p_fingerprint_data: fingerprint
     });

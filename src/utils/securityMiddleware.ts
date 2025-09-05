@@ -24,17 +24,21 @@ export class SecurityMiddleware {
     return false;
   }
 
-  // Log security events on the client side
+  // Log security events via secure edge function
   static async logSecurityEvent(event: {
     event_type: string;
     event_details?: Record<string, any>;
   }): Promise<void> {
     try {
-      await supabase.from('security_audit_log').insert({
-        event_type: event.event_type,
-        event_details: event.event_details,
-        user_agent: navigator.userAgent,
-        created_at: new Date().toISOString()
+      await supabase.functions.invoke('log-security-event', {
+        body: {
+          event_type: event.event_type,
+          event_details: {
+            ...event.event_details,
+            user_agent: navigator.userAgent,
+            timestamp: new Date().toISOString()
+          }
+        }
       });
     } catch (error) {
       console.error('Failed to log security event:', error);

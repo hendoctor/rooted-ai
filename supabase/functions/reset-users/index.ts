@@ -13,6 +13,31 @@ serve(async (req) => {
   }
 
   try {
+    // CRITICAL SECURITY: Check if this function should be available in production
+    const allowResetUsers = Deno.env.get('ALLOW_RESET_USERS');
+    const resetToken = req.headers.get('X-Admin-Reset-Token');
+    const expectedResetToken = Deno.env.get('ADMIN_RESET_TOKEN');
+    
+    if (!allowResetUsers || allowResetUsers !== 'true') {
+      return new Response(JSON.stringify({ 
+        error: 'Reset function disabled',
+        message: 'This function is disabled in production for security'
+      }), { 
+        status: 403, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (!resetToken || !expectedResetToken || resetToken !== expectedResetToken) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid reset token',
+        message: 'Admin reset token is required and must match the configured secret'
+      }), { 
+        status: 403, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
     // Get environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -47,6 +72,36 @@ serve(async (req) => {
 
     if (roleErr || roleRow?.role !== 'Admin') {
       return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Enhanced security validation using the new database function
+    const clientIP = req.headers.get('cf-connecting-ip') || 
+                    req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                    req.headers.get('x-real-ip') || 
+                    'unknown';
+
+    const { data: validationResult, error: validationError } = await supabaseAdmin.rpc('validate_admin_reset_request', {
+      admin_user_id: userData.user.id,
+      reset_token: resetToken,
+      client_ip: clientIP
+    });
+
+    if (validationError) {
+      console.error('Failed to validate reset request:', validationError);
+      return new Response(JSON.stringify({ error: 'Validation failed' }), { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
+    }
+
+    if (validationResult && !(validationResult as any).allowed) {
+      return new Response(JSON.stringify({ 
+        error: 'Reset request blocked',
+        reason: (validationResult as any).reason 
+      }), { 
+        status: 429, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      });
     }
 
     console.log('🧹 Starting user cleanup and reset process...');
@@ -151,17 +206,47 @@ serve(async (req) => {
 
     console.log('✅ Successfully updated profile for James Hennahane');
 
-    // SECURITY: Never return passwords in API responses
-    // Log password separately for admin access only
-    console.log(`🔐 ADMIN PASSWORD: ${securePassword}`);
-    console.log('⚠️  SECURITY: Password logged to function logs only - check Supabase Functions logs');
+    // SECURITY: Send password via secure email instead of logging
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (resendApiKey) {
+      try {
+        const emailResponse = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'security@rootedai.tech',
+            to: ['james@hennahane.com'],
+            subject: 'Admin Account Reset - Secure Credentials',
+            html: `
+              <h2>Admin Account Reset Complete</h2>
+              <p>Your admin account has been reset successfully.</p>
+              <p><strong>Email:</strong> james@hennahane.com</p>
+              <p><strong>Temporary Password:</strong> <code>${securePassword}</code></p>
+              <p><strong>Important:</strong> Please change this password immediately after logging in.</p>
+              <p>This email was sent automatically from the reset-users security function.</p>
+            `
+          })
+        });
+
+        if (!emailResponse.ok) {
+          console.error('Failed to send password email:', await emailResponse.text());
+        } else {
+          console.log('✅ Password sent securely via email');
+        }
+      } catch (emailError) {
+        console.error('Error sending password email:', emailError);
+      }
+    }
     
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'Successfully reset users and created Admin account',
         admin_email: 'james@hennahane.com',
-        note: 'Password has been logged to function logs for security. Check Supabase Functions logs to retrieve it.'
+        note: 'Temporary password has been sent securely via email to the admin address.'
       }), 
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
