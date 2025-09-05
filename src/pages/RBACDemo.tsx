@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuthReliable';
+import { useAuth } from '@/hooks/useAuth';
 import { useCachedQuery } from '@/hooks/useCachedQuery';
 import { useMutation } from '@/hooks/useMutation';
 import { canCRUD, Role } from '@/lib/rbac';

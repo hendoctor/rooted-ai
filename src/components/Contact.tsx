@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuthReliable';
+import { useAuth } from '@/hooks/useAuth';
 import ContactForm from '@/components/ContactForm';
 import { AnimatedSection } from '@/hooks/useScrollAnimation';
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuthReliable';
+import { useAuth } from '@/hooks/useAuth';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
 import Header from '@/components/Header';

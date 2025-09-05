@@ -4,7 +4,7 @@ import { Download } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
 import ProfileMenu from './ProfileMenu';
-import { useAuth } from '@/hooks/useAuthReliable';
+import { useAuth } from '@/hooks/useAuth';
 import { SimpleMenuManager } from '@/utils/simpleMenuUtils';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';

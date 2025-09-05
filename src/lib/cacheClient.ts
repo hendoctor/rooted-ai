@@ -1,3 +1,5 @@
+import { CacheManager } from './cacheManager';
+
 export type Strategy = 'cache-first' | 'network-first' | 'stale-while-revalidate';
 
 interface CacheEntry<T> {
@@ -10,6 +12,12 @@ class CacheClient {
   private store = new Map<string, CacheEntry<unknown>>();
 
   async fetch<T>(key: string, url: string, options: RequestInit = {}, strategy: Strategy = 'cache-first', ttl = 60000): Promise<T> {
+    // Check unified cache manager first
+    const cached = CacheManager.get<T>(key);
+    if (cached && strategy === 'cache-first') {
+      return cached;
+    }
+
     const entry = this.store.get(key);
     const now = Date.now();
     const isExpired = entry ? now > entry.expiry : true;
@@ -62,7 +70,11 @@ class CacheClient {
 
     const data = await res.json();
     const etag = res.headers.get('ETag') || undefined;
+    
+    // Store in both caches
     this.store.set(key, { data, expiry: Date.now() + ttl, etag });
+    CacheManager.set(key, data, ttl);
+    
     console.info(`[cache] updated ${key}`);
     return data;
   }
@@ -70,9 +82,11 @@ class CacheClient {
   invalidate(key?: string) {
     if (key) {
       this.store.delete(key);
+      CacheManager.invalidate(key);
       console.info(`[cache] invalidated ${key}`);
     } else {
       this.store.clear();
+      CacheManager.clearAll();
       console.info('[cache] cleared');
     }
   }

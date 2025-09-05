@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cacheClient, Strategy } from '@/lib/cacheClient';
+import { CacheManager } from '@/lib/cacheManager';
 
 interface Options {
   strategy?: Strategy;
@@ -15,8 +16,21 @@ export function useCachedQuery<T = unknown>(key: string, url: string, options: O
 
   const fetchData = () => {
     setLoading(true);
+    
+    // Check unified cache first
+    const cached = CacheManager.get<T>(key);
+    if (cached && strategy === 'cache-first') {
+      setData(cached);
+      setLoading(false);
+      return;
+    }
+    
     cacheClient.fetch<T>(key, url, {}, strategy, ttl)
-      .then(setData)
+      .then((result) => {
+        setData(result);
+        // Store in unified cache too
+        CacheManager.set(key, result, ttl);
+      })
       .catch((err) => setError(err as Error))
       .finally(() => setLoading(false));
   };
