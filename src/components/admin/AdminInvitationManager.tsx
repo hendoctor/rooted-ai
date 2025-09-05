@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import SortableTable, { Column } from './SortableTable';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -44,12 +44,12 @@ const AdminInvitationManager: React.FC<AdminInvitationManagerProps> = ({ onInvit
     try {
       const { data, error } = await supabase
         .from('user_invitations')
-        .select('*')
+        .select<AdminInvitation[]>('*')
         .eq('role', 'Admin')
-        .order('created_at', { ascending: false }) as any;
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setInvitations(data as any || []);
+      setInvitations(data ?? []);
     } catch (error) {
       console.error('Error fetching admin invitations:', error);
       toast({
@@ -120,7 +120,7 @@ const AdminInvitationManager: React.FC<AdminInvitationManagerProps> = ({ onInvit
       const { error } = await supabase
         .from('user_invitations')
         .update({ status: 'cancelled' })
-        .eq('id', invitationId) as any;
+        .eq('id', invitationId);
 
       if (error) throw error;
 
@@ -169,6 +169,78 @@ const AdminInvitationManager: React.FC<AdminInvitationManagerProps> = ({ onInvit
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  const columns: Column<AdminInvitation>[] = [
+    {
+      key: 'full_name',
+      label: 'Admin User',
+      render: (inv) => (
+        <div>
+          <div className="font-medium flex items-center gap-2">
+            <Shield className="h-4 w-4 text-forest-green" />
+            {inv.full_name}
+          </div>
+          <div className="text-sm text-muted-foreground">{inv.email}</div>
+        </div>
+      ),
+      initialWidth: 200,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (inv) => getStatusBadge(inv.status, inv.expires_at),
+      initialWidth: 120,
+    },
+    {
+      key: 'created_at',
+      label: 'Sent',
+      render: (inv) => (
+        <div className="flex items-center gap-1 text-sm">
+          <Clock className="h-3 w-3" />
+          {format(new Date(inv.created_at), 'MMM dd, yyyy')}
+        </div>
+      ),
+      initialWidth: 150,
+    },
+    {
+      key: 'expires_at',
+      label: 'Expires',
+      render: (inv) => (
+        <div className="text-sm">
+          {format(new Date(inv.expires_at), 'MMM dd, yyyy')}
+        </div>
+      ),
+      initialWidth: 150,
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: (inv) => (
+        <div className="flex gap-2 justify-end">
+          {inv.status === 'pending' && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => copyInvitationLink(inv.invitation_token)}
+              >
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => cancelInvitation(inv.id)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+      initialWidth: 120,
+    },
+  ];
 
   return (
     <Card>
@@ -253,78 +325,11 @@ const AdminInvitationManager: React.FC<AdminInvitationManagerProps> = ({ onInvit
         </Dialog>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Admin User</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Sent</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invitations.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    No admin invitations sent yet
-                  </TableCell>
-                </TableRow>
-              ) : (
-                invitations.map((invitation) => (
-                  <TableRow key={invitation.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium flex items-center gap-2">
-                          <Shield className="h-4 w-4 text-forest-green" />
-                          {invitation.full_name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">{invitation.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(invitation.status, invitation.expires_at)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Clock className="h-3 w-3" />
-                        {format(new Date(invitation.created_at), 'MMM dd, yyyy')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {format(new Date(invitation.expires_at), 'MMM dd, yyyy')}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end">
-                        {invitation.status === 'pending' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => copyInvitationLink(invitation.invitation_token)}
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => cancelInvitation(invitation.id)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        {invitations.length === 0 ? (
+          <p className="text-center text-muted-foreground">No admin invitations sent yet</p>
+        ) : (
+          <SortableTable data={invitations} columns={columns} />
+        )}
       </CardContent>
     </Card>
   );

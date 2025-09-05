@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import SortableTable, { Column } from '@/components/admin/SortableTable';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -613,6 +613,124 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const userColumns: Column<UserWithRole>[] = [
+    { key: 'email', label: 'Email', initialWidth: 200 },
+    {
+      key: 'role',
+      label: 'Role',
+      render: (u) => (
+        <Badge variant={u.role === 'Admin' ? 'default' : 'secondary'}>
+          {u.role === 'Admin' && <Crown className="h-3 w-3 mr-1" />}
+          {u.role}
+        </Badge>
+      ),
+      initialWidth: 120,
+    },
+    { key: 'display_name', label: 'Display Name', initialWidth: 150 },
+    {
+      key: 'companies',
+      label: 'Company Memberships',
+      sortable: false,
+      render: (user) =>
+        user.companies && user.companies.length > 0 ? (
+          <div className="space-y-1">
+            {user.companies.map((company, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  {company.name}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  ({company.userRole})
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-1"
+                  onClick={() => removeUserFromCompany(user.auth_user_id, company.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="text-muted-foreground">{user.client_name || 'No company'}</span>
+        ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: (user) => (
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => openEditUser(user)}>
+            <Edit2 className="h-3 w-3" />
+          </Button>
+          {!user.display_name && (
+            <Button variant="outline" size="sm" onClick={() => createMissingProfile(user)}>
+              <UserPlus className="h-3 w-3" />
+            </Button>
+          )}
+          <Button variant="destructive" size="sm" onClick={() => deleteUser(user.email)}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      ),
+      initialWidth: 150,
+    },
+  ];
+
+  const newsletterColumns: Column<NewsletterSubscription>[] = [
+    {
+      key: 'email',
+      label: 'Email',
+      initialWidth: 200,
+      render: (s) => <span className="font-medium">{s.email}</span>,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (s) => (
+        <Badge variant={s.status === 'active' ? 'default' : 'secondary'}>
+          {s.status}
+        </Badge>
+      ),
+      initialWidth: 100,
+    },
+    { key: 'source', label: 'Source', initialWidth: 150 },
+    {
+      key: 'created_at',
+      label: 'Subscribed',
+      render: (s) => new Date(s.created_at).toLocaleDateString(),
+      initialWidth: 120,
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: (s) => (
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={s.status === 'active'}
+            onCheckedChange={() => toggleNewsletterSubscription(s)}
+          />
+          <span className="text-sm">
+            {s.status === 'active' ? 'Active' : 'Inactive'}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-auto p-1"
+            onClick={() => deleteNewsletterSubscription(s.id)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      initialWidth: 170,
+    },
+  ];
+
   if (loading || loadingData) {
     console.log('AdminDashboard: Loading state - loading:', loading, 'loadingData:', loadingData);
     return (
@@ -847,72 +965,7 @@ const AdminDashboard: React.FC = () => {
             ) : usersWithRoles.length === 0 ? (
               <p className="text-muted-foreground text-center py-4">No users found.</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Display Name</TableHead>
-                    <TableHead>Company Memberships</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {usersWithRoles.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={user.role === 'Admin' ? 'default' : 'secondary'}>
-                          {user.role === 'Admin' && <Crown className="h-3 w-3 mr-1" />}
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{user.display_name || 'Not set'}</TableCell>
-                      <TableCell>
-                        {user.companies && user.companies.length > 0 ? (
-                          <div className="space-y-1">
-                            {user.companies.map((company, idx) => (
-                              <div key={idx} className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-xs">
-                                  {company.name}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  ({company.userRole})
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-auto p-1"
-                                  onClick={() => removeUserFromCompany(user.auth_user_id, company.id)}
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">{user.client_name || 'No company'}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => openEditUser(user)}>
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
-                          {!user.display_name && (
-                            <Button variant="outline" size="sm" onClick={() => createMissingProfile(user)}>
-                              <UserPlus className="h-3 w-3" />
-                            </Button>
-                          )}
-                          <Button variant="destructive" size="sm" onClick={() => deleteUser(user.email)}>
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <SortableTable data={usersWithRoles} columns={userColumns} />
             )}
           </CardContent>
         </Card>
@@ -1035,50 +1088,10 @@ const AdminDashboard: React.FC = () => {
                     (Active: {newsletterSubscriptions.filter(s => s.status === 'active').length})
                   </p>
                 </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Source</TableHead>
-                      <TableHead>Subscribed</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {newsletterSubscriptions.map((subscription) => (
-                      <TableRow key={subscription.id}>
-                        <TableCell className="font-medium">{subscription.email}</TableCell>
-                        <TableCell>
-                          <Badge variant={subscription.status === 'active' ? 'default' : 'secondary'}>
-                            {subscription.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{subscription.source}</TableCell>
-                        <TableCell>{new Date(subscription.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              checked={subscription.status === 'active'}
-                              onCheckedChange={() => toggleNewsletterSubscription(subscription)}
-                            />
-                            <span className="text-sm">
-                              {subscription.status === 'active' ? 'Active' : 'Inactive'}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-auto p-1"
-                              onClick={() => deleteNewsletterSubscription(subscription.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <SortableTable
+                  data={newsletterSubscriptions}
+                  columns={newsletterColumns}
+                />
               </div>
             )}
           </CardContent>
