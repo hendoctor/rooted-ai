@@ -272,6 +272,75 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_form_fingerprints: {
+        Row: {
+          fingerprint_hash: string
+          first_seen: string
+          id: string
+          ip_address: unknown
+          is_suspicious: boolean
+          language: string | null
+          last_seen: string
+          screen_resolution: string | null
+          submission_count: number
+          timezone_offset: number | null
+          user_agent_hash: string | null
+        }
+        Insert: {
+          fingerprint_hash: string
+          first_seen?: string
+          id?: string
+          ip_address: unknown
+          is_suspicious?: boolean
+          language?: string | null
+          last_seen?: string
+          screen_resolution?: string | null
+          submission_count?: number
+          timezone_offset?: number | null
+          user_agent_hash?: string | null
+        }
+        Update: {
+          fingerprint_hash?: string
+          first_seen?: string
+          id?: string
+          ip_address?: unknown
+          is_suspicious?: boolean
+          language?: string | null
+          last_seen?: string
+          screen_resolution?: string | null
+          submission_count?: number
+          timezone_offset?: number | null
+          user_agent_hash?: string | null
+        }
+        Relationships: []
+      }
+      contact_form_honeypots: {
+        Row: {
+          blocked: boolean
+          honeypot_field: string | null
+          id: string
+          ip_address: unknown
+          timestamp: string
+          user_agent: string | null
+        }
+        Insert: {
+          blocked?: boolean
+          honeypot_field?: string | null
+          id?: string
+          ip_address: unknown
+          timestamp?: string
+          user_agent?: string | null
+        }
+        Update: {
+          blocked?: boolean
+          honeypot_field?: string | null
+          id?: string
+          ip_address?: unknown
+          timestamp?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           created_at: string
@@ -898,6 +967,15 @@ export type Database = {
       user_is_company_member: {
         Args: { check_company_id: string }
         Returns: boolean
+      }
+      validate_contact_submission: {
+        Args: {
+          p_fingerprint_data?: Json
+          p_honeypot_field?: string
+          p_ip_address: unknown
+          p_user_agent: string
+        }
+        Returns: Json
       }
       validate_invitation_secure: {
         Args: { token_input: string }
