@@ -27,6 +27,7 @@ interface AuthContextType {
   requireRole: (roles: string[], companyId?: string) => boolean;
   getAccessibleRoutes: () => string[];
   clearError: () => void;
+  forceRefresh: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,15 +43,82 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadingTimeout, setLoadingTimeout] = useState<NodeJS.Timeout | null>(null);
   const initializingRef = useRef(false);
-  const prevUserIdRef = useRef<string | null>(null);
+  const fetchRetryCount = useRef(0);
+  const maxRetries = 3;
   const { toast } = useToast();
 
-  // Fetch user role and companies in one optimized call
-  const fetchUserData = useCallback(async (userId: string) => {
+  // Get/set last user ID from session storage for navigation detection
+  const getLastUserId = (): string | null => {
     try {
-      console.log('👤 Fetching user data for:', userId);
-      
+      return sessionStorage.getItem('last_user_id');
+    } catch {
+      return null;
+    }
+  };
+
+  const setLastUserId = (userId: string | null): void => {
+    try {
+      if (userId) {
+        sessionStorage.setItem('last_user_id', userId);
+      } else {
+        sessionStorage.removeItem('last_user_id');
+      }
+    } catch {
+      // Ignore session storage errors
+    }
+  };
+
+  // Fetch user role and companies with timeout and retry logic
+  const fetchUserData = useCallback(async (userId: string, isRetry = false) => {
+    if (!userId) return { role: 'Client', companies: [] };
+    
+    console.log('👤 Fetching user data for:', userId, isRetry ? '(retry)' : '');
+    setLoading(true);
+    setError(null);
+
+    // Clear any existing timeout
+    if (loadingTimeout) {
+      clearTimeout(loadingTimeout);
+      setLoadingTimeout(null);
+    }
+
+    // Set a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.warn('⏰ User data fetch timeout, retrying...');
+      if (fetchRetryCount.current < maxRetries) {
+        fetchRetryCount.current++;
+        fetchUserData(userId, true);
+      } else {
+        setError('Loading took too long. Please refresh the page.');
+        setLoading(false);
+      }
+    }, 10000); // 10 second timeout
+
+    setLoadingTimeout(timeout);
+
+    try {
+      // Check cache first (but refresh in background for non-retries)
+      const cacheKey = `user_data_${userId}`;
+      const cached = CacheManager.get<{
+        role: string;
+        companies: Company[];
+      }>(cacheKey);
+
+      if (cached && !isRetry) {
+        console.log('📦 Using cached user data, refreshing in background');
+        setUserRole(cached.role);
+        setCompanies(cached.companies);
+        setLoading(false);
+        clearTimeout(timeout);
+        setLoadingTimeout(null);
+        
+        // Refresh in background without blocking UI
+        setTimeout(() => fetchUserData(userId, true), 100);
+        return cached;
+      }
+
       // Use optimized function that gets everything in one call
       const { data, error } = await supabase.rpc('get_user_context_optimized', {
         user_id: userId
@@ -61,30 +129,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Fallback to individual calls
         const roleResult = await fetchUserRole(userId);
         const companiesResult = await fetchUserCompanies(roleResult);
-        return { role: roleResult, companies: companiesResult };
+        const result = { role: roleResult, companies: companiesResult };
+        
+        // Cache the result for 15 minutes
+        CacheManager.set(cacheKey, result, 900000);
+        return result;
       }
+
+      let role = 'Client';
+      let companiesData: Company[] = [];
 
       if (data && data.length > 0) {
         const userData = data[0];
-        const role = userData.role || 'Client';
+        role = userData.role || 'Client';
         const companiesRaw = userData.companies || [];
-        const companiesData = Array.isArray(companiesRaw) ? companiesRaw.map((company: any) => ({
+        companiesData = Array.isArray(companiesRaw) ? companiesRaw.map((company: any) => ({
           id: company.company_id,
           name: company.company_name,
           slug: company.company_slug,
           userRole: company.user_role,
           isAdmin: company.is_admin
         })) : [];
-        
-        return { role, companies: companiesData };
       }
 
-      return { role: 'Client', companies: [] };
+      const result = { role, companies: companiesData };
+      
+      // Cache the result for 15 minutes
+      CacheManager.set(cacheKey, result, 900000);
+      
+      // Reset retry count on success
+      fetchRetryCount.current = 0;
+      console.log('✅ User data loaded successfully');
+      
+      return result;
     } catch (error) {
       console.warn('Error fetching user data:', error);
+      
+      // Try to use cached data as fallback
+      const cacheKey = `user_data_${userId}`;
+      const cached = CacheManager.get<{
+        role: string;
+        companies: Company[];
+      }>(cacheKey);
+
+      if (cached) {
+        console.log('📦 Using cached data as fallback');
+        return cached;
+      }
+      
       return { role: 'Client', companies: [] };
+    } finally {
+      setLoading(false);
+      clearTimeout(timeout);
+      setLoadingTimeout(null);
     }
-  }, []);
+  }, [loadingTimeout, maxRetries]);
 
   // Fallback individual fetch functions
   const fetchUserRole = useCallback(async (userId: string): Promise<string> => {
@@ -159,6 +258,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       setLoading(true);
+      // Clear cached data for this user
+      const cacheKey = `user_data_${user.id}`;
+      CacheManager.invalidate(cacheKey);
+      fetchRetryCount.current = 0; // Reset retry count
+      
       const { role, companies: companiesData } = await fetchUserData(user.id);
       setUserRole(role);
       setCompanies(companiesData);
@@ -171,20 +275,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user?.id, fetchUserData]);
 
-  // Handle auth state changes
+  // Force refresh for stuck states
+  const forceRefresh = useCallback(() => {
+    console.log('🔄 Force refresh requested');
+    setError(null);
+    fetchRetryCount.current = 0;
+    if (loadingTimeout) {
+      clearTimeout(loadingTimeout);
+      setLoadingTimeout(null);
+    }
+    if (user?.id) {
+      CacheManager.invalidate(`user_data_${user.id}`);
+      fetchUserData(user.id);
+    } else {
+      // Try to get session again
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user?.id) {
+          fetchUserData(session.user.id);
+        }
+      });
+    }
+  }, [user, fetchUserData, loadingTimeout]);
+
+  // Handle auth state changes with smart user detection
   const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
     console.log('🔄 Auth state change:', event, !!newSession?.user);
 
     try {
       if (newSession?.user) {
         const userId = newSession.user.id;
-        const isNewUser = prevUserIdRef.current !== userId;
-        prevUserIdRef.current = userId;
+        const lastUserId = getLastUserId();
 
-        // Clear caches if user changed
-        if (isNewUser) {
-          console.log('👤 New user detected, clearing caches');
+        // Only clear caches for actual user changes, not navigation returns
+        if (userId !== lastUserId) {
+          console.log('👤 User changed, clearing user-specific caches');
           CacheManager.clearUserData();
+          setLastUserId(userId);
+        } else {
+          console.log('👤 Same user returning, keeping caches');
         }
 
         // Set basic auth state immediately
@@ -192,19 +320,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setSession(newSession);
         setError(null);
 
-        // Only fetch user data if it's a new user or initial session
-        if (isNewUser || event === 'SIGNED_IN') {
-          const { role, companies: companiesData } = await fetchUserData(userId);
-          setUserRole(role);
-          setCompanies(companiesData);
-        }
+        // Fetch user data
+        const { role, companies: companiesData } = await fetchUserData(userId);
+        setUserRole(role);
+        setCompanies(companiesData);
       } else {
         console.log('🚪 User signed out');
         setUser(null);
         setSession(null);
         setUserRole(null);
         setCompanies([]);
-        prevUserIdRef.current = null;
+        setLastUserId(null);
         CacheManager.clearAll();
       }
     } catch (error) {
@@ -220,6 +346,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       CacheManager.clearAll();
+      setLastUserId(null);
+      
+      // Clear any pending timeouts
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+        setLoadingTimeout(null);
+      }
+      
       await supabase.auth.signOut();
       window.location.href = '/';
     } catch (error) {
@@ -231,7 +365,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       window.location.reload();
     }
-  }, [toast]);
+  }, [toast, loadingTimeout]);
 
   // Clear error
   const clearError = useCallback(() => setError(null), []);
@@ -291,7 +425,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshAuth,
     requireRole,
     getAccessibleRoutes,
-    clearError
+    clearError,
+    forceRefresh
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -313,7 +448,8 @@ export const useAuth = (): AuthContextType => {
       refreshAuth: async () => {},
       requireRole: () => false,
       getAccessibleRoutes: () => ['/'],
-      clearError: () => {}
+      clearError: () => {},
+      forceRefresh: () => {}
     };
   }
   return context;

@@ -12,18 +12,56 @@ interface AuthGuardProps {
   fallback?: React.ReactNode;
 }
 
+interface AuthWithForceRefresh {
+  forceRefresh: () => void;
+}
+
 const AuthGuard: React.FC<AuthGuardProps> = ({ 
   children, 
   requiredRoles = [],
   companyId,
   fallback
 }) => {
-  const { user, loading, error, requireRole, clearError } = useAuth();
+  const authData = useAuth();
+  const { user, loading, error, requireRole, clearError } = authData;
   const location = useLocation();
+  const [showRefreshOption, setShowRefreshOption] = React.useState(false);
 
-  // Show loading state
+  // Show refresh option after 8 seconds of loading
+  React.useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setShowRefreshOption(true), 8000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowRefreshOption(false);
+    }
+  }, [loading]);
+
+  // Show loading state with recovery option
   if (loading) {
-    return fallback || <LoadingSpinner />;
+    return fallback || (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <LoadingSpinner />
+          <p className="text-muted-foreground">Loading your session...</p>
+          {showRefreshOption && (
+            <div className="mt-8">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  if ('forceRefresh' in authData) {
+                    (authData as any).forceRefresh();
+                  }
+                }}
+                className="text-sm"
+              >
+                Taking too long? Click to refresh
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   // Show error state with recovery
