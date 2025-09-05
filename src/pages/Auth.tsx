@@ -59,24 +59,31 @@ const { refreshAuth } = useAuth();
               // Refresh auth context after sign-in
               try { await refreshAuth(); } catch {}
 
-              const [roleResult, companiesResult] = await Promise.all([
-                supabase.rpc('get_user_role_by_auth_id', { auth_user_id: session.user.id }),
-                supabase.rpc('get_user_companies')
-              ]);
+              const { data: roleData } = await supabase.rpc('get_user_role_by_auth_id', { auth_user_id: session.user.id });
 
-              const userRole = (roleResult.data as any)?.role || 'Client';
+              const userRole = (roleData as any)?.role || 'Client';
 
               if (userRole === 'Admin') {
                 navigate('/admin');
                 return;
               }
 
-              // Client users should go to their unique company portal
               if (userRole === 'Client') {
-                const companiesArr = Array.isArray(companiesResult.data) ? companiesResult.data as any[] : [];
+                // Ensure membership and get company slug
+                const { data: ensured } = await (supabase.rpc as any)('ensure_membership_for_current_user');
+                const ensuredSlug = (ensured as any)?.company_slug;
+
+                if (ensuredSlug) {
+                  navigate(`/${ensuredSlug}`);
+                  return;
+                }
+
+                // Fallback: fetch companies and redirect to first slug
+                const { data: companiesResult } = await supabase.rpc('get_user_companies');
+                const companiesArr = Array.isArray(companiesResult) ? (companiesResult as any[]) : [];
                 if (companiesArr.length > 0) {
                   const companySlug = companiesArr[0]?.company_slug;
-                  navigate(`/client-portal?company=${companySlug}`);
+                  navigate(`/${companySlug}`);
                 } else {
                   toast({
                     title: 'No Company Found',
@@ -277,10 +284,18 @@ const { refreshAuth } = useAuth();
             }
             // Signed in successfully - fetch companies and redirect
             try { await refreshAuth(); } catch {}
+            // Ensure membership and get slug
+            const { data: ensured } = await (supabase.rpc as any)('ensure_membership_for_current_user');
+            const ensuredSlug = (ensured as any)?.company_slug;
+            if (ensuredSlug) {
+              navigate(`/${ensuredSlug}`);
+              return;
+            }
+            // Fallback to companies RPC
             const { data: comps } = await supabase.rpc('get_user_companies');
             if (Array.isArray(comps) && comps.length > 0) {
               const companySlug = (comps as any[])[0]?.company_slug;
-              navigate(`/client-portal?company=${companySlug}`);
+              navigate(`/${companySlug}`);
             } else {
               toast({
                 title: 'No Company Found',
