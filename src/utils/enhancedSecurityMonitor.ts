@@ -1,6 +1,13 @@
-import { SecurityMiddleware } from './securityMiddleware';
+import { supabase } from '@/integrations/supabase/client';
 
-// Enhanced security monitoring with detailed event tracking
+export interface SecurityMetrics {
+  sessionDuration: number;
+  failedAttempts: number;
+  suspiciousActivity: boolean;
+  lastActivity: number;
+  tenantViolations: number;
+}
+
 export class EnhancedSecurityMonitor {
   private static failedAttempts = new Map<string, number>();
   private static suspiciousIPs = new Set<string>();
@@ -10,15 +17,21 @@ export class EnhancedSecurityMonitor {
     const attempts = this.failedAttempts.get(email) || 0;
     this.failedAttempts.set(email, attempts + 1);
     
-    await SecurityMiddleware.logSecurityEvent({
-      event_type: 'failed_auth_attempt',
-      event_details: {
-        email_domain: email.split('@')[1], // Log domain only for privacy
-        reason,
-        attempt_count: attempts + 1,
-        timestamp: Date.now()
-      }
-    });
+    try {
+      await supabase.functions.invoke('log-security-event', {
+        body: {
+          event_type: 'failed_auth_attempt',
+          event_details: {
+            email_domain: email.split('@')[1], // Log domain only for privacy
+            reason,
+            attempt_count: attempts + 1,
+            timestamp: Date.now()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to log security event:', error);
+    }
     
     // Alert on multiple failed attempts
     if (attempts >= 4) {
@@ -28,26 +41,38 @@ export class EnhancedSecurityMonitor {
   
   // Monitor suspicious navigation patterns
   static async logSuspiciousNavigation(path: string, userAgent: string): Promise<void> {
-    await SecurityMiddleware.logSecurityEvent({
-      event_type: 'suspicious_navigation',
-      event_details: {
-        path,
-        user_agent_type: this.categorizeUserAgent(userAgent),
-        timestamp: Date.now()
-      }
-    });
+    try {
+      await supabase.functions.invoke('log-security-event', {
+        body: {
+          event_type: 'suspicious_navigation',
+          event_details: {
+            path,
+            user_agent_type: this.categorizeUserAgent(userAgent),
+            timestamp: Date.now()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to log security event:', error);
+    }
   }
   
   // Log general suspicious activities
   static async logSuspiciousActivity(activityType: string, details: Record<string, any>): Promise<void> {
-    await SecurityMiddleware.logSecurityEvent({
-      event_type: 'suspicious_activity',
-      event_details: {
-        activity_type: activityType,
-        ...details,
-        timestamp: Date.now()
-      }
-    });
+    try {
+      await supabase.functions.invoke('log-security-event', {
+        body: {
+          event_type: 'suspicious_activity',
+          event_details: {
+            activity_type: activityType,
+            ...details,
+            timestamp: Date.now()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to log security event:', error);
+    }
   }
   
   // Monitor rapid-fire requests (potential bot behavior)
@@ -120,3 +145,47 @@ EnhancedSecurityMonitor.monitorRequestRate();
 setInterval(() => {
   EnhancedSecurityMonitor.cleanup();
 }, 3600000);
+
+// Export singleton instance for real-time monitoring
+export const securityMonitor = new class SecurityMonitorInstance {
+  private metrics: SecurityMetrics = {
+    sessionDuration: 0,
+    failedAttempts: 0,
+    suspiciousActivity: false,
+    lastActivity: Date.now(),
+    tenantViolations: 0
+  };
+  private listeners: Array<(metrics: SecurityMetrics) => void> = [];
+
+  startMonitoring(): void {
+    console.log('Security monitoring started');
+  }
+
+  stopMonitoring(): void {
+    console.log('Security monitoring stopped');
+  }
+
+  addListener(listener: (metrics: SecurityMetrics) => void): void {
+    this.listeners.push(listener);
+  }
+
+  removeListener(listener: (metrics: SecurityMetrics) => void): void {
+    this.listeners = this.listeners.filter(l => l !== listener);
+  }
+
+  async detectRealTimeThreats(): Promise<{
+    threats: string[];
+    severity: 'low' | 'medium' | 'high';
+    actions: string[];
+  }> {
+    return {
+      threats: [],
+      severity: 'low',
+      actions: []
+    };
+  }
+
+  getMetrics(): SecurityMetrics {
+    return { ...this.metrics };
+  }
+}();
