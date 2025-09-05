@@ -8,12 +8,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import SessionSecurity from "@/components/SessionSecurity";
+
 import AuthGuard from "@/components/AuthGuard";
 import { CacheManager } from "@/lib/cacheManager";
-import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
-import { OnboardingGuide } from '@/components/onboarding/OnboardingGuide';
-import { useAdaptiveUI } from '@/hooks/useAdaptiveUI';
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -138,39 +135,28 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  const performanceMonitor = usePerformanceMonitor();
-  const { getAdaptiveClasses } = useAdaptiveUI();
-
-  // Initialize cache management and performance tracking
+  console.log('App component rendering...');
+  
+  // Initialize cache management safely
   React.useEffect(() => {
-    // Set app version for cache validation
-    CacheManager.setVersion('1.0.0');
-    
-    // Clear caches on page refresh if needed
-    if (performance.navigation?.type === 1) { // Page refresh
-      console.log('Page refresh detected, validating caches');
-      CacheManager.cleanup();
+    try {
+      // Set app version for cache validation
+      CacheManager.setVersion('1.0.0');
+      
+      // Clear caches on page refresh if needed
+      if (performance.navigation?.type === 1) { // Page refresh
+        console.log('Page refresh detected, validating caches');
+        CacheManager.cleanup();
+      }
+      
+      console.log('App initialized successfully');
+    } catch (error) {
+      console.error('App initialization error:', error);
     }
-
-    // Track app initialization
-    performanceMonitor.mark('app-init');
-    
-    // Register service worker for enhanced caching
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      navigator.serviceWorker.register('/sw-enhanced.js')
-        .then((registration) => {
-          console.log('Service Worker registered:', registration);
-        })
-        .catch((error) => {
-          console.warn('Service Worker registration failed:', error);
-        });
-    }
-
-    return performanceMonitor.trackComponent('App');
-  }, [performanceMonitor]);
+  }, []);
 
   return (
-    <div className={getAdaptiveClasses()}>
+    <div>
       {/* Skip Link for Accessibility */}
       <a href="#main-content" className="skip-link">
         Skip to main content
@@ -180,8 +166,7 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <AuthProvider>
-              <OnboardingGuide />
-              <SessionSecurity />
+              {/* <SessionSecurity /> */}
               <Toaster />
               <Sonner />
               <BrowserRouter>
