@@ -924,6 +924,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_company_members_minimal: {
+        Args: { p_company_id: string }
+        Returns: {
+          display_name: string
+          member_role: string
+          user_id: string
+        }[]
+      }
       get_current_user_client_name: {
         Args: Record<PropertyKey, never>
         Returns: string
