@@ -25,6 +25,30 @@ serve(async (req) => {
       }
     });
 
+    // Require authenticated ADMIN to run this function
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const supabaseAuth = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const { data: userData } = await supabaseAuth.auth.getUser();
+    if (!userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { data: roleRow, error: roleErr } = await supabaseAdmin
+      .from('users')
+      .select('role')
+      .eq('auth_user_id', userData.user.id)
+      .single();
+
+    if (roleErr || roleRow?.role !== 'Admin') {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     console.log('🧹 Starting user cleanup and reset process...');
 
     // Step 1: Get all existing users
@@ -145,7 +169,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('❌ Unexpected error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', details: error.message }), 
+      JSON.stringify({ error: 'Internal server error', details: (error as Error).message }), 
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -10,6 +10,11 @@ const corsHeaders = {
   'Referrer-Policy': 'strict-origin-when-cross-origin'
 }
 
+// Simple in-memory rate limit per IP: max 20 events per minute
+const rateMap = new Map<string, { count: number; window: number }>();
+const RATE_LIMIT = 20;
+const WINDOW_MS = 60 * 1000;
+
 const getClientIP = (req: Request): string => {
   return req.headers.get('cf-connecting-ip') || 
          req.headers.get('x-forwarded-for')?.split(',')[0] || 
@@ -22,46 +27,70 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
+    // Require authenticated caller
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const supabaseAuth = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY') ?? '', {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const { data: userData } = await supabaseAuth.auth.getUser();
+    if (!userData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // IP-based rate limit
+    const ip = getClientIP(req);
+    const now = Date.now();
+    const entry = rateMap.get(ip);
+    if (!entry || now - entry.window > WINDOW_MS) {
+      rateMap.set(ip, { count: 1, window: now });
+    } else {
+      if (entry.count >= RATE_LIMIT) {
+        return new Response(JSON.stringify({ error: 'Too many events' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      entry.count += 1;
+      rateMap.set(ip, entry);
+    }
+
     const { event_type, event_details } = await req.json();
-    
-    // Validate required fields
+
     if (!event_type) {
       return new Response(
         JSON.stringify({ error: 'event_type is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
+
     // Sanitize event details to prevent sensitive data leakage
     const sanitizedDetails = event_details ? {
       severity: event_details.severity || 'medium',
       timestamp: event_details.timestamp || new Date().toISOString(),
-      url: event_details.url ? new URL(event_details.url).pathname : undefined, // Only path, not full URL
-      user_agent_family: event_details.user_agent ? 
-        event_details.user_agent.split(' ')[0] : undefined, // Only browser family
-      // Remove other potentially sensitive data
+      url: (() => { try { return event_details.url ? new URL(event_details.url).pathname : undefined } catch { return undefined } })(),
+      user_agent_family: event_details.user_agent ? String(event_details.user_agent).split(' ')[0] : undefined,
       endpoint: event_details.endpoint,
       result: event_details.result,
       error_type: event_details.error_type
     } : null;
-    
-    // Insert security event with client IP
+
     const { error } = await supabase
       .from('security_audit_log')
       .insert({
         event_type,
         event_details: sanitizedDetails,
-        ip_address: getClientIP(req),
+        ip_address: ip,
         user_agent: req.headers.get('user-agent')?.substring(0, 255) || null,
+        user_id: userData.user.id,
         created_at: new Date().toISOString()
       });
-    
+
     if (error) {
       console.error('Failed to log security event:', error);
       return new Response(
@@ -69,12 +98,12 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
+
     return new Response(
       JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-    
+
   } catch (error) {
     console.error('Security event logging error:', error);
     return new Response(

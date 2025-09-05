@@ -98,6 +98,12 @@ verify_jwt = false
 [functions.accept-invitation]
 verify_jwt = false
 
+[functions.log-security-event]
+verify_jwt = true
+
+[functions.reset-users]
+verify_jwt = true
+
 [analytics]
 enabled = true
 port = 54330

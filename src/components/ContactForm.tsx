@@ -71,11 +71,19 @@ const ContactForm = () => {
         return;
       }
 
-      // Submit to Supabase edge function with CSRF protection
+      // Submit to Supabase edge function with CSRF protection and advanced validation
       const { data, error } = await supabase.functions.invoke('contact-form', {
         body: {
           ...validatedData,
-          csrf_token: currentToken
+          csrf_token: currentToken,
+          // Honeypot field (should remain empty)
+          website: '',
+          // Lightweight fingerprinting for spam detection
+          fingerprint: {
+            screen: `${window.screen.width}x${window.screen.height}`,
+            timezone: String(new Date().getTimezoneOffset()),
+            language: navigator.language
+          }
         },
         headers: {
           'X-CSRF-Token': currentToken
@@ -195,6 +203,17 @@ const ContactForm = () => {
           </div>
         </div>
       </div>
+
+      {/* Honeypot field for bots - must remain empty */}
+      <input
+        type="text"
+        name="website"
+        autoComplete="off"
+        tabIndex={-1}
+        aria-hidden="true"
+        className="hidden"
+        defaultValue=""
+      />
 
       <Button
         type="submit"

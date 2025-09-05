@@ -61,7 +61,7 @@ const getClientIP = (req: Request): string => {
 
 serve(async (req) => {
   const origin = req.headers.get('origin');
-  const corsHeaders = generateCorsHeaders(origin);
+  const corsHeaders = generateCorsHeaders(origin || undefined);
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -112,12 +112,7 @@ serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Server-side rate limiting: max 3 per 10 minutes per IP
+    // Server-side rate limiting (coarse pre-check) remains but DB will ultimately decide
     const windowStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     const { count: recentCount } = await supabase
       .from('contact_submissions')
@@ -126,7 +121,6 @@ serve(async (req) => {
       .gte('created_at', windowStart);
 
     if ((recentCount ?? 0) >= 3) {
-      // Log rate limit exceeded
       await supabase.from('security_audit_log').insert({
         event_type: 'rate_limit_exceeded',
         ip_address: clientIP,
@@ -139,7 +133,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
 
     // Extract payload after CSRF validation
     const { name, email, message, service_type } = body as { name: string; email: string; message: string; service_type?: string };
@@ -171,6 +164,39 @@ serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Advanced server-side validation via DB function (honeypot + fingerprint + rate limits)
+    const honeypot: string = (body?.website || body?.honeypot || '').toString();
+    const fingerprint = body?.fingerprint && typeof body.fingerprint === 'object'
+      ? {
+          screen: String(body.fingerprint.screen ?? ''),
+          timezone: String(body.fingerprint.timezone ?? ''),
+          language: String(body.fingerprint.language ?? '')
+        }
+      : null;
+
+    const { data: validationResult, error: validationError } = await supabase.rpc('validate_contact_submission', {
+      p_ip_address: clientIP,
+      p_user_agent: userAgent,
+      p_honeypot_field: honeypot || null,
+      p_fingerprint_data: fingerprint
+    });
+
+    if (validationError) {
+      console.error('validate_contact_submission error:', validationError);
+      return new Response(JSON.stringify({ error: 'Submission validation failed' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (validationResult && (validationResult as any).allowed === false) {
+      const status = (validationResult as any).honeypot_violation ? 400 : 429;
+      return new Response(
+        JSON.stringify({ error: (validationResult as any).reason || 'Request blocked' }),
+        { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Sanitize all inputs
@@ -233,7 +259,7 @@ serve(async (req) => {
         event_type: 'contact_form_error',
         ip_address: getClientIP(req),
         user_agent: req.headers.get('user-agent') || '',
-        event_details: { error: error.message }
+        event_details: { error: (error as Error).message }
       });
     } catch (logError) {
       console.error('Failed to log error:', logError);
