@@ -10,6 +10,8 @@ const UsefulLinkCard: React.FC<UsefulLinkCardProps> = ({ title, url }) => {
   return (
     <a
       href={url}
+      target="_blank"
+      rel="noopener noreferrer"
       className="block p-3 rounded-lg border border-sage/20 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-forest-green"
     >
       <div className="flex items-center justify-between">

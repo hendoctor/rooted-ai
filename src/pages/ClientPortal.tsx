@@ -55,11 +55,11 @@ const ClientPortal: React.FC = () => {
   const activeCompany = company || resolvedCompany;
   const companySlug = activeCompany?.slug;
 
-  const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; date: string; status?: 'New' | 'Important'; }>>([]);
+  const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; date: string; summary?: string; content?: string; url?: string; status?: 'New' | 'Important'; }>>([]);
   const [resources, setResources] = useState<Array<{ id: string; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string }>>([]);
   const [usefulLinks, setUsefulLinks] = useState<Array<{ id: string; title: string; url: string }>>([]);
   const [nextSession, setNextSession] = useState<string | undefined>();
-  const [kpis, setKpis] = useState<Array<{ name: string; value: string }>>([]);
+  const [kpis, setKpis] = useState<Array<{ name: string; value: string; target?: string }>>([]);
   const [faqs, setFaqs] = useState<Array<{ id: string; question: string; answer: string }>>([]);
   const [aiTools, setAiTools] = useState<Array<{ id: string; ai_tool: string; url?: string; comments?: string }>>([]);
 
@@ -74,7 +74,7 @@ useEffect(() => {
         // Announcements
         const { data: annData, error: annError } = await supabase
           .from('announcements')
-          .select('id, title, created_at, announcement_companies!inner(company_id)')
+          .select('id, title, summary, content, url, created_at, announcement_companies!inner(company_id)')
           .eq('announcement_companies.company_id', companyId)
           .order('created_at', { ascending: false });
         
@@ -86,6 +86,9 @@ useEffect(() => {
               id: a.id,
               title: a.title || '',
               date: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
+              summary: a.summary || '',
+              content: a.content || '',
+              url: a.url || '',
             }))
           );
         }
@@ -156,7 +159,7 @@ useEffect(() => {
         if (!reportError && reportData && reportData[0]) {
           const kpiData = reportData[0].kpis;
           if (Array.isArray(kpiData)) {
-            setKpis(kpiData as Array<{ name: string; value: string }>);
+            setKpis(kpiData as Array<{ name: string; value: string; target?: string }>);
           } else {
             setKpis([]);
           }
@@ -260,7 +263,15 @@ useEffect(() => {
             <CardContent className="flex-1">
               {announcements.length ? (
                 announcements.map(a => (
-                  <AnnouncementCard key={a.id} title={a.title} date={a.date} status={a.status} />
+                  <AnnouncementCard
+                    key={a.id}
+                    title={a.title}
+                    date={a.date}
+                    status={a.status}
+                    summary={a.summary}
+                    content={a.content}
+                    url={a.url}
+                  />
                 ))
               ) : (
                 <EmptyState message="No announcements yet." />
@@ -334,7 +345,7 @@ useEffect(() => {
             <CardContent className="grid grid-cols-2 gap-4">
               {kpis.length ? (
                 kpis.map((kpi, idx) => (
-                  <KPITile key={idx} label={kpi.name} value={kpi.value} />
+                  <KPITile key={idx} label={kpi.name} value={kpi.value} target={kpi.target} />
                 ))
               ) : (
                 <EmptyState message="No reports yet." />

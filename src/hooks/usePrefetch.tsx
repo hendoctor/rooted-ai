@@ -56,7 +56,7 @@ export function usePrefetch({
       const [announcements, resources, usefulLinks, coaching, reports, faqs, aiTools] = await Promise.allSettled([
         supabase
           .from('announcements')
-          .select('id, title, created_at, announcement_companies!inner(company_id)')
+          .select('id, title, summary, content, url, created_at, announcement_companies!inner(company_id)')
           .eq('announcement_companies.company_id', companyId)
           .order('created_at', { ascending: false })
           .limit(5),
