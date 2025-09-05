@@ -21,11 +21,11 @@ const EmptyState = React.lazy(() => import('@/components/client-portal/EmptyStat
 const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCard'));
 
 interface CompanyData {
-  announcements: Array<{ id: string; title: string; date: string; status?: 'New' | 'Important' }>;
+  announcements: Array<{ id: string; title: string; date: string; summary?: string; content?: string; url?: string; status?: 'New' | 'Important' }>;
   resources: Array<{ id: string; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string }>;
   usefulLinks: Array<{ id: string; title: string; url: string }>;
   nextSession?: string;
-  kpis: Array<{ name: string; value: string }>;
+  kpis: Array<{ name: string; value: string; target?: string }>;
   faqs: Array<{ id: string; question: string; answer: string }>;
   aiTools: Array<{ id: string; ai_tool: string; url?: string; comments?: string }>;
 }
@@ -110,7 +110,7 @@ const OptimizedClientPortal: React.FC = () => {
       ] = await Promise.allSettled([
         supabase
           .from('announcements')
-          .select('id, title, created_at, announcement_companies!inner(company_id)')
+          .select('id, title, summary, content, url, created_at, announcement_companies!inner(company_id)')
           .eq('announcement_companies.company_id', companyId)
           .order('created_at', { ascending: false })
           .limit(5),
@@ -160,6 +160,9 @@ const OptimizedClientPortal: React.FC = () => {
             id: a.id,
             title: a.title || '',
             date: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
+            summary: a.summary || '',
+            content: a.content || '',
+            url: a.url || '',
           }))
         : [];
 
@@ -190,7 +193,7 @@ const OptimizedClientPortal: React.FC = () => {
         reportsResult.value.data && 
         reportsResult.value.data[0] && 
         Array.isArray(reportsResult.value.data[0].kpis)
-        ? reportsResult.value.data[0].kpis as Array<{ name: string; value: string }>
+        ? reportsResult.value.data[0].kpis as Array<{ name: string; value: string; target?: string }>
         : [];
 
       const faqs = faqsResult.status === 'fulfilled' && faqsResult.value.data
@@ -335,7 +338,15 @@ const OptimizedClientPortal: React.FC = () => {
                 <CardContent className="flex-1">
                   {data.announcements.length ? (
                     data.announcements.map(a => (
-                      <AnnouncementCard key={a.id} title={a.title} date={a.date} status={a.status} />
+                      <AnnouncementCard
+                        key={a.id}
+                        title={a.title}
+                        date={a.date}
+                        status={a.status}
+                        summary={a.summary}
+                        content={a.content}
+                        url={a.url}
+                      />
                     ))
                   ) : (
                     <EmptyState message="No announcements yet." />
@@ -417,7 +428,7 @@ const OptimizedClientPortal: React.FC = () => {
                 <CardContent className="grid grid-cols-2 gap-4">
                   {data.kpis.length ? (
                     data.kpis.map((kpi, idx) => (
-                      <KPITile key={idx} label={kpi.name} value={kpi.value} />
+                      <KPITile key={idx} label={kpi.name} value={kpi.value} target={kpi.target} />
                     ))
                   ) : (
                     <EmptyState message="No reports yet." />

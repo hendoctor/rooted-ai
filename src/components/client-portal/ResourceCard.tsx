@@ -12,6 +12,8 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ title, type, href }) => {
   return (
     <a
       href={href}
+      target={href ? "_blank" : undefined}
+      rel={href ? "noopener noreferrer" : undefined}
       className="block p-3 rounded-lg border border-sage/20 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-forest-green"
     >
       <div className="flex items-center justify-between mb-2">
