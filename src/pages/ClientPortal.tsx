@@ -19,41 +19,19 @@ const ClientPortal: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
-  // Default to the user's first company if no slug is specified or slug is invalid
-  useEffect(() => {
-    if (!slug && companies.length > 0) {
-      navigate(`/${companies[0].slug}`, { replace: true });
-    }
-  }, [slug, companies, navigate]);
-
-  const company = slug
+  // Find the company by slug or use the first available company
+  const company = slug 
     ? companies.find(c => c.slug === slug)
     : companies[0];
 
-  // Fallback resolver: fetch companies directly if context hasn't populated yet
-  const [resolvedCompany, setResolvedCompany] = useState<{ id: string; name?: string; slug: string } | undefined>();
+  // Redirect to first company if no slug provided
   useEffect(() => {
-    if (user && slug && (!company || companies.length === 0)) {
-      (async () => {
-        try {
-          const { data } = await supabase.rpc('get_user_companies');
-          if (Array.isArray(data)) {
-            const match = (data as any[]).find(c => c.company_slug === slug);
-            if (match) {
-              setResolvedCompany({ id: match.company_id, name: match.company_name, slug: match.company_slug });
-            } else if (data[0]) {
-              navigate(`/${(data as any[])[0].company_slug}`, { replace: true });
-            }
-          }
-        } catch (e) {
-          console.warn('Failed to resolve company from RPC:', e);
-        }
-      })();
+    if (!loading && !slug && companies.length > 0) {
+      navigate(`/${companies[0].slug}`, { replace: true });
     }
-  }, [user, slug, company, companies, navigate]);
+  }, [slug, companies, navigate, loading]);
 
-  const activeCompany = company || resolvedCompany;
-  const companySlug = activeCompany?.slug;
+  const companySlug = company?.slug;
 
   const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; date: string; summary?: string; content?: string; url?: string; status?: 'New' | 'Important'; }>>([]);
   const [resources, setResources] = useState<Array<{ id: string; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string }>>([]);
@@ -64,8 +42,8 @@ const ClientPortal: React.FC = () => {
   const [aiTools, setAiTools] = useState<Array<{ id: string; ai_tool: string; url?: string; comments?: string }>>([]);
 
 useEffect(() => {
-  if (!activeCompany?.id) return;
-  const companyId = activeCompany.id;
+  if (!company?.id) return;
+  const companyId = company.id;
 
     const loadData = async () => {
       console.log('Loading client portal content for company:', companyId);
@@ -209,7 +187,7 @@ useEffect(() => {
     };
 
     loadData();
-  }, [activeCompany?.id]);
+  }, [company?.id]);
 
   if (loading) {
     return (
@@ -221,9 +199,14 @@ useEffect(() => {
     return <AccessDenied />;
   }
 
-  if (!activeCompany) {
+  if (!company) {
     return (
-      <div className="min-h-screen flex items-center justify-center">Initializing your company portal...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h2 className="text-lg font-semibold">No Company Access</h2>
+          <p className="text-muted-foreground">You don't have access to any company portals yet.</p>
+        </div>
+      </div>
     );
   }
 

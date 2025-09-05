@@ -950,6 +950,16 @@ export type Database = {
           role: string
         }[]
       }
+      get_user_profile: {
+        Args: { p_user_id: string }
+        Returns: {
+          companies: Json
+          user_client_name: string
+          user_display_name: string
+          user_email: string
+          user_role: string
+        }[]
+      }
       get_user_role_by_auth_id: {
         Args: { auth_user_id: string }
         Returns: Json

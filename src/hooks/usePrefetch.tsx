@@ -1,7 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { CacheManager } from '@/lib/cacheManager';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PrefetchOptions {
@@ -25,22 +24,12 @@ export function usePrefetch({
   const prefetchUserData = useCallback(async () => {
     if (!user?.id || !userRole) return;
 
-    const userId = user.id;
-    const userContextKey = `user_context_${userId}`;
-    
-    // Skip if already cached
-    if (CacheManager.has(userContextKey)) return;
-
     try {
-      const { data } = await supabase.rpc('get_user_context_optimized', {
-        p_user_id: userId
+      await supabase.rpc('get_user_profile', {
+        p_user_id: user.id
       });
-      
-      if (data) {
-        CacheManager.set(userContextKey, data, 900000); // 15 minutes
-      }
     } catch (error) {
-      console.warn('Prefetch user context failed:', error);
+      console.warn('Prefetch user profile failed:', error);
     }
   }, [user?.id, userRole]);
 
@@ -48,12 +37,13 @@ export function usePrefetch({
   const prefetchCompanyData = useCallback(async (companyId: string) => {
     const cacheKey = `company_data_${companyId}`;
     
-    // Skip if already cached
-    if (CacheManager.has(cacheKey)) return;
+    // Skip if already prefetched in this session
+    if (prefetchedRef.current.has(cacheKey)) return;
+    prefetchedRef.current.add(cacheKey);
 
     try {
       // Prefetch multiple company-related data in parallel
-      const [announcements, resources, usefulLinks, coaching, reports, faqs, aiTools] = await Promise.allSettled([
+      await Promise.allSettled([
         supabase
           .from('announcements')
           .select('id, title, summary, content, url, created_at, announcement_companies!inner(company_id)')
@@ -99,19 +89,6 @@ export function usePrefetch({
           .eq('ai_tool_companies.company_id', companyId)
           .limit(10)
       ]);
-
-      // Cache each result if successful
-      const results = {
-        announcements: announcements.status === 'fulfilled' ? announcements.value.data : [],
-        resources: resources.status === 'fulfilled' ? resources.value.data : [],
-        usefulLinks: usefulLinks.status === 'fulfilled' ? usefulLinks.value.data : [],
-        coaching: coaching.status === 'fulfilled' ? coaching.value.data : [],
-        reports: reports.status === 'fulfilled' ? reports.value.data : [],
-        faqs: faqs.status === 'fulfilled' ? faqs.value.data : [],
-        aiTools: aiTools.status === 'fulfilled' ? aiTools.value.data : []
-      };
-
-      CacheManager.set(cacheKey, results, 600000); // 10 minutes
     } catch (error) {
       console.warn('Prefetch company data failed:', error);
     }

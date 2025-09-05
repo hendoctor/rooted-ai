@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import AuthGuard from "@/components/AuthGuard";
-import { CacheManager } from "@/lib/cacheManager";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -23,33 +22,9 @@ import NotFound from "./pages/NotFound";
 import RBACDemo from "./pages/RBACDemo";
 import RBACGuard from "@/components/RBACGuard";
 
-// Loading wrapper component with safety fallback
+// Simplified loading wrapper
 const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { loading, error, refreshAuth, signOut } = useAuth();
-  const [showRetry, setShowRetry] = React.useState(false);
-  const [forceShowContent, setForceShowContent] = React.useState(false);
-
-  React.useEffect(() => {
-    if (loading) {
-      const retryTimer = setTimeout(() => {
-        setShowRetry(true);
-      }, 8000); // Show retry after 8 seconds
-      
-      // Safety fallback - prevent indefinite loading
-      const fallbackTimer = setTimeout(() => {
-        console.warn('Loading timeout reached, showing content anyway');
-        setForceShowContent(true);
-      }, 15000); // Force show content after 15 seconds
-
-      return () => {
-        clearTimeout(retryTimer);
-        clearTimeout(fallbackTimer);
-      };
-    } else {
-      setShowRetry(false);
-      setForceShowContent(false);
-    }
-  }, [loading]);
+  const { loading, error, refreshAuth, clearError } = useAuth();
 
   // Show error with recovery options
   if (error) {
@@ -61,24 +36,19 @@ const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
         </div>
         <div className="flex gap-2">
           <Button onClick={refreshAuth}>Retry</Button>
-          <Button variant="outline" onClick={signOut}>Re-login</Button>
+          <Button variant="outline" onClick={clearError}>Continue</Button>
           <Button variant="ghost" onClick={() => window.location.reload()}>Refresh Page</Button>
         </div>
       </div>
     );
   }
 
-  // Show loading spinner with safety fallback
-  if (loading && !forceShowContent) {
+  // Show loading spinner
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         <div className="text-sm text-muted-foreground">Loading your account...</div>
-        {showRetry && (
-          <Button onClick={refreshAuth} variant="outline" size="sm">
-            Having trouble? Click to retry
-          </Button>
-        )}
       </div>
     );
   }
@@ -166,24 +136,6 @@ const queryClient = new QueryClient({
 
 const App = () => {
   console.log('App component rendering...');
-  
-  // Initialize cache management safely
-  React.useEffect(() => {
-    try {
-      // Set app version for cache validation
-      CacheManager.setVersion('1.0.0');
-      
-      // Clear caches on page refresh if needed
-      if (performance.navigation?.type === 1) { // Page refresh
-        console.log('Page refresh detected, validating caches');
-        CacheManager.cleanup();
-      }
-      
-      console.log('App initialized successfully');
-    } catch (error) {
-      console.error('App initialization error:', error);
-    }
-  }, []);
 
   return (
     <div>

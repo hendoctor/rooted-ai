@@ -82,7 +82,7 @@ const AdminDashboard: React.FC = () => {
   const [userToAdd, setUserToAdd] = useState('');
   const { toast } = useToast();
 
-  // Fetch data with timeout protection
+  // Simplified data loading
   useEffect(() => {
     console.log('📊 AdminDashboard effect:', { loading, user: !!user, isAdmin });
     
@@ -104,18 +104,12 @@ const AdminDashboard: React.FC = () => {
     try {
       console.log('🔄 Fetching all admin data...');
       
-      // Add timeout protection
-      const dataPromise = Promise.all([
+      await Promise.all([
         fetchUsersWithRoles(),
         fetchAllCompanies(),
         fetchNewsletterSubscriptions()
       ]);
       
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Data fetch timeout')), 10000)
-      );
-
-      await Promise.race([dataPromise, timeoutPromise]);
       console.log('✅ All admin data loaded successfully');
     } catch (error) {
       console.error('❌ Failed to fetch admin data:', error);
