@@ -29,6 +29,13 @@ export const OnboardingGuide = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [completedFlows, setCompletedFlows] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+
+  // Early return if there's an error
+  if (error) {
+    console.warn('OnboardingGuide error:', error);
+    return null;
+  }
 
   // Define onboarding flows
   const onboardingFlows: OnboardingFlow[] = [
@@ -107,16 +114,25 @@ export const OnboardingGuide = () => {
 
   // Load completed flows from localStorage
   useEffect(() => {
-    const completed = localStorage.getItem('completed_onboarding_flows');
-    if (completed) {
-      setCompletedFlows(new Set(JSON.parse(completed)));
+    try {
+      const completed = localStorage.getItem('completed_onboarding_flows');
+      if (completed) {
+        setCompletedFlows(new Set(JSON.parse(completed)));
+      }
+    } catch (error) {
+      console.warn('Error loading completed onboarding flows:', error);
+      setError('Failed to load onboarding progress');
     }
   }, []);
 
   // Save completed flows to localStorage
   const saveCompletedFlows = useCallback((flows: Set<string>) => {
-    localStorage.setItem('completed_onboarding_flows', JSON.stringify([...flows]));
-    setCompletedFlows(flows);
+    try {
+      localStorage.setItem('completed_onboarding_flows', JSON.stringify([...flows]));
+      setCompletedFlows(flows);
+    } catch (error) {
+      console.warn('Error saving completed onboarding flows:', error);
+    }
   }, []);
 
   // Check if user should see onboarding

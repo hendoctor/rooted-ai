@@ -25,43 +25,6 @@ export const useAdaptiveUI = () => {
     compressionLevel: 'low'
   });
 
-  // Monitor network connection
-  useEffect(() => {
-    if ('connection' in navigator) {
-      const connection = (navigator as any).connection;
-      
-      const updateConnection = () => {
-        const quality: ConnectionQuality = {
-          effectiveType: connection.effectiveType || '4g',
-          downlink: connection.downlink || 10,
-          rtt: connection.rtt || 100,
-          saveData: connection.saveData || false
-        };
-        
-        setConnectionQuality(quality);
-        updateAdaptiveConfig(quality);
-      };
-
-      // Initial check
-      updateConnection();
-
-      // Listen for changes
-      connection.addEventListener('change', updateConnection);
-      
-      return () => {
-        connection.removeEventListener('change', updateConnection);
-      };
-    } else {
-      // Fallback for browsers without Network Information API
-      setConnectionQuality({
-        effectiveType: '4g',
-        downlink: 10,
-        rtt: 100,
-        saveData: false
-      });
-    }
-  }, []);
-
   // Update adaptive configuration based on connection quality
   const updateAdaptiveConfig = useCallback((quality: ConnectionQuality) => {
     const config: AdaptiveUIConfig = {
@@ -114,6 +77,63 @@ export const useAdaptiveUI = () => {
       config.compressionLevel === 'medium' ? '0.85' : '1'
     );
   }, []);
+
+  // Monitor network connection
+  useEffect(() => {
+    try {
+      if ('connection' in navigator) {
+        const connection = (navigator as any).connection;
+        
+        const updateConnection = () => {
+          try {
+            const quality: ConnectionQuality = {
+              effectiveType: connection.effectiveType || '4g',
+              downlink: connection.downlink || 10,
+              rtt: connection.rtt || 100,
+              saveData: connection.saveData || false
+            };
+            
+            setConnectionQuality(quality);
+            updateAdaptiveConfig(quality);
+          } catch (error) {
+            console.warn('Error updating connection:', error);
+          }
+        };
+
+        // Initial check
+        updateConnection();
+
+        // Listen for changes
+        connection.addEventListener('change', updateConnection);
+        
+        return () => {
+          connection.removeEventListener('change', updateConnection);
+        };
+      } else {
+        // Fallback for browsers without Network Information API
+        const fallbackQuality: ConnectionQuality = {
+          effectiveType: '4g',
+          downlink: 10,
+          rtt: 100,
+          saveData: false
+        };
+        setConnectionQuality(fallbackQuality);
+        updateAdaptiveConfig(fallbackQuality);
+      }
+    } catch (error) {
+      console.warn('Error initializing network monitoring:', error);
+      // Fallback
+      const fallbackQuality: ConnectionQuality = {
+        effectiveType: '4g',
+        downlink: 10,
+        rtt: 100,
+        saveData: false
+      };
+      setConnectionQuality(fallbackQuality);
+      updateAdaptiveConfig(fallbackQuality);
+    }
+  }, [updateAdaptiveConfig]);
+
 
   // Get adaptive class names for components
   const getAdaptiveClasses = useCallback((baseClasses: string = '') => {
