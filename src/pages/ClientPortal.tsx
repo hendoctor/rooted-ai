@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuthReliable';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
 import Header from '@/components/Header';
 import AnnouncementCard from '@/components/client-portal/AnnouncementCard';
@@ -15,33 +15,33 @@ import { supabase } from '@/integrations/supabase/client';
 
 const ClientPortal: React.FC = () => {
   const { user, userRole, companies, loading } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const companyParam = searchParams.get('company');
+  const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
 
-  // Default to the user's first company if no company is specified
+  // Default to the user's first company if no slug is specified or slug is invalid
   useEffect(() => {
-    if (!companyParam && companies.length > 0) {
-      setSearchParams({ company: companies[0].slug });
+    if (!slug && companies.length > 0) {
+      navigate(`/${companies[0].slug}`, { replace: true });
     }
-  }, [companyParam, companies, setSearchParams]);
+  }, [slug, companies, navigate]);
 
-  const company = companyParam
-    ? companies.find(c => c.slug === companyParam)
+  const company = slug
+    ? companies.find(c => c.slug === slug)
     : companies[0];
 
   // Fallback resolver: fetch companies directly if context hasn't populated yet
   const [resolvedCompany, setResolvedCompany] = useState<{ id: string; name?: string; slug: string } | undefined>();
   useEffect(() => {
-    if (user && companyParam && (!company || companies.length === 0)) {
+    if (user && slug && (!company || companies.length === 0)) {
       (async () => {
         try {
           const { data } = await supabase.rpc('get_user_companies');
           if (Array.isArray(data)) {
-            const match = (data as any[]).find(c => c.company_slug === companyParam);
+            const match = (data as any[]).find(c => c.company_slug === slug);
             if (match) {
               setResolvedCompany({ id: match.company_id, name: match.company_name, slug: match.company_slug });
             } else if (data[0]) {
-              setSearchParams({ company: (data as any[])[0].company_slug });
+              navigate(`/${(data as any[])[0].company_slug}`, { replace: true });
             }
           }
         } catch (e) {
@@ -49,7 +49,7 @@ const ClientPortal: React.FC = () => {
         }
       })();
     }
-  }, [user, companyParam, company, companies, setSearchParams]);
+  }, [user, slug, company, companies, navigate]);
 
   const activeCompany = company || resolvedCompany;
   const companySlug = activeCompany?.slug;
@@ -221,7 +221,7 @@ useEffect(() => {
                 <h3 className="text-lg font-semibold text-forest-green">Company Settings</h3>
                 <p className="text-sm text-slate-gray">Manage your company details and information</p>
               </div>
-              <Link to={`/${companySlug}`}>
+              <Link to={`/${companySlug}/settings`}>
                 <Button className="bg-forest-green hover:bg-forest-green/90 text-cream">
                   Edit Company Details
                 </Button>

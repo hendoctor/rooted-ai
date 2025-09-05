@@ -54,9 +54,9 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
         <DropdownMenuSeparator />
         {userRole === 'Client' && (
             <>
-              {companies && companies.length > 0 && (
+               {companies && companies.length > 0 && (
                 <DropdownMenuItem asChild>
-                  <Link to={`/client-portal?company=${companies[0].slug}`} className="cursor-pointer">
+                  <Link to={`/${companies[0].slug}`} className="cursor-pointer">
                     <Building className="mr-2 h-4 w-4" />
                     <span>Client Portal</span>
                   </Link>
@@ -64,7 +64,7 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
               )}
               {companies && companies.length > 0 && (
                 <DropdownMenuItem asChild>
-                  <Link to={`/${companies[0].slug}`} className="cursor-pointer">
+                  <Link to={`/${companies[0].slug}/settings`} className="cursor-pointer">
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Company Settings</span>
                   </Link>

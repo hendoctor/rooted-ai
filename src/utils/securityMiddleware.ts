@@ -12,12 +12,12 @@ export class SecurityMiddleware {
     }
     
     // Clients have access to specific actions
-    const clientAllowedActions = ['/', '/profile', '/client-portal'];
+    const clientAllowedActions = ['/', '/profile'];
     if (userRole === 'Client') {
-      const reservedPaths = ['/auth', '/admin', '/client-portal', '/rbac-demo', '/access-denied'];
+      const reservedPaths = ['/auth', '/admin', '/rbac-demo', '/access-denied'];
       return (
         clientAllowedActions.includes(action) ||
-        (!reservedPaths.includes(action) && /^\/[-a-zA-Z0-9]+$/.test(action))
+        (!reservedPaths.includes(action) && (/^\/[-a-zA-Z0-9]+$/.test(action) || /^\/[-a-zA-Z0-9]+\/settings$/.test(action)))
       );
     }
     

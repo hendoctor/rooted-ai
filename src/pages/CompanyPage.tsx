@@ -210,7 +210,7 @@ export default function CompanyPage() {
               <p className="text-muted-foreground">Company Dashboard</p>
             </div>
             <div className="flex gap-2">
-                <Link to={`/client-portal?company=${company.slug}`}>
+                <Link to={`/${company.slug}`}>
                   <Button variant="outline">Back to Client Portal</Button>
                 </Link>
               <Button

@@ -102,9 +102,9 @@ const Header = () => {
               {companyName && (
                 <>
                   <span className="text-slate-gray">•</span>
-                    {userRole === 'Client' ? (
+                     {userRole === 'Client' ? (
                       <Link
-                        to={`/client-portal?company=${companies[0]?.slug}`}
+                        to={`/${companies[0]?.slug}`}
                         className="text-slate-gray hover:text-forest-green transition-colors duration-200"
                       >
                         {companyName}
@@ -239,17 +239,17 @@ const Header = () => {
                     </div>
                      {userRole === 'Client' && (
                        <>
-                         {companies && companies.length > 0 && (
-                           <Link to={`/client-portal?company=${companies[0].slug}`}>
-                             <Button
-                               variant="outline"
-                               className="w-full border-sage hover:bg-sage/20 mb-2"
-                               onClick={() => setIsMobileMenuOpen(false)}
-                             >
-                               Client Portal
-                             </Button>
-                           </Link>
-                         )}
+                          {companies && companies.length > 0 && (
+                            <Link to={`/${companies[0].slug}`}>
+                              <Button
+                                variant="outline"
+                                className="w-full border-sage hover:bg-sage/20 mb-2"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                              >
+                                Client Portal
+                              </Button>
+                            </Link>
+                          )}
                          <Link to="/profile">
                            <Button 
                              variant="outline" 

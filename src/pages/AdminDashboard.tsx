@@ -688,7 +688,7 @@ const AdminDashboard: React.FC = () => {
                           className="w-full text-xs sm:text-sm"
                         >
                           <Link
-                            to={`/client-portal?company=${company.slug}`}
+                            to={`/${company.slug}`}
                             className="flex items-center justify-center"
                           >
                             <ExternalLink className="h-3 w-3 mr-1" />

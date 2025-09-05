@@ -87,14 +87,6 @@ const AppContent = () => {
         }
       />
       <Route
-        path="/client-portal"
-        element={
-          <FastAuthGuard requiredRoles={["Client", "Admin"]}>
-            <ClientPortal />
-          </FastAuthGuard>
-        }
-      />
-      <Route
         path="/rbac-demo"
         element={
           <FastAuthGuard requiredRoles={["Admin", "Client"]}>
@@ -105,10 +97,18 @@ const AppContent = () => {
         }
       />
       <Route
-        path="/:slug"
+        path="/:slug/settings"
         element={
           <FastAuthGuard requiredRoles={["Admin", "Client"]}>
             <CompanyPage />
+          </FastAuthGuard>
+        }
+      />
+      <Route
+        path="/:slug"
+        element={
+          <FastAuthGuard requiredRoles={["Client", "Admin"]}>
+            <ClientPortal />
           </FastAuthGuard>
         }
       />
