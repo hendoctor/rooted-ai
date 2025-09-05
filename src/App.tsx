@@ -12,6 +12,8 @@ import SessionSecurity from "@/components/SessionSecurity";
 import AuthGuard from "@/components/AuthGuard";
 import { CacheManager } from "@/lib/cacheManager";
 import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
+import { OnboardingGuide } from '@/components/onboarding/OnboardingGuide';
+import { useAdaptiveUI } from '@/hooks/useAdaptiveUI';
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -137,6 +139,7 @@ const queryClient = new QueryClient({
 
 const App = () => {
   const performanceMonitor = usePerformanceMonitor();
+  const { getAdaptiveClasses } = useAdaptiveUI();
 
   // Initialize cache management and performance tracking
   React.useEffect(() => {
@@ -167,22 +170,32 @@ const App = () => {
   }, [performanceMonitor]);
 
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AuthProvider>
-            <SessionSecurity />
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AppLoadingWrapper>
-                <AppContent />
-              </AppLoadingWrapper>
-            </BrowserRouter>
-          </AuthProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <div className={getAdaptiveClasses()}>
+      {/* Skip Link for Accessibility */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <AuthProvider>
+              <OnboardingGuide />
+              <SessionSecurity />
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AppLoadingWrapper>
+                  <main id="main-content">
+                    <AppContent />
+                  </main>
+                </AppLoadingWrapper>
+              </BrowserRouter>
+            </AuthProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </div>
   );
 };
 

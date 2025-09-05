@@ -77,6 +77,201 @@
   * {
     @apply border-border;
   }
+}
+
+/* ==========================================
+   ACCESSIBILITY ENHANCEMENTS
+   ========================================== */
+
+/* High Contrast Mode */
+.high-contrast {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 10%;
+  --card-foreground: 0 0% 100%;
+  --primary: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 20%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 90%;
+  --accent: 0 0% 25%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 100% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 30%;
+  --input: 0 0% 25%;
+  --ring: 0 0% 100%;
+}
+
+/* Reduced Motion */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Large Text */
+.large-text {
+  font-size: 1.25em;
+}
+
+.large-text .text-xs { font-size: 0.875rem; }
+.large-text .text-sm { font-size: 1rem; }
+.large-text .text-base { font-size: 1.25rem; }
+.large-text .text-lg { font-size: 1.5rem; }
+.large-text .text-xl { font-size: 1.875rem; }
+.large-text .text-2xl { font-size: 2.25rem; }
+
+/* Enhanced Focus Indicators */
+.enhanced-focus *:focus {
+  outline: 3px solid hsl(var(--primary)) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}
+
+.enhanced-focus button:focus,
+.enhanced-focus [role="button"]:focus,
+.enhanced-focus input:focus,
+.enhanced-focus textarea:focus,
+.enhanced-focus select:focus {
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.3) !important;
+}
+
+/* Screen Reader Optimizations */
+.screen-reader-mode {
+  /* Enhance text readability */
+  line-height: 1.6;
+  word-spacing: 0.1em;
+  letter-spacing: 0.05em;
+}
+
+.screen-reader-mode img {
+  /* Ensure all images have meaningful alt text */
+  border: 2px solid transparent;
+}
+
+.screen-reader-mode img:not([alt]),
+.screen-reader-mode img[alt=""] {
+  border-color: hsl(var(--destructive));
+}
+
+/* Skip Links */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 9999;
+  font-weight: 600;
+  transition: top 0.3s ease;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* Onboarding Highlights */
+.onboarding-highlight {
+  position: relative;
+  z-index: 1001;
+  border-radius: 8px;
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.3), 
+              0 0 0 8px hsl(var(--primary) / 0.1),
+              0 10px 30px -5px hsl(var(--primary) / 0.4) !important;
+  animation: onboarding-pulse 2s ease-in-out infinite;
+}
+
+@keyframes onboarding-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.3), 
+                0 0 0 8px hsl(var(--primary) / 0.1),
+                0 10px 30px -5px hsl(var(--primary) / 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 0 6px hsl(var(--primary) / 0.4), 
+                0 0 0 12px hsl(var(--primary) / 0.15),
+                0 15px 40px -5px hsl(var(--primary) / 0.5);
+  }
+}
+
+/* Data Saver Mode */
+.data-saver img,
+.data-saver video {
+  filter: contrast(0.8) brightness(0.9);
+}
+
+.data-saver [data-background-image] {
+  background-image: none !important;
+}
+
+/* Connection Quality Indicators */
+.connection-slow-2g .loading-indicator::after {
+  content: " (Slow Connection)";
+  color: hsl(var(--destructive));
+  font-size: 0.75em;
+}
+
+.connection-2g .loading-indicator::after {
+  content: " (Limited Connection)";
+  color: hsl(var(--destructive));
+  font-size: 0.75em;
+}
+
+.connection-3g .loading-indicator::after {
+  content: " (3G)";
+  color: hsl(var(--secondary-foreground));
+  font-size: 0.75em;
+}
+
+/* Performance Optimization Classes */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Print Styles */
+@media print {
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  a {
+    text-decoration: underline;
+  }
+  
+  a::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+}
   
   body {
     @apply bg-cream text-slate-gray font-inter dark:bg-background dark:text-foreground;
