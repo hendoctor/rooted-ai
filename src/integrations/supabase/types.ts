@@ -761,6 +761,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: undefined
       }
+      ensure_membership_for_current_user: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_current_user_client_name: {
         Args: Record<PropertyKey, never>
         Returns: string
