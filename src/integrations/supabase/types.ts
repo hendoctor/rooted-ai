@@ -943,7 +943,7 @@ export type Database = {
         }[]
       }
       get_user_context_optimized: {
-        Args: { user_id: string }
+        Args: { p_user_id: string }
         Returns: {
           companies: Json
           permissions: Json

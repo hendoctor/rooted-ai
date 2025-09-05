@@ -23,18 +23,33 @@ import NotFound from "./pages/NotFound";
 import RBACDemo from "./pages/RBACDemo";
 import RBACGuard from "@/components/RBACGuard";
 
-// Loading wrapper component
+// Loading wrapper component with safety fallback
 const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
   const { loading, error, refreshAuth, signOut } = useAuth();
+  const [showRetry, setShowRetry] = React.useState(false);
+  const [forceShowContent, setForceShowContent] = React.useState(false);
 
-  // Show loading spinner only for initial auth check
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  React.useEffect(() => {
+    if (loading) {
+      const retryTimer = setTimeout(() => {
+        setShowRetry(true);
+      }, 8000); // Show retry after 8 seconds
+      
+      // Safety fallback - prevent indefinite loading
+      const fallbackTimer = setTimeout(() => {
+        console.warn('Loading timeout reached, showing content anyway');
+        setForceShowContent(true);
+      }, 15000); // Force show content after 15 seconds
+
+      return () => {
+        clearTimeout(retryTimer);
+        clearTimeout(fallbackTimer);
+      };
+    } else {
+      setShowRetry(false);
+      setForceShowContent(false);
+    }
+  }, [loading]);
 
   // Show error with recovery options
   if (error) {
@@ -49,6 +64,21 @@ const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
           <Button variant="outline" onClick={signOut}>Re-login</Button>
           <Button variant="ghost" onClick={() => window.location.reload()}>Refresh Page</Button>
         </div>
+      </div>
+    );
+  }
+
+  // Show loading spinner with safety fallback
+  if (loading && !forceShowContent) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="text-sm text-muted-foreground">Loading your account...</div>
+        {showRetry && (
+          <Button onClick={refreshAuth} variant="outline" size="sm">
+            Having trouble? Click to retry
+          </Button>
+        )}
       </div>
     );
   }

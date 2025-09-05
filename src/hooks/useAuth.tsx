@@ -70,58 +70,68 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Fetch user role and companies with timeout and retry logic
+  // Fetch user role and companies with cache-first approach
   const fetchUserData = useCallback(async (userId: string, isRetry = false) => {
     if (!userId) return { role: 'Client', companies: [] };
     
     console.log('👤 Fetching user data for:', userId, isRetry ? '(retry)' : '');
-    setLoading(true);
-    setError(null);
+    
+    // Check cache first - if exists, use it without showing loading
+    const cacheKey = `user_data_${userId}`;
+    const cached = CacheManager.get<{
+      role: string;
+      companies: Company[];
+    }>(cacheKey);
 
-    // Clear any existing timeout
-    if (loadingTimeout) {
-      clearTimeout(loadingTimeout);
-      setLoadingTimeout(null);
+    if (cached && !isRetry) {
+      console.log('📦 Using cached user data, refreshing in background');
+      setUserRole(cached.role);
+      setCompanies(cached.companies);
+      setLoading(false);
+      
+      // Silent background refresh
+      setTimeout(async () => {
+        try {
+          const { data, error } = await supabase.rpc('get_user_context_optimized', {
+            p_user_id: userId
+          });
+          
+          if (!error && data && data.length > 0) {
+            const userData = data[0];
+            const role = userData.role || 'Client';
+            const companiesRaw = userData.companies || [];
+            const companiesData = Array.isArray(companiesRaw) ? companiesRaw.map((company: any) => ({
+              id: company.company_id,
+              name: company.company_name,
+              slug: company.company_slug,
+              userRole: company.user_role,
+              isAdmin: company.is_admin
+            })) : [];
+            
+            const result = { role, companies: companiesData };
+            CacheManager.set(cacheKey, result, 900000);
+            setUserRole(role);
+            setCompanies(companiesData);
+          }
+        } catch (error) {
+          console.error('Silent refresh failed:', error);
+        }
+      }, 100);
+      
+      return cached;
     }
 
-    // Set a timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      console.warn('⏰ User data fetch timeout, retrying...');
-      if (fetchRetryCount.current < maxRetries) {
-        fetchRetryCount.current++;
-        fetchUserData(userId, true);
-      } else {
-        setError('Loading took too long. Please refresh the page.');
-        setLoading(false);
-      }
-    }, 10000); // 10 second timeout
-
-    setLoadingTimeout(timeout);
+    // No cache - show loading and fetch
+    if (!isRetry) {
+      setLoading(true);
+      setError(null);
+    }
 
     try {
-      // Check cache first (but refresh in background for non-retries)
-      const cacheKey = `user_data_${userId}`;
-      const cached = CacheManager.get<{
-        role: string;
-        companies: Company[];
-      }>(cacheKey);
-
-      if (cached && !isRetry) {
-        console.log('📦 Using cached user data, refreshing in background');
-        setUserRole(cached.role);
-        setCompanies(cached.companies);
-        setLoading(false);
-        clearTimeout(timeout);
-        setLoadingTimeout(null);
-        
-        // Refresh in background without blocking UI
-        setTimeout(() => fetchUserData(userId, true), 100);
-        return cached;
-      }
 
       // Use optimized function that gets everything in one call
       const { data, error } = await supabase.rpc('get_user_context_optimized', {
-        user_id: userId
+        p_user_id: userId
       });
 
       if (error) {
@@ -180,8 +190,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return { role: 'Client', companies: [] };
     } finally {
       setLoading(false);
-      clearTimeout(timeout);
-      setLoadingTimeout(null);
     }
   }, [loadingTimeout, maxRetries]);
 
@@ -297,8 +305,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user, fetchUserData, loadingTimeout]);
 
-  // Handle auth state changes with smart user detection
-  const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
+  // Handle auth state changes - CRITICAL: must be synchronous
+  const handleAuthStateChange = useCallback((event: string, newSession: Session | null) => {
     console.log('🔄 Auth state change:', event, !!newSession?.user);
 
     try {
@@ -315,15 +323,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('👤 Same user returning, keeping caches');
         }
 
-        // Set basic auth state immediately
+        // Set basic auth state immediately (synchronous)
         setUser(newSession.user);
         setSession(newSession);
         setError(null);
 
-        // Fetch user data
-        const { role, companies: companiesData } = await fetchUserData(userId);
-        setUserRole(role);
-        setCompanies(companiesData);
+        // Defer async work to prevent deadlock
+        setTimeout(async () => {
+          try {
+            const { role, companies: companiesData } = await fetchUserData(userId);
+            setUserRole(role);
+            setCompanies(companiesData);
+          } catch (error) {
+            console.error('Deferred auth data fetch error:', error);
+            setError('Failed to load user data');
+          }
+        }, 0);
       } else {
         console.log('🚪 User signed out');
         setUser(null);
@@ -332,11 +347,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setCompanies([]);
         setLastUserId(null);
         CacheManager.clearAll();
+        setLoading(false);
       }
     } catch (error) {
       console.error('Auth state change error:', error);
       setError('Authentication error occurred');
-    } finally {
       setLoading(false);
     }
   }, [fetchUserData]);
@@ -394,7 +409,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (session?.user) {
           console.log('✅ Found existing session');
-          await handleAuthStateChange('INITIAL_SESSION', session);
+          handleAuthStateChange('INITIAL_SESSION', session);
         } else {
           console.log('❌ No existing session');
           setLoading(false);

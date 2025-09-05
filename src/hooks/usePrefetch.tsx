@@ -33,7 +33,7 @@ export function usePrefetch({
 
     try {
       const { data } = await supabase.rpc('get_user_context_optimized', {
-        user_id: userId
+        p_user_id: userId
       });
       
       if (data) {
