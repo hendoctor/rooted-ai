@@ -292,7 +292,6 @@
     padding-right: 0 !important;
     --removed-body-scroll-bar-size: 0 !important;
   }
-}
 
 @layer utilities {
   .text-forest-green {
