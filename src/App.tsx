@@ -115,10 +115,30 @@ const AppContent = () => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 300000, // 5 minutes
+      gcTime: 900000, // 15 minutes (was cacheTime)
+      retry: (failureCount, error: any) => {
+        // Don't retry on 4xx errors
+        if (error?.status >= 400 && error?.status < 500) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+    mutations: {
+      retry: false,
+    },
+  },
+});
 
 const App = () => {
-  // Initialize cache management
+  const performanceMonitor = usePerformanceMonitor();
+
+  // Initialize cache management and performance tracking
   React.useEffect(() => {
     // Set app version for cache validation
     CacheManager.setVersion('1.0.0');
@@ -128,7 +148,23 @@ const App = () => {
       console.log('Page refresh detected, validating caches');
       CacheManager.cleanup();
     }
-  }, []);
+
+    // Track app initialization
+    performanceMonitor.mark('app-init');
+    
+    // Register service worker for enhanced caching
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      navigator.serviceWorker.register('/sw-enhanced.js')
+        .then((registration) => {
+          console.log('Service Worker registered:', registration);
+        })
+        .catch((error) => {
+          console.warn('Service Worker registration failed:', error);
+        });
+    }
+
+    return performanceMonitor.trackComponent('App');
+  }, [performanceMonitor]);
 
   return (
     <ErrorBoundary>
