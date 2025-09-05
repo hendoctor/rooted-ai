@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import SortableTable, { Column } from './SortableTable';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -53,12 +53,12 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
     try {
       const { data, error } = await supabase
         .from('user_invitations')
-        .select('*')
+        .select<Invitation[]>('*')
         .eq('role', 'Client')
-        .order('created_at', { ascending: false }) as any;
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setInvitations(data as any || []);
+      setInvitations(data ?? []);
     } catch (error) {
       console.error('Error fetching invitations:', error);
       toast({
@@ -135,7 +135,7 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
       const { error } = await supabase
         .from('user_invitations')
         .update({ status: 'cancelled' })
-        .eq('id', invitationId) as any;
+        .eq('id', invitationId);
 
       if (error) throw error;
 
@@ -184,6 +184,81 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  const columns: Column<Invitation>[] = [
+    {
+      key: 'full_name',
+      label: 'Client',
+      render: (inv) => (
+        <div>
+          <div className="font-medium">{inv.full_name}</div>
+          <div className="text-sm text-muted-foreground">{inv.email}</div>
+        </div>
+      ),
+      initialWidth: 180,
+    },
+    {
+      key: 'client_name',
+      label: 'Company',
+      render: (inv) => inv.client_name || 'No company',
+      initialWidth: 150,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (inv) => getStatusBadge(inv.status, inv.expires_at),
+      initialWidth: 120,
+    },
+    {
+      key: 'created_at',
+      label: 'Sent',
+      render: (inv) => (
+        <div className="flex items-center gap-1 text-sm">
+          <Clock className="h-3 w-3" />
+          {format(new Date(inv.created_at), 'MMM dd, yyyy')}
+        </div>
+      ),
+      initialWidth: 150,
+    },
+    {
+      key: 'expires_at',
+      label: 'Expires',
+      render: (inv) => (
+        <div className="text-sm">
+          {format(new Date(inv.expires_at), 'MMM dd, yyyy')}
+        </div>
+      ),
+      initialWidth: 150,
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: (inv) => (
+        <div className="flex gap-2 justify-end">
+          {inv.status === 'pending' && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => copyInvitationLink(inv.invitation_token)}
+              >
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => cancelInvitation(inv.id)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </>
+          )}
+        </div>
+      ),
+      initialWidth: 120,
+    },
+  ];
 
   return (
     <Card>
@@ -287,79 +362,11 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
         </Dialog>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Company</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Sent</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {invitations.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    No invitations sent yet
-                  </TableCell>
-                </TableRow>
-              ) : (
-                invitations.map((invitation) => (
-                  <TableRow key={invitation.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{invitation.full_name}</div>
-                        <div className="text-sm text-muted-foreground">{invitation.email}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {invitation.client_name || 'No company'}
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(invitation.status, invitation.expires_at)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Clock className="h-3 w-3" />
-                        {format(new Date(invitation.created_at), 'MMM dd, yyyy')}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {format(new Date(invitation.expires_at), 'MMM dd, yyyy')}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end">
-                        {invitation.status === 'pending' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => copyInvitationLink(invitation.invitation_token)}
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => cancelInvitation(invitation.id)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        {invitations.length === 0 ? (
+          <p className="text-center text-muted-foreground">No invitations sent yet</p>
+        ) : (
+          <SortableTable data={invitations} columns={columns} />
+        )}
       </CardContent>
     </Card>
   );
