@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import SessionSecurity from "@/components/SessionSecurity";
 import AuthGuard from "@/components/AuthGuard";
 import { CacheManager } from "@/lib/cacheManager";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";

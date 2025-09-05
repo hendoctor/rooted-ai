@@ -44,12 +44,12 @@ const AdminInvitationManager: React.FC<AdminInvitationManagerProps> = ({ onInvit
     try {
       const { data, error } = await supabase
         .from('user_invitations')
-        .select<AdminInvitation[]>('*')
+        .select('*')
         .eq('role', 'Admin')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setInvitations(data ?? []);
+      setInvitations((data as AdminInvitation[]) ?? []);
     } catch (error) {
       console.error('Error fetching admin invitations:', error);
       toast({

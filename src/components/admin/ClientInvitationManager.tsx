@@ -53,12 +53,12 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
     try {
       const { data, error } = await supabase
         .from('user_invitations')
-        .select<Invitation[]>('*')
+        .select('*')
         .eq('role', 'Client')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setInvitations(data ?? []);
+      setInvitations((data as Invitation[]) ?? []);
     } catch (error) {
       console.error('Error fetching invitations:', error);
       toast({
