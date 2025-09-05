@@ -11,6 +11,7 @@ import UsefulLinkCard from '@/components/client-portal/UsefulLinkCard';
 import CoachingCard from '@/components/client-portal/CoachingCard';
 import KPITile from '@/components/client-portal/KPITile';
 import EmptyState from '@/components/client-portal/EmptyState';
+import AiToolCard from '@/components/client-portal/AiToolCard';
 import { supabase } from '@/integrations/supabase/client';
 
 const ClientPortal: React.FC = () => {
@@ -60,6 +61,7 @@ const ClientPortal: React.FC = () => {
   const [nextSession, setNextSession] = useState<string | undefined>();
   const [kpis, setKpis] = useState<Array<{ name: string; value: string }>>([]);
   const [faqs, setFaqs] = useState<Array<{ id: string; question: string; answer: string }>>([]);
+  const [aiTools, setAiTools] = useState<Array<{ id: string; ai_tool: string; url?: string; comments?: string }>>([]);
 
 useEffect(() => {
   if (!activeCompany?.id) return;
@@ -176,6 +178,25 @@ useEffect(() => {
               id: f.id,
               question: f.question || '',
               answer: f.answer || '',
+            }))
+          );
+        }
+
+        // AI Tools
+        const { data: aiToolData, error: aiToolError } = await supabase
+          .from('ai_tools')
+          .select('id, ai_tool, url, comments, ai_tool_companies!inner(company_id)')
+          .eq('ai_tool_companies.company_id', companyId);
+        
+        console.log('AI Tools query result:', { data: aiToolData, error: aiToolError });
+        
+        if (!aiToolError && aiToolData) {
+          setAiTools(
+            aiToolData.map(t => ({
+              id: t.id,
+              ai_tool: t.ai_tool || '',
+              url: t.url || '',
+              comments: t.comments || '',
             }))
           );
         }
@@ -305,7 +326,7 @@ useEffect(() => {
         </div>
 
         {/* Secondary Row */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
           <Card className="flex flex-col">
             <CardHeader>
               <CardTitle className="text-forest-green">Reports & KPIs</CardTitle>
@@ -335,6 +356,27 @@ useEffect(() => {
                 ))
               ) : (
                 <EmptyState message="Short answers coming soon." />
+              )}
+            </CardContent>
+          </Card>
+
+          {/* AI Tools */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="text-forest-green">AI Tools</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {aiTools.length ? (
+                aiTools.map(t => (
+                  <AiToolCard 
+                    key={t.id} 
+                    title={t.ai_tool} 
+                    url={t.url} 
+                    comments={t.comments} 
+                  />
+                ))
+              ) : (
+                <EmptyState message="No AI tools available yet." />
               )}
             </CardContent>
           </Card>

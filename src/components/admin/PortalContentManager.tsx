@@ -16,7 +16,8 @@ import {
   BarChart2,
   HelpCircle,
   Plus,
-  FileText
+  FileText,
+  Bot
 } from 'lucide-react';
 import SortableTable, { Column } from './SortableTable';
 import { supabase } from '@/integrations/supabase/client';
@@ -90,6 +91,14 @@ interface Faq {
   companies: string[];
 }
 
+interface AiTool {
+  id: string;
+  ai_tool: string;
+  url?: string;
+  comments?: string;
+  companies: string[];
+}
+
 const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?: string }> = ({ companies, currentAdmin }) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
@@ -97,6 +106,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const [coachings, setCoachings] = useState<Coaching[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [aiTools, setAiTools] = useState<AiTool[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Fetch all data on component mount
@@ -113,7 +123,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         fetchUsefulLinks(),
         fetchCoaching(),
         fetchReports(),
-        fetchFaqs()
+        fetchFaqs(),
+        fetchAiTools()
       ]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -257,6 +268,27 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setFaqs(transformedData);
   };
 
+  const fetchAiTools = async () => {
+    const { data, error } = await supabase
+      .from('ai_tools')
+      .select(`
+        *,
+        ai_tool_companies(company_id)
+      `);
+    
+    if (error) throw error;
+    
+    const transformedData = data?.map((item: any) => ({
+      id: item.id,
+      ai_tool: item.ai_tool || '',
+      url: item.url || '',
+      comments: item.comments || '',
+      companies: item.ai_tool_companies?.map((atc: any) => atc.company_id) || []
+    })) || [];
+    
+    setAiTools(transformedData);
+  };
+
   // Announcement state
   const [announcementOpen, setAnnouncementOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
@@ -292,6 +324,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const [editingFaq, setEditingFaq] = useState<Faq | null>(null);
   const emptyFaq: Faq = { id: '', question: '', answer: '', category: '', updatedBy: currentAdmin || '', goal: '', companies: [] };
   const [faqForm, setFaqForm] = useState<Faq>(emptyFaq);
+
+  // AI Tools state
+  const [aiToolOpen, setAiToolOpen] = useState(false);
+  const [editingAiTool, setEditingAiTool] = useState<AiTool | null>(null);
+  const emptyAiTool: AiTool = { id: '', ai_tool: '', url: '', comments: '', companies: [] };
+  const [aiToolForm, setAiToolForm] = useState<AiTool>(emptyAiTool);
 
   // Helpers
   const toggleSelection = (ids: string[], id: string) =>
@@ -654,6 +692,53 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setLoading(false);
   };
 
+  const saveAiTool = async () => {
+    try {
+      setLoading(true);
+      if (editingAiTool) {
+        await supabase.from('ai_tools').update({
+          ai_tool: aiToolForm.ai_tool,
+          url: aiToolForm.url,
+          comments: aiToolForm.comments
+        }).eq('id', editingAiTool.id);
+
+        await supabase.from('ai_tool_companies').delete().eq('ai_tool_id', editingAiTool.id);
+        if (aiToolForm.companies.length > 0) {
+          await supabase.from('ai_tool_companies').insert(
+            aiToolForm.companies.map(companyId => ({
+              ai_tool_id: editingAiTool.id,
+              company_id: companyId
+            }))
+          );
+        }
+      } else {
+        const { data } = await supabase.from('ai_tools').insert({
+          ai_tool: aiToolForm.ai_tool,
+          url: aiToolForm.url,
+          comments: aiToolForm.comments
+        }).select().single();
+
+        if (aiToolForm.companies.length > 0 && data) {
+          await supabase.from('ai_tool_companies').insert(
+            aiToolForm.companies.map(companyId => ({
+              ai_tool_id: data.id,
+              company_id: companyId
+            }))
+          );
+        }
+      }
+      
+      await fetchAiTools();
+      toast.success('AI Tool saved successfully');
+      setAiToolOpen(false);
+      setEditingAiTool(null);
+      setAiToolForm(emptyAiTool);
+    } catch (error) {
+      toast.error('Failed to save AI Tool');
+    }
+    setLoading(false);
+  };
+
   // Table helpers and column definitions
   const handleEditAnnouncement = (item: Announcement) => {
     setEditingAnnouncement(item);
@@ -870,6 +955,20 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     toast.success('FAQ deleted');
   };
 
+  const handleEditAiTool = (item: AiTool) => {
+    setEditingAiTool(item);
+    setAiToolForm(item);
+    setAiToolOpen(true);
+  };
+
+  const deleteAiTool = async (id: string) => {
+    if (!confirm('Delete this AI Tool?')) return;
+    await supabase.from('ai_tool_companies').delete().eq('ai_tool_id', id);
+    await supabase.from('ai_tools').delete().eq('id', id);
+    await fetchAiTools();
+    toast.success('AI Tool deleted');
+  };
+
   const faqColumns: Column<Faq>[] = [
     { key: 'question', label: 'Question', initialWidth: 200 },
     { key: 'answer', label: 'Answer', initialWidth: 200 },
@@ -888,6 +987,29 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             <Pencil className="h-4 w-4" />
           </Button>
           <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => deleteFaq(item.id)}>
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const aiToolColumns: Column<AiTool>[] = [
+    { key: 'ai_tool', label: 'AI Tool', initialWidth: 200 },
+    { key: 'url', label: 'URL', initialWidth: 200 },
+    { key: 'comments', label: 'Comments', initialWidth: 200 },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      initialWidth: 80,
+      render: (item) => (
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditAiTool(item)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => deleteAiTool(item.id)}>
             <Trash2 className="h-4 w-4 text-red-500" />
           </Button>
         </div>
@@ -1510,6 +1632,91 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+          </section>
+
+          {/* AI Tools */}
+          <section>
+            <h3 className="text-forest-green font-semibold flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              AI Tools
+            </h3>
+            <Dialog open={aiToolOpen} onOpenChange={setAiToolOpen}>
+              <SortableTable
+                data={aiTools}
+                columns={aiToolColumns}
+                toolbar={(columnsButton) => (
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add AI Tool
+                      </Button>
+                    </DialogTrigger>
+                    {columnsButton}
+                  </div>
+                )}
+              />
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>{editingAiTool ? 'Edit AI Tool' : 'Add AI Tool'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="ai-tool-name">AI Tool Name</Label>
+                    <Input
+                      id="ai-tool-name"
+                      value={aiToolForm.ai_tool}
+                      onChange={(e) => setAiToolForm({ ...aiToolForm, ai_tool: e.target.value })}
+                      placeholder="Enter AI tool name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="ai-tool-url">URL</Label>
+                    <Input
+                      id="ai-tool-url"
+                      value={aiToolForm.url}
+                      onChange={(e) => setAiToolForm({ ...aiToolForm, url: e.target.value })}
+                      placeholder="Enter tool URL"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="ai-tool-comments">Comments</Label>
+                    <Textarea
+                      id="ai-tool-comments"
+                      value={aiToolForm.comments}
+                      onChange={(e) => setAiToolForm({ ...aiToolForm, comments: e.target.value })}
+                      placeholder="Enter comments or instructions"
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label>Assign to Companies</Label>
+                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-2">
+                      {companies.map((company) => (
+                        <div key={company.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`ai-tool-company-${company.id}`}
+                            checked={aiToolForm.companies.includes(company.id)}
+                            onCheckedChange={() =>
+                              setAiToolForm({
+                                ...aiToolForm,
+                                companies: toggleSelection(aiToolForm.companies, company.id)
+                              })
+                            }
+                          />
+                          <Label htmlFor={`ai-tool-company-${company.id}`}>{company.name}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={saveAiTool} disabled={loading}>
+                    {loading ? 'Saving...' : 'Save'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </section>
         </CardContent>
       </Card>

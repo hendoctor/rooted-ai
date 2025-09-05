@@ -83,6 +83,54 @@ export type Database = {
           },
         ]
       }
+      ai_tool_companies: {
+        Row: {
+          ai_tool_id: string
+          company_id: string
+          created_at: string
+        }
+        Insert: {
+          ai_tool_id: string
+          company_id: string
+          created_at?: string
+        }
+        Update: {
+          ai_tool_id?: string
+          company_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      ai_tools: {
+        Row: {
+          ai_tool: string
+          comments: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          ai_tool: string
+          comments?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          ai_tool?: string
+          comments?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       announcement_companies: {
         Row: {
           announcement_id: string
