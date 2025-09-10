@@ -54,14 +54,23 @@ export default function CompanyPage() {
 
   const fetchCompany = async () => {
     try {
+      // Use maybeSingle() to avoid errors when no rows are returned due to RLS
       const { data: company, error } = await supabase
         .from('companies')
         .select('*')
         .eq('slug', slug)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        toast.error('Company not found');
+        console.error('Database error:', error);
+        toast.error('Failed to load company details');
+        setAccessChecked(true);
+        return;
+      }
+
+      if (!company) {
+        // No company found or no access due to RLS
+        setAccessChecked(true);
         return;
       }
 
@@ -70,14 +79,6 @@ export default function CompanyPage() {
         ...company,
         settings: (company.settings as CompanySettings) || {}
       };
-      
-      // Check access permissions
-      const canAccess = checkCompanyAccess(companyData.id);
-      
-      if (!canAccess) {
-        setAccessChecked(true);
-        return;
-      }
       
       setCompany(companyData);
       setFormData({
@@ -92,18 +93,14 @@ export default function CompanyPage() {
     } catch (error) {
       console.error('Error fetching company:', error);
       toast.error('Failed to load company details');
+      setAccessChecked(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const checkCompanyAccess = (companyId: string): boolean => {
-    // Admin has access to all companies
-    if (userRole === 'Admin') return true;
-    
-    // Check if user is a member of this company
-    return companies.some(c => c.id === companyId);
-  };
+  // Remove this function since RLS policies handle access control
+  // The database will only return companies the user has access to
 
   const handleSave = async () => {
     if (!company) return;
@@ -179,9 +176,27 @@ export default function CompanyPage() {
     );
   }
 
-  // Show access denied if access was checked and denied
+  // Show access denied if access was checked and no company was found
   if (accessChecked && !company) {
-    return <Navigate to="/access-denied" replace />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+            <CardDescription>
+              You don't have permission to access this company's settings, or the company doesn't exist.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link to="/">
+              <Button variant="outline" className="w-full">
+                Return to Home
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (!company) {
