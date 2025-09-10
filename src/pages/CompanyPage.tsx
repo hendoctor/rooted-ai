@@ -219,18 +219,19 @@ export default function CompanyPage() {
       <Header />
       <div className="container mx-auto py-8 px-4 flex-1 mt-16">
         <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
             <div>
               <h1 className="text-3xl font-bold">{company.name}</h1>
               <p className="text-muted-foreground">Company Dashboard</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Link to={`/${company.slug}`}>
-                  <Button variant="outline">Back to Client Portal</Button>
+                  <Button variant="outline" className="w-full sm:w-auto">Back to Client Portal</Button>
                 </Link>
               <Button
                 onClick={() => (editing ? handleSave() : setEditing(true))}
                 variant={editing ? 'default' : 'outline'}
+                className="w-full sm:w-auto"
               >
                 {editing ? 'Save Changes' : 'Edit Details'}
               </Button>
