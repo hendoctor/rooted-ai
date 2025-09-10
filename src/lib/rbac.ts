@@ -18,7 +18,8 @@ const permissions: RolePermissions = {
     dashboard: ['Admin', 'Manager'],
     reports: ['Admin', 'Manager'],
     profile: ['Admin', 'Manager', 'User'],
-    'rbac-demo': ['Admin', 'Manager', 'User']
+    'rbac-demo': ['Admin', 'Manager', 'User'],
+    'client-portal': ['Admin', 'Manager', 'User']
   },
   crud: {
     users: {
@@ -27,6 +28,16 @@ const permissions: RolePermissions = {
       User: ['read']
     },
     todos: {
+      Admin: ['create', 'read', 'update', 'delete'],
+      Manager: ['read', 'update'],
+      User: ['read']
+    },
+    'client-portal': {
+      Admin: ['create', 'read', 'update', 'delete'],
+      Manager: ['read', 'update'],
+      User: ['read']
+    },
+    companies: {
       Admin: ['create', 'read', 'update', 'delete'],
       Manager: ['read', 'update'],
       User: ['read']
