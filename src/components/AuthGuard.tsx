@@ -37,7 +37,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
     }
   }, [loading]);
 
-  // Show loading state with recovery option
+  // Show loading state with recovery option and timeout
   if (loading) {
     return fallback || (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -45,18 +45,17 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
           <LoadingSpinner />
           <p className="text-muted-foreground">Loading your session...</p>
           {showRefreshOption && (
-            <div className="mt-8">
+            <div className="mt-8 space-y-2">
               <Button 
                 variant="outline"
-                onClick={() => {
-                  if ('forceRefresh' in authData) {
-                    (authData as any).forceRefresh();
-                  }
-                }}
+                onClick={() => window.location.reload()}
                 className="text-sm"
               >
-                Taking too long? Click to refresh
+                Refresh Page
               </Button>
+              <p className="text-xs text-muted-foreground">
+                If this continues, try refreshing the page
+              </p>
             </div>
           )}
         </div>

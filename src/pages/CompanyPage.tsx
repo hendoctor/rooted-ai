@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -46,13 +46,38 @@ export default function CompanyPage() {
     address: ''
   });
 
+  // Add loading timeout protection
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  
   useEffect(() => {
     if (!authLoading && user && slug && userRole) {
+      // Clear any existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      // Set timeout for loading protection
+      timeoutRef.current = setTimeout(() => {
+        if (loading) {
+          setLoading(false);
+          setAccessChecked(true);
+          console.warn('Company loading timeout - stopping loading state');
+        }
+      }, 8000);
+      
       fetchCompany();
     }
-  }, [user, authLoading, slug, userRole, companies]);
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [user, authLoading, slug, userRole]);
 
   const fetchCompany = async () => {
+    setLoading(true);
+    
     try {
       // Use maybeSingle() to avoid errors when no rows are returned due to RLS
       const { data: company, error } = await supabase
@@ -64,12 +89,14 @@ export default function CompanyPage() {
       if (error) {
         console.error('Database error:', error);
         toast.error('Failed to load company details');
+        setLoading(false);
         setAccessChecked(true);
         return;
       }
 
       if (!company) {
         // No company found or no access due to RLS
+        setLoading(false);
         setAccessChecked(true);
         return;
       }
@@ -96,6 +123,10 @@ export default function CompanyPage() {
       setAccessChecked(true);
     } finally {
       setLoading(false);
+      // Clear timeout when loading completes
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     }
   };
 

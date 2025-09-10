@@ -50,11 +50,26 @@ const ClientPortal: React.FC = () => {
   }, [userRole, slug, companyFromList]);
 
   const company = companyFromList || (userRole === 'Admin' ? adminCompany : undefined);
-  // Redirect to first company if no slug provided
+  // Navigation timeout ref
+  const navigationTimeoutRef = React.useRef<NodeJS.Timeout>();
+  
+  // Redirect to first company if no slug provided (with timeout protection)
   useEffect(() => {
-    if (!loading && !slug && companies.length > 0) {
-      navigate(`/${companies[0].slug}`, { replace: true });
+    if (navigationTimeoutRef.current) {
+      clearTimeout(navigationTimeoutRef.current);
     }
+    
+    if (!loading && !slug && companies.length > 0) {
+      navigationTimeoutRef.current = setTimeout(() => {
+        navigate(`/${companies[0].slug}`, { replace: true });
+      }, 100); // Small delay to prevent rapid navigation
+    }
+    
+    return () => {
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+    };
   }, [slug, companies, navigate, loading]);
 
   const companySlug = company?.slug;
@@ -67,14 +82,44 @@ const ClientPortal: React.FC = () => {
   const [faqs, setFaqs] = useState<Array<{ id: string; question: string; answer: string }>>([]);
   const [aiTools, setAiTools] = useState<Array<{ id: string; ai_tool: string; url?: string; comments?: string }>>([]);
 
-useEffect(() => {
-  if (!company?.id) return;
-  const companyId = company.id;
+  // Data loading state
+  const [dataLoading, setDataLoading] = React.useState(false);
+  const loadingTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const abortControllerRef = React.useRef<AbortController>();
+
+  useEffect(() => {
+    if (!company?.id || dataLoading) return;
+    
+    const companyId = company.id;
+    
+    // Clear previous timeout and abort controller
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
+    setDataLoading(true);
+    
+    // Set timeout protection (10 seconds)
+    loadingTimeoutRef.current = setTimeout(() => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        console.warn('Data loading timeout - aborting requests');
+        setDataLoading(false);
+      }
+    }, 10000);
 
     const loadData = async () => {
       console.log('Loading client portal content for company:', companyId);
       
       try {
+        if (signal.aborted) return;
         // Announcements
         const { data: annData, error: annError } = await supabase
           .from('announcements')
@@ -208,16 +253,40 @@ useEffect(() => {
           );
         }
       } catch (error) {
-        console.error('Error loading client portal content:', error);
+        if (!signal.aborted) {
+          console.error('Error loading client portal content:', error);
+        }
+      } finally {
+        if (!signal.aborted) {
+          setDataLoading(false);
+          if (loadingTimeoutRef.current) {
+            clearTimeout(loadingTimeoutRef.current);
+          }
+        }
       }
     };
 
     loadData();
-  }, [company?.id]);
+    
+    // Cleanup function
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [company?.id, dataLoading]);
 
-  if (loading) {
+  if (loading || dataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p>Loading your portal...</p>
+        </div>
+      </div>
     );
   }
 

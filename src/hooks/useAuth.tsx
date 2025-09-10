@@ -41,13 +41,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
   // Fetch user profile data using the new simplified function
-  const fetchUserProfile = useCallback(async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string, abortSignal?: AbortSignal) => {
     if (!userId) {
       console.warn('No userId provided to fetchUserProfile');
       return { role: 'Client', companies: [] };
+    }
+
+    if (isRefreshing) {
+      console.warn('Profile fetch already in progress, skipping');
+      return { role: userRole || 'Client', companies };
     }
 
     console.log('👤 Fetching user profile for:', userId);
@@ -57,6 +63,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { data, error } = await supabase.rpc('get_user_profile', {
         p_user_id: userId
       });
+
+      if (abortSignal?.aborted) {
+        console.log('Profile fetch aborted');
+        return { role: 'Client', companies: [] };
+      }
 
       if (error) {
         console.error('Error fetching user profile:', error);
@@ -86,13 +97,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('✅ User profile loaded successfully:', { role, companiesCount: companiesData.length });
       return { role, companies: companiesData };
     } catch (error) {
+      if (abortSignal?.aborted) {
+        console.log('Profile fetch aborted');
+        return { role: 'Client', companies: [] };
+      }
       console.error('Failed to fetch user profile:', error);
       setError('Failed to load user profile');
       return { role: 'Client', companies: [] };
     }
-  }, []);
+  }, [isRefreshing, userRole, companies]);
 
-  // Handle auth state changes
+  // Handle auth state changes with debouncing
   const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
     console.log('🔄 Auth state change:', event, !!newSession?.user);
 
@@ -101,6 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(newSession.user);
       setSession(newSession);
       setError(null);
+      setIsRefreshing(true);
 
       // Fetch user profile data
       try {
@@ -112,6 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError('Failed to load user profile');
       } finally {
         setLoading(false);
+        setIsRefreshing(false);
       }
     } else {
       // User signed out
@@ -122,6 +139,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setCompanies([]);
       setError(null);
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, [fetchUserProfile]);
 
@@ -156,15 +174,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return routes;
   }, [user, userRole, companies]);
 
-  // Refresh auth data
+  // Refresh auth data with debouncing
   const refreshAuth = useCallback(async () => {
-    if (!user?.id) {
-      console.warn('No user ID available for refresh');
+    if (!user?.id || isRefreshing) {
+      console.warn('No user ID available for refresh or already refreshing');
       return;
     }
 
     console.log('🔄 Refreshing auth data...');
-    setLoading(true);
+    setIsRefreshing(true);
     setError(null);
 
     try {
@@ -176,9 +194,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Failed to refresh auth:', error);
       setError('Failed to refresh authentication');
     } finally {
-      setLoading(false);
+      setIsRefreshing(false);
     }
-  }, [user?.id, fetchUserProfile]);
+  }, [user?.id, isRefreshing, fetchUserProfile]);
 
   // Sign out
   const signOut = useCallback(async () => {
