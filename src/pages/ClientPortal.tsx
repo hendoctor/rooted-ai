@@ -18,12 +18,38 @@ const ClientPortal: React.FC = () => {
   const { user, userRole, companies, loading } = useAuth();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  // Local admin override for accessing any company by slug
+  const [adminCompany, setAdminCompany] = useState<{ id: string; name?: string; slug: string } | null>(null);
+  const [adminCompanyLoading, setAdminCompanyLoading] = useState(false);
 
-  // Find the company by slug or use the first available company
-  const company = slug 
-    ? companies.find(c => c.slug === slug)
-    : companies[0];
+  // Find the company by slug or use the first available company; admins can access any slug
+  const companyFromList = slug ? companies.find(c => c.slug === slug) : companies[0];
 
+  useEffect(() => {
+    if (userRole === 'Admin' && slug && !companyFromList) {
+      let cancelled = false;
+      setAdminCompanyLoading(true);
+      (async () => {
+        try {
+          const { data } = await supabase
+            .from('companies')
+            .select('id, name, slug')
+            .eq('slug', slug)
+            .single();
+          if (!cancelled) setAdminCompany(data as any);
+        } catch (e) {
+          if (!cancelled) setAdminCompany(null);
+        } finally {
+          if (!cancelled) setAdminCompanyLoading(false);
+        }
+      })();
+      return () => { cancelled = true; };
+    } else {
+      setAdminCompany(null);
+    }
+  }, [userRole, slug, companyFromList]);
+
+  const company = companyFromList || (userRole === 'Admin' ? adminCompany : undefined);
   // Redirect to first company if no slug provided
   useEffect(() => {
     if (!loading && !slug && companies.length > 0) {
@@ -200,6 +226,21 @@ useEffect(() => {
   }
 
   if (!company) {
+    if (userRole === 'Admin') {
+      if (adminCompanyLoading) {
+        return (
+          <div className="min-h-screen flex items-center justify-center">Loading...</div>
+        );
+      }
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <h2 className="text-lg font-semibold">Company Not Found</h2>
+            <p className="text-muted-foreground">This company slug does not exist.</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
