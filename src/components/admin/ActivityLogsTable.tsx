@@ -348,7 +348,7 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-forest-green">
           <Clock className="h-5 w-5" />
           Activity Logs
         </CardTitle>

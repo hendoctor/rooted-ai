@@ -1022,9 +1022,6 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Activity Logs Section */}
-        <ActivityLogsTable />
-
         {/* Newsletter Subscriptions Section */}
         <Card>
           <CardHeader className="space-y-4">
@@ -1099,7 +1096,10 @@ const AdminDashboard: React.FC = () => {
         <ClientInvitationManager companies={allCompanies} />
         
         <PortalContentManager companies={allCompanies} currentAdmin={user?.email || ""} />
-        
+
+        {/* Activity Logs Section */}
+        <ActivityLogsTable />
+
         <AdminPermissionDebugger />
       </div>
       <Footer />
