@@ -1,6 +1,5 @@
 
 import React from 'react';
-import PermissionDebugger from '@/components/PermissionDebugger';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
 import About from '@/components/About';
@@ -14,7 +13,6 @@ import PWAUpdateNotification from '@/components/PWAUpdateNotification';
 const Index = () => {
   return (
     <div className="min-h-screen">
-      <PermissionDebugger />
       <Header />
       <main>
         <Hero />

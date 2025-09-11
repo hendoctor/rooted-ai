@@ -18,6 +18,7 @@ import { LoadingSpinner, InlineLoader } from '@/components/LoadingSpinner';
 import PortalContentManager from '@/components/admin/PortalContentManager';
 import ClientInvitationManager from '@/components/admin/ClientInvitationManager';
 import AdminInvitationManager from '@/components/admin/AdminInvitationManager';
+import AdminPermissionDebugger from '@/components/admin/AdminPermissionDebugger';
 import { Link } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
 
@@ -1122,6 +1123,8 @@ const AdminDashboard: React.FC = () => {
         <ClientInvitationManager companies={allCompanies} />
         
         <PortalContentManager companies={allCompanies} currentAdmin={user?.email || ""} />
+        
+        <AdminPermissionDebugger />
       </div>
       <Footer />
     </div>
