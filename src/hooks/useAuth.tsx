@@ -258,7 +258,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
       
       // If we have valid stored data, use it immediately and clear loading
-      if (hasValidStoredData && storedRole !== 'Client') {
+      if (hasValidStoredData) {
         console.log('⚡ Using stored auth data for instant restore');
         setUserRole(storedRole);
         setCompanies(JSON.parse(storedCompanies));
@@ -291,7 +291,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
         }, 100);
       } else {
-        // No valid stored data or role is Client - fetch fresh profile
+        // No valid stored data - fetch fresh profile
         console.log('🔍 No valid stored data, fetching fresh profile...');
         setLoading(false); // Clear loading state immediately for responsive UI
         
