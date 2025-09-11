@@ -47,7 +47,7 @@ const ClientPortal: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Portal data
+  // Portal data with loading state
   const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; date: string; summary?: string; content?: string; url?: string; status?: 'New' | 'Important'; }>>([]);
   const [resources, setResources] = useState<Array<{ id: string; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string }>>([]);
   const [usefulLinks, setUsefulLinks] = useState<Array<{ id: string; title: string; url: string }>>([]);
@@ -55,6 +55,8 @@ const ClientPortal: React.FC = () => {
   const [kpis, setKpis] = useState<Array<{ name: string; value: string; target?: string }>>([]);
   const [faqs, setFaqs] = useState<Array<{ id: string; question: string; answer: string }>>([]);
   const [aiTools, setAiTools] = useState<Array<{ id: string; ai_tool: string; url?: string; comments?: string }>>([]);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [dataError, setDataError] = useState<string | null>(null);
 
   // Initialize company and redirect if needed
   useEffect(() => {
@@ -124,15 +126,46 @@ const ClientPortal: React.FC = () => {
     initializeCompany();
   }, [user, userRole, companies, slug, navigate]);
 
-  // Load portal data when company is available
+  // Enhanced portal data loading with better error handling and retry logic
   useEffect(() => {
     const loadPortalData = async () => {
-      if (!company?.id) return;
+      if (!company?.id || !user || !userRole) {
+        console.log('📊 Skipping portal data load - missing requirements:', {
+          companyId: company?.id,
+          user: !!user,
+          userRole
+        });
+        return;
+      }
 
-      console.log(`📊 Loading portal data for company: ${company.id}`);
+      console.log(`📊 Loading portal data for company: ${company.id} (${company.name || company.slug})`);
+      setDataLoading(true);
+      setDataError(null);
 
       try {
-        // Load all portal data in parallel
+        // Clear existing data first to prevent stale data display
+        setAnnouncements([]);
+        setResources([]);
+        setUsefulLinks([]);
+        setNextSession(undefined);
+        setKpis([]);
+        setFaqs([]);
+        setAiTools([]);
+
+        // Load all portal data in parallel with retry logic
+        const loadWithRetry = async (queryFn: () => Promise<any>, retries = 2): Promise<any> => {
+          for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+              const result = await queryFn();
+              return result;
+            } catch (error) {
+              console.warn(`Query attempt ${attempt + 1} failed:`, error);
+              if (attempt === retries) throw error;
+              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
+            }
+          }
+        };
+
         const [
           announcementsResult,
           resourcesResult,
@@ -142,67 +175,92 @@ const ClientPortal: React.FC = () => {
           faqsResult,
           aiToolsResult
         ] = await Promise.allSettled([
-          supabase
-            .from('announcements')
-            .select(`
-              id, title, summary, content, url, created_at,
-              announcement_companies!inner(company_id)
-            `)
-            .eq('announcement_companies.company_id', company.id)
-            .order('created_at', { ascending: false }),
+          loadWithRetry(async () => {
+            const result = await supabase
+              .from('announcements')
+              .select(`
+                id, title, summary, content, url, created_at,
+                announcement_companies!inner(company_id)
+              `)
+              .eq('announcement_companies.company_id', company.id)
+              .order('created_at', { ascending: false });
+            return result;
+          }),
 
-          supabase
-            .from('portal_resources')
-            .select(`
-              id, title, description, link, category,
-              portal_resource_companies!inner(company_id)
-            `)
-            .eq('portal_resource_companies.company_id', company.id),
+          loadWithRetry(async () => {
+            const result = await supabase
+              .from('portal_resources')
+              .select(`
+                id, title, description, link, category,
+                portal_resource_companies!inner(company_id)
+              `)
+              .eq('portal_resource_companies.company_id', company.id);
+            return result;
+          }),
 
-          supabase
-            .from('useful_links')
-            .select(`
-              id, title, url, description,
-              useful_link_companies!inner(company_id)
-            `)
-            .eq('useful_link_companies.company_id', company.id),
+          loadWithRetry(async () => {
+            const result = await supabase
+              .from('useful_links')
+              .select(`
+                id, title, url, description,
+                useful_link_companies!inner(company_id)
+              `)
+              .eq('useful_link_companies.company_id', company.id);
+            return result;
+          }),
 
-          supabase
-            .from('adoption_coaching')
-            .select(`
-              id, topic, description, steps, media, contact,
-              adoption_coaching_companies!inner(company_id)
-            `)
-            .eq('adoption_coaching_companies.company_id', company.id),
+          loadWithRetry(async () => {
+            const result = await supabase
+              .from('adoption_coaching')
+              .select(`
+                id, topic, description, steps, media, contact,
+                adoption_coaching_companies!inner(company_id)
+              `)
+              .eq('adoption_coaching_companies.company_id', company.id);
+            return result;
+          }),
 
-          supabase
-            .from('reports')
-            .select(`
-              id, name, period, kpis, notes, link,
-              report_companies!inner(company_id)
-            `)
-            .eq('report_companies.company_id', company.id)
-            .order('created_at', { ascending: false }),
+          loadWithRetry(async () => {
+            const result = await supabase
+              .from('reports')
+              .select(`
+                id, name, period, kpis, notes, link,
+                report_companies!inner(company_id)
+              `)
+              .eq('report_companies.company_id', company.id)
+              .order('created_at', { ascending: false });
+            return result;
+          }),
 
-          supabase
-            .from('faqs')
-            .select(`
-              id, question, answer, category,
-              faq_companies!inner(company_id)
-            `)
-            .eq('faq_companies.company_id', company.id),
+          loadWithRetry(async () => {
+            const result = await supabase
+              .from('faqs')
+              .select(`
+                id, question, answer, category,
+                faq_companies!inner(company_id)
+              `)
+              .eq('faq_companies.company_id', company.id);
+            return result;
+          }),
 
-          supabase
-            .from('ai_tools')
-            .select(`
-              id, ai_tool, url, comments,
-              ai_tool_companies!inner(company_id)
-            `)
-            .eq('ai_tool_companies.company_id', company.id)
+          loadWithRetry(async () => {
+            const result = await supabase
+              .from('ai_tools')
+              .select(`
+                id, ai_tool, url, comments,
+                ai_tool_companies!inner(company_id)
+              `)
+              .eq('ai_tool_companies.company_id', company.id);
+            return result;
+          })
         ]);
 
+        // Process results with better error handling
+        let loadedCount = 0;
+        const totalSections = 7;
+
         // Process announcements
-        if (announcementsResult.status === 'fulfilled' && announcementsResult.value.data) {
+        if (announcementsResult.status === 'fulfilled' && announcementsResult.value?.data) {
           const formattedAnnouncements = announcementsResult.value.data.map((item: any) => ({
             id: item.id,
             title: item.title,
@@ -213,10 +271,14 @@ const ClientPortal: React.FC = () => {
             status: 'New' as const
           }));
           setAnnouncements(formattedAnnouncements);
+          loadedCount++;
+          console.log(`✅ Loaded ${formattedAnnouncements.length} announcements`);
+        } else if (announcementsResult.status === 'rejected') {
+          console.error('❌ Failed to load announcements:', announcementsResult.reason);
         }
 
         // Process resources
-        if (resourcesResult.status === 'fulfilled' && resourcesResult.value.data) {
+        if (resourcesResult.status === 'fulfilled' && resourcesResult.value?.data) {
           const formattedResources = resourcesResult.value.data.map((item: any) => ({
             id: item.id,
             title: item.title,
@@ -224,51 +286,85 @@ const ClientPortal: React.FC = () => {
             href: item.link
           }));
           setResources(formattedResources);
+          loadedCount++;
+          console.log(`✅ Loaded ${formattedResources.length} resources`);
+        } else if (resourcesResult.status === 'rejected') {
+          console.error('❌ Failed to load resources:', resourcesResult.reason);
         }
 
         // Process useful links
-        if (linksResult.status === 'fulfilled' && linksResult.value.data) {
+        if (linksResult.status === 'fulfilled' && linksResult.value?.data) {
           const formattedLinks = linksResult.value.data.map((item: any) => ({
             id: item.id,
             title: item.title,
             url: item.url
           }));
           setUsefulLinks(formattedLinks);
+          loadedCount++;
+          console.log(`✅ Loaded ${formattedLinks.length} useful links`);
+        } else if (linksResult.status === 'rejected') {
+          console.error('❌ Failed to load useful links:', linksResult.reason);
         }
 
         // Process coaching (next session)
-        if (coachingResult.status === 'fulfilled' && coachingResult.value.data && coachingResult.value.data.length > 0) {
+        if (coachingResult.status === 'fulfilled' && coachingResult.value?.data && coachingResult.value.data.length > 0) {
           const coaching = coachingResult.value.data[0];
           setNextSession(coaching.topic);
+          loadedCount++;
+          console.log(`✅ Loaded coaching session: ${coaching.topic}`);
+        } else if (coachingResult.status === 'rejected') {
+          console.error('❌ Failed to load coaching:', coachingResult.reason);
         }
 
         // Process reports (KPIs)
-        if (reportsResult.status === 'fulfilled' && reportsResult.value.data && reportsResult.value.data.length > 0) {
+        if (reportsResult.status === 'fulfilled' && reportsResult.value?.data && reportsResult.value.data.length > 0) {
           const latestReport = reportsResult.value.data[0];
           if (latestReport.kpis && Array.isArray(latestReport.kpis)) {
             setKpis(latestReport.kpis as Array<{ name: string; value: string; target?: string }>);
+            loadedCount++;
+            console.log(`✅ Loaded ${latestReport.kpis.length} KPIs`);
           }
+        } else if (reportsResult.status === 'rejected') {
+          console.error('❌ Failed to load reports:', reportsResult.reason);
         }
 
         // Process FAQs
-        if (faqsResult.status === 'fulfilled' && faqsResult.value.data) {
+        if (faqsResult.status === 'fulfilled' && faqsResult.value?.data) {
           setFaqs(faqsResult.value.data);
+          loadedCount++;
+          console.log(`✅ Loaded ${faqsResult.value.data.length} FAQs`);
+        } else if (faqsResult.status === 'rejected') {
+          console.error('❌ Failed to load FAQs:', faqsResult.reason);
         }
 
         // Process AI Tools
-        if (aiToolsResult.status === 'fulfilled' && aiToolsResult.value.data) {
+        if (aiToolsResult.status === 'fulfilled' && aiToolsResult.value?.data) {
           setAiTools(aiToolsResult.value.data);
+          loadedCount++;
+          console.log(`✅ Loaded ${aiToolsResult.value.data.length} AI tools`);
+        } else if (aiToolsResult.status === 'rejected') {
+          console.error('❌ Failed to load AI tools:', aiToolsResult.reason);
         }
 
-        console.log(`✅ Portal data loaded successfully for ${company.name || company.slug}`);
+        console.log(`✅ Portal data loading completed for ${company.name || company.slug}: ${loadedCount}/${totalSections} sections loaded successfully`);
+        
+        // Show toast if some sections failed to load
+        if (loadedCount < totalSections) {
+          toast.error(`Some content sections failed to load (${loadedCount}/${totalSections} loaded)`);
+          setDataError(`Only ${loadedCount} of ${totalSections} content sections loaded successfully`);
+        }
+
       } catch (err) {
-        console.error('Error loading portal data:', err);
-        toast.error('Failed to load some portal data');
+        console.error('❌ Critical error loading portal data:', err);
+        toast.error('Failed to load portal content');
+        setDataError('Failed to load portal content. Please refresh the page.');
+      } finally {
+        setDataLoading(false);
       }
     };
 
     loadPortalData();
-  }, [company?.id]);
+  }, [company?.id, user, userRole, slug]); // Added user, userRole, slug as dependencies
 
   // Check access - Any member can view the portal
   const hasAccess = company?.id && (userRole === 'Admin' || isMemberOfCompany(company.id));
@@ -426,10 +522,25 @@ const ClientPortal: React.FC = () => {
           </div>
         )}
 
-        {/* Empty state if no content */}
-        {announcements.length === 0 && resources.length === 0 && usefulLinks.length === 0 && aiTools.length === 0 && !nextSession && kpis.length === 0 && (
+        {/* Data loading indicator */}
+        {dataLoading && (
+          <div className="text-center py-8">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Loading portal content...</p>
+          </div>
+        )}
+
+        {/* Data error indicator */}
+        {dataError && (
+          <div className="text-center py-4">
+            <p className="text-sm text-orange-600 dark:text-orange-400">{dataError}</p>
+          </div>
+        )}
+
+        {/* Empty state if no content and not loading */}
+        {!dataLoading && announcements.length === 0 && resources.length === 0 && usefulLinks.length === 0 && aiTools.length === 0 && !nextSession && kpis.length === 0 && (
           <EmptyState 
-            message="Your portal content is being prepared. Check back soon!"
+            message={dataError ? "Some content failed to load. Please refresh the page." : "Your portal content is being prepared. Check back soon!"}
           />
         )}
       </div>
