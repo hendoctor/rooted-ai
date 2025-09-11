@@ -86,6 +86,42 @@ const AdminDashboard: React.FC = () => {
   const [userToAdd, setUserToAdd] = useState('');
   const { toast } = useToast();
 
+  // Enhanced data loading with auth state handling
+  useEffect(() => {
+    console.log('📊 AdminDashboard effect:', { loading, user: !!user, isAdmin, userRole });
+
+    // Still loading auth state - wait
+    if (loading) {
+      console.log('⏳ Auth still loading, waiting...');
+      return;
+    }
+
+    // Auth loaded but no user - no need to fetch data
+    if (!user) {
+      console.log('❌ No user found after auth load');
+      return;
+    }
+
+    // User exists but not admin - no need to fetch data
+    if (!isAdmin) {
+      console.log('❌ User is not admin, role:', userRole);
+      return;
+    }
+
+    // Admin authenticated - fetch data
+    console.log('✅ Admin authenticated, fetching data...');
+    setLoadingData(true); // Set loading only when we start fetching
+    fetchAllData();
+    const cleanup = setupRealtimeSubscriptions();
+
+    // Log admin dashboard access
+    if (user?.id && user?.email) {
+      activityLogger.logPageView(user.id, user.email, 'Admin Dashboard').catch(console.error);
+    }
+
+    return cleanup;
+  }, [user, loading, isAdmin, userRole]);
+
   // Unified loading state - show loading only if auth is loading OR we're fetching data
   const showLoading = loading || loadingData;
 
@@ -110,42 +146,6 @@ const AdminDashboard: React.FC = () => {
   if (!user || !isAdmin) {
     return <AccessDenied />;
   }
-
-  // Enhanced data loading with auth state handling
-  useEffect(() => {
-    console.log('📊 AdminDashboard effect:', { loading, user: !!user, isAdmin, userRole });
-    
-    // Still loading auth state - wait
-    if (loading) {
-      console.log('⏳ Auth still loading, waiting...');
-      return;
-    }
-    
-    // Auth loaded but no user - no need to fetch data
-    if (!user) {
-      console.log('❌ No user found after auth load');
-      return;
-    }
-    
-    // User exists but not admin - no need to fetch data
-    if (!isAdmin) {
-      console.log('❌ User is not admin, role:', userRole);
-      return;
-    }
-    
-    // Admin authenticated - fetch data
-    console.log('✅ Admin authenticated, fetching data...');
-    setLoadingData(true); // Set loading only when we start fetching
-    fetchAllData();
-    const cleanup = setupRealtimeSubscriptions();
-    
-    // Log admin dashboard access
-    if (user?.id && user?.email) {
-      activityLogger.logPageView(user.id, user.email, 'Admin Dashboard').catch(console.error);
-    }
-    
-    return cleanup;
-  }, [user, loading, isAdmin, userRole]);
 
   const fetchAllData = async () => {
     try {
