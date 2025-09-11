@@ -284,144 +284,275 @@ const ClientPortal: React.FC = () => {
           </div>
         </div>
 
-        {/* Content Loading State */}
+        {/* Content Loading State - Dashboard Skeleton */}
         {contentLoading && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-48 w-full" />
-              ))}
+          <div className="dashboard-layout">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Main content skeleton */}
+              <div className="lg:col-span-8 space-y-6">
+                <Skeleton className="h-32 w-full" />
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-32 w-full" />
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full" />
+                  ))}
+                </div>
+              </div>
+              {/* Sidebar skeleton */}
+              <div className="lg:col-span-4 space-y-6">
+                <Skeleton className="h-40 w-full" />
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Portal Content */}
+        {/* Portal Content - Dashboard Layout */}
         {!contentLoading && (
-          <div className="space-y-8">
-            {/* KPIs Section */}
-            {content.kpis.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-2xl font-semibold">Key Performance Indicators</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {content.kpis.map((kpi: any, index: number) => (
-                    <Suspense key={index} fallback={<Skeleton className="h-48 w-full" />}>
-                      <KPITile 
-                        label={kpi.name || 'KPI'} 
-                        value={kpi.value || '0'} 
-                        target={kpi.target}
-                      />
-                    </Suspense>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="dashboard-layout">
+            {/* Dashboard Grid Container */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              
+              {/* Main Dashboard Area - Left Column */}
+              <div className="lg:col-span-8 space-y-6">
+                
+                {/* At-a-Glance Summary */}
+                <Card className="bg-gradient-to-br from-forest-green/5 to-sage/10 border-forest-green/20 animate-fade-in">
+                  <CardHeader>
+                    <CardTitle className="text-forest-green">Dashboard Overview</CardTitle>
+                    <CardDescription>Your personalized content summary</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 bg-background/50 rounded-lg">
+                        <div className="text-2xl font-bold text-forest-green">{content.announcements.length}</div>
+                        <div className="text-sm text-muted-foreground">Announcements</div>
+                      </div>
+                      <div className="text-center p-3 bg-background/50 rounded-lg">
+                        <div className="text-2xl font-bold text-forest-green">{content.resources.length}</div>
+                        <div className="text-sm text-muted-foreground">Resources</div>
+                      </div>
+                      <div className="text-center p-3 bg-background/50 rounded-lg">
+                        <div className="text-2xl font-bold text-forest-green">{content.ai_tools.length}</div>
+                        <div className="text-sm text-muted-foreground">AI Tools</div>
+                      </div>
+                      <div className="text-center p-3 bg-background/50 rounded-lg">
+                        <div className="text-2xl font-bold text-forest-green">{content.useful_links.length}</div>
+                        <div className="text-sm text-muted-foreground">Quick Links</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-            {/* Coaching Section */}
-            {content.coaching.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-2xl font-semibold">Upcoming Sessions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {content.coaching.map((session) => (
-                    <Card key={session.id}>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {session.topic}
-                        </CardTitle>
-                        {session.description && (
-                          <CardDescription>{session.description}</CardDescription>
-                        )}
-                      </CardHeader>
-                      <CardContent>
-                        <Suspense fallback={<Skeleton className="h-8 w-full" />}>
-                          <CoachingCard nextSession={session.contact} />
-                        </Suspense>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
+                {/* KPIs Dashboard Widget */}
+                {content.kpis.length > 0 && (
+                  <div className="animate-slide-up">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-semibold text-forest-green">Performance Metrics</h2>
+                      <div className="w-2 h-2 bg-forest-green rounded-full animate-pulse"></div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {content.kpis.map((kpi: any, index: number) => (
+                        <div key={index} className="animate-scale-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+                            <div className="card-energy">
+                              <KPITile 
+                                label={kpi.name || 'KPI'} 
+                                value={kpi.value || '0'} 
+                                target={kpi.target}
+                              />
+                            </div>
+                          </Suspense>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            {/* Announcements Section */}
-            {content.announcements.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-2xl font-semibold">Announcements</h2>
-                <div className="space-y-4">
-                  {content.announcements.map((announcement: any) => (
-                    <Suspense key={announcement.id} fallback={<Skeleton className="h-32 w-full" />}>
-                      <AnnouncementCard 
-                        title={announcement.title}
-                        date={new Date(announcement.created_at).toLocaleDateString()}
-                        summary={announcement.summary}
-                        content={announcement.content}
-                        url={announcement.url}
-                        status="New"
-                      />
-                    </Suspense>
-                  ))}
-                </div>
-              </div>
-            )}
+                {/* Announcements Widget */}
+                {content.announcements.length > 0 && (
+                  <div className="animate-slide-up-delayed">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-semibold text-forest-green">Latest Updates</h2>
+                      <div className="text-sm bg-forest-green/10 text-forest-green px-2 py-1 rounded-full">
+                        {content.announcements.length} new
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {content.announcements.slice(0, 3).map((announcement: any, index: number) => (
+                        <div key={announcement.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Suspense fallback={<Skeleton className="h-24 w-full" />}>
+                            <div className="interactive-scale">
+                              <AnnouncementCard 
+                                title={announcement.title}
+                                date={new Date(announcement.created_at).toLocaleDateString()}
+                                summary={announcement.summary}
+                                content={announcement.content}
+                                url={announcement.url}
+                                status="New"
+                              />
+                            </div>
+                          </Suspense>
+                        </div>
+                      ))}
+                      {content.announcements.length > 3 && (
+                        <Card className="bg-muted/30 border-dashed">
+                          <CardContent className="p-4 text-center">
+                            <p className="text-muted-foreground text-sm">
+                              +{content.announcements.length - 3} more announcements available
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-            {/* Resources Section */}
-            {content.resources.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-2xl font-semibold">Resources</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {content.resources.map((resource: any) => (
-                    <Suspense key={resource.id} fallback={<Skeleton className="h-48 w-full" />}>
-                      <ResourceCard 
-                        title={resource.title}
-                        type={resource.category || 'Guide'}
-                        href={resource.link}
-                      />
-                    </Suspense>
-                  ))}
-                </div>
+                {/* Resources Grid Widget */}
+                {content.resources.length > 0 && (
+                  <div className="animate-slide-up-delayed-2">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-semibold text-forest-green">Resource Library</h2>
+                      <div className="text-sm text-muted-foreground">{content.resources.length} available</div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {content.resources.slice(0, 4).map((resource: any, index: number) => (
+                        <div key={resource.id} className="animate-elastic-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+                            <div className="card-energy">
+                              <ResourceCard 
+                                title={resource.title}
+                                type={resource.category || 'Guide'}
+                                href={resource.link}
+                              />
+                            </div>
+                          </Suspense>
+                        </div>
+                      ))}
+                    </div>
+                    {content.resources.length > 4 && (
+                      <div className="mt-4 text-center">
+                        <Card className="bg-muted/30 border-dashed">
+                          <CardContent className="p-4">
+                            <p className="text-muted-foreground text-sm">
+                              +{content.resources.length - 4} more resources in your library
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
 
-            {/* AI Tools Section */}
-            {content.ai_tools.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-2xl font-semibold">AI Tools</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {content.ai_tools.map((tool: any) => (
-                    <Suspense key={tool.id} fallback={<Skeleton className="h-48 w-full" />}>
-                      <AiToolCard 
-                        title={tool.ai_tool}
-                        url={tool.url}
-                        comments={tool.comments}
-                      />
-                    </Suspense>
-                  ))}
-                </div>
-              </div>
-            )}
+              {/* Right Sidebar - Quick Access */}
+              <div className="lg:col-span-4 space-y-6">
+                
+                {/* Coaching Sessions Widget */}
+                {content.coaching.length > 0 && (
+                  <div className="animate-slide-left">
+                    <h3 className="text-lg font-semibold text-forest-green mb-4">Upcoming Sessions</h3>
+                    <div className="space-y-3">
+                      {content.coaching.map((session, index) => (
+                        <Card key={session.id} className="interactive-lift bg-gradient-to-r from-sage/5 to-forest-green/5">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-base">
+                              <Calendar className="h-4 w-4 text-forest-green" />
+                              {session.topic}
+                            </CardTitle>
+                            {session.description && (
+                              <CardDescription className="text-sm">{session.description}</CardDescription>
+                            )}
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <Suspense fallback={<Skeleton className="h-8 w-full" />}>
+                              <CoachingCard nextSession={session.contact} />
+                            </Suspense>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            {/* Useful Links Section */}
-            {content.useful_links.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-2xl font-semibold">Useful Links</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {content.useful_links.map((link: any) => (
-                    <Suspense key={link.id} fallback={<Skeleton className="h-48 w-full" />}>
-                      <UsefulLinkCard 
-                        title={link.title}
-                        url={link.url}
-                      />
-                    </Suspense>
-                  ))}
-                </div>
+                {/* AI Tools Widget */}
+                {content.ai_tools.length > 0 && (
+                  <div className="animate-slide-left-delayed">
+                    <h3 className="text-lg font-semibold text-forest-green mb-4">AI Toolkit</h3>
+                    <div className="space-y-3">
+                      {content.ai_tools.slice(0, 3).map((tool: any, index: number) => (
+                        <div key={tool.id} className="animate-spring-up" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Suspense fallback={<Skeleton className="h-20 w-full" />}>
+                            <div className="interactive-scale">
+                              <AiToolCard 
+                                title={tool.ai_tool}
+                                url={tool.url}
+                                comments={tool.comments}
+                              />
+                            </div>
+                          </Suspense>
+                        </div>
+                      ))}
+                      {content.ai_tools.length > 3 && (
+                        <Card className="bg-muted/30 border-dashed">
+                          <CardContent className="p-3 text-center">
+                            <p className="text-muted-foreground text-xs">
+                              +{content.ai_tools.length - 3} more tools
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick Links Widget */}
+                {content.useful_links.length > 0 && (
+                  <div className="animate-slide-left-delayed">
+                    <h3 className="text-lg font-semibold text-forest-green mb-4">Quick Access</h3>
+                    <div className="space-y-2">
+                      {content.useful_links.slice(0, 4).map((link: any, index: number) => (
+                        <div key={link.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Suspense fallback={<Skeleton className="h-16 w-full" />}>
+                            <div className="interactive-lift">
+                              <UsefulLinkCard 
+                                title={link.title}
+                                url={link.url}
+                              />
+                            </div>
+                          </Suspense>
+                        </div>
+                      ))}
+                      {content.useful_links.length > 4 && (
+                        <Card className="bg-muted/30 border-dashed">
+                          <CardContent className="p-2 text-center">
+                            <p className="text-muted-foreground text-xs">
+                              +{content.useful_links.length - 4} more links
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Empty State */}
             {!hasAnyContent && (
-              <Suspense fallback={<Skeleton className="h-48 w-full" />}>
-                <EmptyState message="No content available for this company portal." />
-              </Suspense>
+              <div className="col-span-full animate-fade-in">
+                <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+                  <EmptyState message="No content available for this company portal." />
+                </Suspense>
+              </div>
             )}
           </div>
         )}
