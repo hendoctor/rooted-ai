@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
-import { Lock, AlertCircle } from 'lucide-react';
+import { Lock, AlertCircle, Shield } from 'lucide-react';
 import Header from '@/components/Header';
 import AccessDenied from './AccessDenied';
 import { generateSlug } from '@/lib/utils';
@@ -44,6 +44,7 @@ export default function CompanyPage() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isAdminSimulating, setIsAdminSimulating] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -64,6 +65,7 @@ export default function CompanyPage() {
 
         // Find company from user's companies first
         const userCompany = companies.find(c => c.slug === slug);
+        let foundCompany = null;
         
         if (userCompany) {
           // Fetch full company data
@@ -74,22 +76,27 @@ export default function CompanyPage() {
             .single();
 
           if (error) throw error;
-          setCompany(data as Company);
+          foundCompany = data as Company;
         } else if (userRole === 'Admin') {
-          // Admin can access any company
-          const { data, error } = await supabase
-            .from('companies')
-            .select('*')
-            .eq('slug', slug)
-            .single();
+          // If Admin and company not found in their list, try to fetch any company by slug
+          try {
+            const { data, error } = await supabase
+              .from('companies')
+              .select('*')
+              .eq('slug', slug)
+              .single();
 
-          if (error) {
-            console.error('Failed to fetch company:', error);
-            setError('Company not found');
-            return;
+            if (!error && data) {
+              foundCompany = data as Company;
+              setIsAdminSimulating(true);
+            }
+          } catch (err) {
+            console.error('Failed to fetch company for admin:', err);
           }
-
-          setCompany(data as Company);
+        }
+        
+        if (foundCompany) {
+          setCompany(foundCompany);
         } else {
           setError('Access denied to this company');
           return;
@@ -229,6 +236,17 @@ export default function CompanyPage() {
               <AlertDescription className="text-amber-800 dark:text-amber-200">
                 <strong>Read-only access:</strong> You're viewing company settings as a member. 
                 Only company administrators can edit these settings. Contact a company admin to make changes.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Admin Simulation Alert */}
+          {isAdminSimulating && (
+            <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+              <Shield className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-blue-800 dark:text-blue-200">
+                <strong>Admin Simulation Mode:</strong> You're viewing company settings as an administrator. 
+                You have full access to edit settings for <strong>{company.name}</strong>.
               </AlertDescription>
             </Alert>
           )}

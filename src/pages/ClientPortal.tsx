@@ -2,10 +2,12 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuthOptimized';
 import { usePortalContent } from '@/hooks/usePortalContent';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, AlertCircle, Settings, Phone, Calendar } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { RefreshCw, AlertCircle, Settings, Phone, Calendar, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { activityLogger } from '@/utils/activityLogger';
 import Header from '@/components/Header';
@@ -28,6 +30,7 @@ const ClientPortal: React.FC = () => {
   const [currentCompany, setCurrentCompany] = useState<any>(null);
   const [resolving, setResolving] = useState(true);
   const [accessError, setAccessError] = useState<string | null>(null);
+  const [isAdminSimulating, setIsAdminSimulating] = useState(false);
 
   // Use optimized portal content hook
   const { content, loading: contentLoading, error: contentError, refresh } = usePortalContent({
@@ -39,48 +42,77 @@ const ClientPortal: React.FC = () => {
   useEffect(() => {
     if (!authReady) return;
     
-    setResolving(true);
-    setAccessError(null);
+    const resolveCompanyAccess = async () => {
+      setResolving(true);
+      setAccessError(null);
+      setIsAdminSimulating(false);
 
-    // Handle unauthenticated users
-    if (!user) {
-      navigate('/access-denied');
-      return;
-    }
-
-    // Find company by slug
-    const company = companies?.find(c => c.slug === slug);
-    
-    if (!company) {
-      if (companies && companies.length === 1) {
-        // Single company - redirect
-        navigate(`/client-portal/${companies[0].slug}`, { replace: true });
+      // Handle unauthenticated users
+      if (!user) {
+        navigate('/access-denied');
         return;
-      } else if (!companies || companies.length === 0) {
-        setAccessError('No company access assigned. Please contact your administrator.');
-      } else {
-        setAccessError('Company not found or access denied.');
       }
+
+      // Find company by slug in user's companies first
+      let company = companies?.find(c => c.slug === slug);
+      
+      // If Admin and company not found in their list, try to fetch any company by slug
+      if (!company && userRole === 'Admin') {
+        try {
+          const { data, error } = await supabase
+            .from('companies')
+            .select('id, name, slug')
+            .eq('slug', slug)
+            .single();
+
+          if (!error && data) {
+            company = {
+              id: data.id,
+              name: data.name,
+              slug: data.slug,
+              userRole: 'Admin',
+              isAdmin: true
+            };
+            setIsAdminSimulating(true);
+          }
+        } catch (err) {
+          console.error('Failed to fetch company for admin:', err);
+        }
+      }
+      
+      if (!company) {
+        if (companies && companies.length === 1) {
+          // Single company - redirect
+          navigate(`/${companies[0].slug}`, { replace: true });
+          return;
+        } else if (!companies || companies.length === 0) {
+          setAccessError('No company access assigned. Please contact your administrator.');
+        } else {
+          setAccessError('Company not found or access denied.');
+        }
+        setResolving(false);
+        return;
+      }
+
+      // Set current company
+      setCurrentCompany(company);
       setResolving(false);
-      return;
-    }
 
-    // Set current company
-    setCurrentCompany(company);
-    setResolving(false);
+      // Fire-and-forget activity logging to prevent blocking
+      if (user?.id && user?.email) {
+        setTimeout(() => {
+          activityLogger.logCompanyAccess(
+            user.id, 
+            user.email, 
+            company.id, 
+            company.name
+          ).catch(console.error);
+        }, 0);
+      }
+    };
 
-    // Fire-and-forget activity logging to prevent blocking
-    if (user?.id && user?.email) {
-      setTimeout(() => {
-        activityLogger.logCompanyAccess(
-          user.id, 
-          user.email, 
-          company.id, 
-          company.name
-        ).catch(console.error);
-      }, 0);
-    }
-  }, [authReady, user, companies, slug, navigate]);
+    resolveCompanyAccess();
+  }, [authReady, user, companies, userRole, slug, navigate]);
 
   // Log portal view after content loads (fire-and-forget)
   useEffect(() => {
@@ -205,25 +237,51 @@ const ClientPortal: React.FC = () => {
   return (
     <div className="min-h-screen bg-background pt-16 lg:pt-20">
       <Header />
+      
+      {/* Admin Simulation Alert */}
+      {isAdminSimulating && (
+        <div className="border-b border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+          <div className="container mx-auto py-3">
+            <Alert className="border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950">
+              <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
+                <strong>Admin Simulation Mode:</strong> You're viewing this portal as an administrator. 
+                You're seeing the client experience for <strong>{currentCompany?.name}</strong>.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      )}
+      
       <div className="container mx-auto py-8 space-y-8">
         {/* Portal Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
               {currentCompany?.name || 'Client Portal'}
+              {isAdminSimulating && (
+                <span className="ml-2 text-sm font-normal text-amber-600 dark:text-amber-400">
+                  (Admin View)
+                </span>
+              )}
             </h1>
             <p className="text-muted-foreground">
-              Welcome to your personalized dashboard
+              {isAdminSimulating 
+                ? "Viewing client portal experience as administrator"
+                : "Welcome to your personalized dashboard"
+              }
             </p>
           </div>
-          {isAdmin && (
-            <Button asChild variant="outline">
-              <a href="/admin">
-                <Settings className="h-4 w-4 mr-2" />
-                Manage Content
-              </a>
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {!isAdminSimulating && isAdmin && (
+              <Button asChild variant="outline">
+                <a href="/admin">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Manage Content
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Content Loading State */}
