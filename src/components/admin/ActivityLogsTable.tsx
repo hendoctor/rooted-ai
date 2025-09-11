@@ -91,28 +91,64 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
     try {
       const offset = (page - 1) * pageSize;
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('activity_logs')
-        .select('*')
-        .ilike('user_email', filters.userEmail ? `%${filters.userEmail}%` : '%')
-        .eq('activity_type', filters.activityType || filters.activityType)
-        .eq('company_id', filters.companyId || filters.companyId)
-        .gte('created_at', filters.startDate ? filters.startDate.toISOString() : '1900-01-01')
-        .lte('created_at', filters.endDate ? filters.endDate.toISOString() : '2100-01-01')
+        .select('*');
+      
+      // Apply filters conditionally
+      if (filters.userEmail) {
+        query = query.ilike('user_email', `%${filters.userEmail}%`);
+      }
+      
+      if (filters.activityType) {
+        query = query.eq('activity_type', filters.activityType);
+      }
+      
+      if (filters.companyId) {
+        query = query.eq('company_id', filters.companyId);
+      }
+      
+      if (filters.startDate) {
+        query = query.gte('created_at', filters.startDate.toISOString());
+      }
+      
+      if (filters.endDate) {
+        query = query.lte('created_at', filters.endDate.toISOString());
+      }
+      
+      const { data, error } = await query
         .order('created_at', { ascending: false })
         .range(offset, offset + pageSize - 1);
 
       if (error) throw error;
 
-      // Get total count for pagination
-      const { count } = await supabase
+      // Get total count for pagination with same filters
+      let countQuery = supabase
         .from('activity_logs')
-        .select('*', { count: 'exact', head: true })
-        .ilike('user_email', filters.userEmail ? `%${filters.userEmail}%` : '%')
-        .eq('activity_type', filters.activityType || filters.activityType)
-        .eq('company_id', filters.companyId || filters.companyId)
-        .gte('created_at', filters.startDate ? filters.startDate.toISOString() : '1900-01-01')
-        .lte('created_at', filters.endDate ? filters.endDate.toISOString() : '2100-01-01');
+        .select('*', { count: 'exact', head: true });
+      
+      // Apply same filters for count
+      if (filters.userEmail) {
+        countQuery = countQuery.ilike('user_email', `%${filters.userEmail}%`);
+      }
+      
+      if (filters.activityType) {
+        countQuery = countQuery.eq('activity_type', filters.activityType);
+      }
+      
+      if (filters.companyId) {
+        countQuery = countQuery.eq('company_id', filters.companyId);
+      }
+      
+      if (filters.startDate) {
+        countQuery = countQuery.gte('created_at', filters.startDate.toISOString());
+      }
+      
+      if (filters.endDate) {
+        countQuery = countQuery.lte('created_at', filters.endDate.toISOString());
+      }
+      
+      const { count } = await countQuery;
 
       setActivityLogs((data || []) as ActivityLog[]);
       setTotalCount(count || 0);
