@@ -8,6 +8,32 @@ import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 // Keys used for persisting auth data across refreshes
 const ROLE_STORAGE_KEY = 'auth_user_role';
 const COMPANIES_STORAGE_KEY = 'auth_companies';
+const AUTH_STATE_KEY = 'auth_state_version';
+
+// Helper function to persist auth data safely
+const persistAuthData = (role: string, companies: Company[]) => {
+  try {
+    const timestamp = Date.now();
+    localStorage.setItem(ROLE_STORAGE_KEY, role);
+    localStorage.setItem(COMPANIES_STORAGE_KEY, JSON.stringify(companies));
+    localStorage.setItem(AUTH_STATE_KEY, timestamp.toString());
+    console.log('💾 Auth data persisted:', { role, companiesCount: companies.length, timestamp });
+  } catch (e) {
+    console.warn('Unable to persist auth data:', e);
+  }
+};
+
+// Helper function to clear auth data safely
+const clearAuthData = () => {
+  try {
+    localStorage.removeItem(ROLE_STORAGE_KEY);
+    localStorage.removeItem(COMPANIES_STORAGE_KEY);
+    localStorage.removeItem(AUTH_STATE_KEY);
+    console.log('🧹 Auth data cleared from localStorage');
+  } catch (e) {
+    console.warn('Unable to clear auth data:', e);
+  }
+};
 
 interface Company {
   id: string;
@@ -58,21 +84,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { toast } = useToast();
   const performance = usePerformanceMonitor();
 
-  // Fetch user profile data with timeout and retry
-  const fetchUserProfile = useCallback(async (userId: string): Promise<{ role: string; companies: Company[] }> => {
+  // Fetch user profile data with timeout and retry logic
+  const fetchUserProfile = useCallback(async (userId: string, attempt = 1): Promise<{ role: string; companies: Company[] }> => {
     if (!userId) {
       console.warn('No userId provided to fetchUserProfile');
-      return { role: 'Client', companies: [] };
+      throw new Error('No user ID provided');
     }
 
-    console.log('👤 Fetching user profile for:', userId);
+    console.log(`👤 Fetching user profile for: ${userId} (attempt ${attempt})`);
 
     return new Promise((resolve, reject) => {
-      // 5-second timeout for profile fetch
+      // 8-second timeout for profile fetch (increased for mobile)
       const profileTimeout = setTimeout(() => {
-        console.warn('⚠️ Profile fetch timeout - using defaults');
-        resolve({ role: 'Client', companies: [] });
-      }, 5000);
+        console.warn('⚠️ Profile fetch timeout - rejecting to preserve existing state');
+        reject(new Error('Profile fetch timeout'));
+      }, 8000);
 
       const fetchProfile = async () => {
         try {
@@ -89,12 +115,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           if (!data || data.length === 0) {
             console.warn('No user profile data returned');
-            resolve({ role: 'Client', companies: [] });
-            return;
+            throw new Error('No profile data found');
           }
 
           const profileData = data[0];
-          const role = profileData.user_role || 'Client';
+          const role = profileData.user_role;
+          
+          // Validate role - reject if invalid to prevent downgrades
+          if (!role || !['Admin', 'Client', 'Manager'].includes(role)) {
+            console.error('Invalid role returned from database:', role);
+            throw new Error('Invalid role data');
+          }
           
           // Parse companies from jsonb
           let companiesData: Company[] = [];
@@ -112,8 +143,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           resolve({ role, companies: companiesData });
         } catch (error) {
           clearTimeout(profileTimeout);
-          console.error('Failed to fetch user profile:', error);
-          reject(error);
+          console.error(`Failed to fetch user profile (attempt ${attempt}):`, error);
+          
+          // Implement retry logic with exponential backoff
+          if (attempt < 3) {
+            const retryDelay = Math.pow(2, attempt) * 1000; // 2s, 4s
+            console.log(`⏳ Retrying profile fetch in ${retryDelay}ms...`);
+            setTimeout(() => {
+              fetchUserProfile(userId, attempt + 1)
+                .then(resolve)
+                .catch(reject);
+            }, retryDelay);
+          } else {
+            reject(error);
+          }
         }
       };
 
@@ -141,29 +184,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setUserRole(role);
             setCompanies(companiesData);
             // Persist role and company info for reliable reloads
-            try {
-              localStorage.setItem(ROLE_STORAGE_KEY, role);
-              localStorage.setItem(COMPANIES_STORAGE_KEY, JSON.stringify(companiesData));
-            } catch (e) {
-              console.warn('Unable to persist auth data:', e);
-            }
+            persistAuthData(role, companiesData);
             console.log('✅ User profile loaded successfully');
           })
           .catch((error) => {
             performance.trackProfileComplete();
             console.error('Error loading user profile:', error);
-            // CRITICAL: Only set default role if no existing role (first login)
-            // For refresh scenarios, preserve existing role to prevent admin -> client regression
+            // Enhanced fallback logic - preserve existing authenticated state
             setUserRole(prevRole => {
+              // Get stored role from localStorage as backup
+              const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+              
+              // Priority order: existing role > stored role > default
               if (prevRole && prevRole !== 'Client') {
                 console.warn('⚠️ Profile fetch failed - preserving existing role:', prevRole);
                 return prevRole;
               }
-              const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
-              if (storedRole) {
+              
+              if (storedRole && storedRole !== 'Client') {
                 console.warn('⚠️ Profile fetch failed - using stored role:', storedRole);
+                setUserRole(storedRole); // Ensure localStorage sync
                 return storedRole;
               }
+              
+              // Only default to 'Client' for truly new users
+              console.log('📝 New user - defaulting to Client role');
               return 'Client';
             });
             setCompanies(prevCompanies => {
@@ -183,16 +228,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setCompanies([]);
       setError(null);
       setLoading(false);
-      try {
-        localStorage.removeItem(ROLE_STORAGE_KEY);
-        localStorage.removeItem(COMPANIES_STORAGE_KEY);
-      } catch (e) {
-        console.warn('Unable to clear persisted auth data:', e);
-      }
+      clearAuthData();
     }
   }, [fetchUserProfile]);
 
-  // Refresh auth data - preserve existing role on failure
+  // Enhanced refresh auth data with better state preservation
   const refreshAuth = useCallback(async () => {
     if (!user?.id) {
       console.warn('No user ID available for refresh');
@@ -202,24 +242,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('🔄 Refreshing auth data...');
     setError(null);
 
+    // Capture current state before attempting refresh
+    const currentRole = userRole;
+    const currentCompanies = companies;
+
     try {
       const { role, companies: companiesData } = await fetchUserProfile(user.id);
+      
+      // Validate role change - prevent downgrades without explicit admin action
+      if (currentRole === 'Admin' && role !== 'Admin') {
+        console.warn('⚠️ Potential admin role downgrade detected - preserving admin role');
+        console.warn(`Current: ${currentRole}, New: ${role}`);
+        return; // Don't apply the change
+      }
+      
       setUserRole(role);
       setCompanies(companiesData);
-      try {
-        localStorage.setItem(ROLE_STORAGE_KEY, role);
-        localStorage.setItem(COMPANIES_STORAGE_KEY, JSON.stringify(companiesData));
-      } catch (e) {
-        console.warn('Unable to persist refreshed auth data:', e);
-      }
+      
+      // Persist to localStorage immediately
+      persistAuthData(role, companiesData);
       console.log('✅ Auth data refreshed successfully');
     } catch (error) {
       console.error('Failed to refresh auth:', error);
-      // CRITICAL: Don't reset role on refresh failure - preserve existing state
+      
+      // Enhanced fallback logic - check localStorage for consistency
+      const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+      const storedCompanies = localStorage.getItem(COMPANIES_STORAGE_KEY);
+      
+      if (storedRole && storedRole !== currentRole) {
+        console.log('🔄 Syncing role from localStorage:', storedRole);
+        setUserRole(storedRole);
+      }
+      
+      if (storedCompanies) {
+        try {
+          const parsedCompanies = JSON.parse(storedCompanies);
+          if (parsedCompanies.length !== currentCompanies.length) {
+            console.log('🔄 Syncing companies from localStorage');
+            setCompanies(parsedCompanies);
+          }
+        } catch (e) {
+          console.warn('Failed to parse stored companies:', e);
+        }
+      }
+      
       console.warn('⚠️ Preserving existing auth state due to refresh failure');
-      setError('Failed to refresh authentication data');
+      setError('Profile data temporarily unavailable');
     }
-  }, [user?.id, fetchUserProfile]);
+  }, [user?.id, userRole, companies, fetchUserProfile]);
 
   // Sign out
   const signOut = useCallback(async () => {
@@ -228,12 +298,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       await supabase.auth.signOut();
       // Clear any persisted auth data
-      try {
-        localStorage.removeItem(ROLE_STORAGE_KEY);
-        localStorage.removeItem(COMPANIES_STORAGE_KEY);
-      } catch (e) {
-        console.warn('Unable to clear persisted auth data:', e);
-      }
+      clearAuthData();
       // State will be cleared by handleAuthStateChange
       window.location.href = '/';
     } catch (error) {
