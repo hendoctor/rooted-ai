@@ -28,7 +28,7 @@ import RBACDemo from "./pages/RBACDemo";
 
 // Enhanced loading wrapper with mobile optimizations
 const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { loading, error, refreshAuth, clearError, user, userRole } = useAuth();
+  const { loading, authReady, error, refreshAuth, clearError, user, userRole } = useAuth();
   const performance = usePerformanceMonitor();
   
   // Progressive loading states
@@ -68,8 +68,8 @@ const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Show progressive loading with enhanced messages
-  if (loading) {
+  // Show progressive loading with enhanced messages - only when not auth ready
+  if (loading || !authReady) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
         <div className="flex flex-col items-center gap-3">

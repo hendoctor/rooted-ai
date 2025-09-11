@@ -1,5 +1,5 @@
-// Mobile-optimized authentication hook - best practices implementation
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+// Optimized authentication hook - single responsibility, no race conditions
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +50,7 @@ interface AuthContextType {
   userRole: string | null;
   companies: Company[];
   loading: boolean;
+  authReady: boolean;
   error: string | null;
   
   // Actions
@@ -89,20 +90,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   });
   
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const performance = usePerformanceMonitor();
 
-  // Enhanced user profile fetch with better error handling and validation
+  // Debouncing and deduplication refs
+  const profileFetchRef = useRef<Promise<{ role: string; companies: Company[] }> | null>(null);
+  const lastProfileFetchRef = useRef<number>(0);
+  const authStateProcessingRef = useRef<boolean>(false);
+
+  // Debounced and deduplicated user profile fetch
   const fetchUserProfile = useCallback(async (userId: string, attempt = 1): Promise<{ role: string; companies: Company[] }> => {
     if (!userId) {
       console.warn('❌ No userId provided to fetchUserProfile');
       throw new Error('No user ID provided');
     }
 
-    console.log(`👤 Fetching user profile for: ${userId} (attempt ${attempt})`);
+    // Deduplication: return existing promise if one is in progress
+    const now = Date.now();
+    if (profileFetchRef.current && (now - lastProfileFetchRef.current) < 5000) {
+      console.log('🔄 Using existing profile fetch promise');
+      return profileFetchRef.current;
+    }
 
-    return new Promise((resolve, reject) => {
+    console.log(`👤 Fetching user profile for: ${userId} (attempt ${attempt})`);
+    lastProfileFetchRef.current = now;
+
+    const promise = new Promise<{ role: string; companies: Company[] }>((resolve, reject) => {
       // 12-second timeout for profile fetch (increased for mobile/slow connections)
       const profileTimeout = setTimeout(() => {
         console.warn('⚠️ Profile fetch timeout - preserving existing state');
@@ -234,10 +249,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       fetchProfile();
     });
+
+    profileFetchRef.current = promise;
+    
+    // Clear the promise reference when completed
+    promise.finally(() => {
+      if (profileFetchRef.current === promise) {
+        profileFetchRef.current = null;
+      }
+    });
+
+    return promise;
   }, []);
 
-  // Enhanced auth state change handler with better preservation logic
+  // Atomic auth state change handler - prevents race conditions
   const handleAuthStateChange = useCallback((event: string, newSession: Session | null) => {
+    // Prevent concurrent processing of auth state changes
+    if (authStateProcessingRef.current) {
+      console.log('🔄 Auth state change already processing, queuing...');
+      setTimeout(() => handleAuthStateChange(event, newSession), 100);
+      return;
+    }
+
+    authStateProcessingRef.current = true;
     console.log('🔄 Auth state change:', event, !!newSession?.user, 'existing role:', userRole);
 
     if (newSession?.user) {
@@ -304,7 +338,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setUserRole(role);
               setCompanies(companiesData);
               persistAuthData(role, companiesData);
-              setLoading(false); // Only set loading false AFTER userRole is set
+              setLoading(false);
+              setAuthReady(true); // Mark auth as fully ready
               
               // Log login activity for fresh profile
               const primaryCompany = companiesData.length > 0 ? companiesData[0] : null;
@@ -328,7 +363,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setUserRole(fallbackRole);
               setCompanies(fallbackCompanies);
               setError('Profile data temporarily unavailable');
-              setLoading(false); // Set loading false after fallback data is set
+              setLoading(false);
+              setAuthReady(true); // Mark as ready even with fallback data
             });
         }, 0);
       }
@@ -341,8 +377,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setCompanies([]);
       setError(null);
       setLoading(false);
+      setAuthReady(false);
       clearAuthData();
     }
+    
+    authStateProcessingRef.current = false;
   }, [fetchUserProfile, userRole]);
 
   // Enhanced refresh auth data with better state preservation
@@ -556,6 +595,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     userRole,
     companies,
     loading,
+    authReady,
     error,
     signOut,
     refreshAuth,
@@ -576,6 +616,7 @@ export const useAuth = (): AuthContextType => {
       userRole: null,
       companies: [],
       loading: true,
+      authReady: false,
       error: null,
       signOut: async () => {},
       refreshAuth: async () => {},
