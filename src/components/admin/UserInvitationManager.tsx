@@ -375,7 +375,7 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
           </Button>
           <Button
             size="sm"
-            variant="outline"
+            variant="destructive"
             onClick={() => deleteInvitation(inv.id)}
           >
             <Trash2 className="h-3 w-3" />
@@ -391,7 +391,7 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
               </Button>
               <Button
                 size="sm"
-                variant="outline"
+                variant="destructive"
                 onClick={() => cancelInvitation(inv.id)}
               >
                 <X className="h-3 w-3" />

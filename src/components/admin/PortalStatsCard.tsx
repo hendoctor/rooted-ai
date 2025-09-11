@@ -134,10 +134,10 @@ const PortalStatsCard: React.FC<PortalStatsCardProps> = ({ stats, onEditCompany,
             </Button>
             
             <Button
-              variant="outline"
+              variant="destructive"
               size="sm"
               onClick={() => onDeleteCompany?.(stats.company_id)}
-              className="w-full text-xs hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+              className="w-full text-xs"
             >
               <Trash2 className="w-3 h-3 mr-1" />
               Delete
