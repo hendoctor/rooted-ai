@@ -35,7 +35,7 @@ interface Company {
 export default function CompanyPage() {
   const { slug } = useParams<{ slug: string }>();
   const { user, userRole, companies } = useAuth();
-  const { hasRoleForCompany } = usePermissions();
+  const { hasRoleForCompany, isMemberOfCompany, isAdminOfCompany } = usePermissions();
   
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -176,8 +176,9 @@ export default function CompanyPage() {
     setEditing(false);
   };
 
-  // Check access - Allow Admins and Clients to edit their own companies
-  const hasAccess = hasRoleForCompany(['Admin', 'Client'], company?.id) || userRole === 'Admin';
+  // Check access and edit permissions
+  const hasAccess = company?.id && (userRole === 'Admin' || isMemberOfCompany(company.id));
+  const canEdit = company?.id && (userRole === 'Admin' || isAdminOfCompany(company.id));
 
   if (loading) {
     return (
@@ -298,23 +299,34 @@ export default function CompanyPage() {
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-4">
-                {!editing ? (
-                  <Button onClick={() => setEditing(true)}>
-                    Edit Information
-                  </Button>
-                ) : (
-                  <>
-                    <Button onClick={handleSave} disabled={saving}>
-                      {saving ? 'Saving...' : 'Save Changes'}
+              {/* Action Buttons - Only show if user can edit */}
+              {canEdit && (
+                <div className="flex gap-2 pt-4">
+                  {!editing ? (
+                    <Button onClick={() => setEditing(true)}>
+                      Edit Information
                     </Button>
-                    <Button variant="outline" onClick={handleCancel} disabled={saving}>
-                      Cancel
-                    </Button>
-                  </>
-                )}
-              </div>
+                  ) : (
+                    <>
+                      <Button onClick={handleSave} disabled={saving}>
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                      <Button variant="outline" onClick={handleCancel} disabled={saving}>
+                        Cancel
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
+              
+              {/* Read-only message for non-admin clients */}
+              {!canEdit && hasAccess && (
+                <div className="pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    You can view company information but cannot make changes. Contact an administrator to edit company details.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

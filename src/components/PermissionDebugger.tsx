@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const PermissionDebugger: React.FC = () => {
   const { user, userRole, companies } = useAuth();
-  const { canAccessPage, canPerformAction, hasRoleForCompany, capabilities } = usePermissions();
+  const { canAccessPage, canPerformAction, hasRoleForCompany, isMemberOfCompany, isAdminOfCompany, capabilities } = usePermissions();
 
   if (!user) {
     return (
@@ -51,6 +51,8 @@ const PermissionDebugger: React.FC = () => {
         <div>
           <h3 className="font-semibold">Role Checks:</h3>
           <p>Has Client role for first company: {companies[0] ? hasRoleForCompany(['Client'], companies[0].id) ? '✅' : '❌' : 'No companies'}</p>
+          <p>Is member of first company: {companies[0] ? isMemberOfCompany(companies[0].id) ? '✅' : '❌' : 'No companies'}</p>
+          <p>Is admin of first company: {companies[0] ? isAdminOfCompany(companies[0].id) ? '✅' : '❌' : 'No companies'}</p>
           <p>Has Admin role: {hasRoleForCompany(['Admin']) ? '✅' : '❌'}</p>
         </div>
         

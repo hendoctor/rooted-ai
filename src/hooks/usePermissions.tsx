@@ -22,16 +22,50 @@ export const usePermissions = () => {
     return canCRUD(role, resource, action);
   }, [userRole]);
 
-  // Check if user has required roles for a company
+  // Check if user has membership access to a company (any membership role)
+  const isMemberOfCompany = useCallback((companyId?: string): boolean => {
+    if (!userRole || !user || !companyId) return false;
+    
+    // Admin always has access
+    if (userRole === 'Admin') return true;
+    
+    // Check if user is a member of the company (any role)
+    return companies.some(c => c.id === companyId);
+  }, [userRole, user, companies]);
+
+  // Check if user has admin privileges for a company
+  const isAdminOfCompany = useCallback((companyId?: string): boolean => {
+    if (!userRole || !user) return false;
+    
+    // Global admin always has admin privileges
+    if (userRole === 'Admin') return true;
+    
+    // Check if user has admin role within the company
+    if (companyId) {
+      return companies.some(c => c.id === companyId && c.isAdmin === true);
+    }
+    
+    return false;
+  }, [userRole, user, companies]);
+
+  // Check if user has required roles for a company (updated logic)
   const hasRoleForCompany = useCallback((roles: string[], companyId?: string): boolean => {
     if (!userRole || !user) return false;
 
     // Admin always has access
     if (userRole === 'Admin') return true;
 
-    // Check global role
+    // For Client access - check if they're requesting Client role and are a member
+    if (roles.includes('Client') && userRole === 'Client') {
+      if (companyId) {
+        // Client users only need to be members of the company for basic access
+        return isMemberOfCompany(companyId);
+      }
+      return true;
+    }
+
+    // For other roles, check specific company role permissions
     if (roles.includes(userRole)) {
-      // If company-specific check needed, verify access
       if (companyId) {
         return companies.some(c => c.id === companyId && roles.includes(c.userRole));
       }
@@ -39,7 +73,7 @@ export const usePermissions = () => {
     }
 
     return false;
-  }, [userRole, user, companies]);
+  }, [userRole, user, companies, isMemberOfCompany]);
 
   // Get accessible routes
   const getAccessibleRoutes = useCallback((): string[] => {
@@ -88,6 +122,8 @@ export const usePermissions = () => {
     canAccessPage,
     canPerformAction,
     hasRoleForCompany,
+    isMemberOfCompany,
+    isAdminOfCompany,
     getAccessibleRoutes,
     accessiblePages: accessiblePagesList,
     capabilities,

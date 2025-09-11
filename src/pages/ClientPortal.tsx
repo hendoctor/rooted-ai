@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 
 const ClientPortal: React.FC = () => {
   const { user, userRole, companies } = useAuth();
-  const { hasRoleForCompany } = usePermissions();
+  const { hasRoleForCompany, isMemberOfCompany } = usePermissions();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
 
@@ -241,8 +241,8 @@ const ClientPortal: React.FC = () => {
     loadPortalData();
   }, [company?.id]);
 
-  // Check access
-  const hasAccess = hasRoleForCompany(['Admin', 'Manager', 'Client'], company?.id);
+  // Check access - Any member can view the portal
+  const hasAccess = company?.id && (userRole === 'Admin' || isMemberOfCompany(company.id));
 
   if (loading) {
     return (
