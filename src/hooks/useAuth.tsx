@@ -92,6 +92,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
     console.log('🔄 Auth state change:', event, !!newSession?.user);
 
+    // Always clear loading state regardless of outcome
+    const finalizeAuth = () => {
+      setLoading(false);
+    };
+
     if (newSession?.user) {
       // Set basic auth state immediately
       setUser(newSession.user);
@@ -103,11 +108,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { role, companies: companiesData } = await fetchUserProfile(newSession.user.id);
         setUserRole(role);
         setCompanies(companiesData);
+        console.log('✅ User authenticated successfully');
       } catch (error) {
         console.error('Error loading user profile during auth change:', error);
-        setError('Failed to load user profile');
+        // Set default values on profile fetch failure but still consider user authenticated
+        setUserRole('Client');
+        setCompanies([]);
+        setError('Profile data unavailable, using defaults');
       } finally {
-        setLoading(false);
+        finalizeAuth();
       }
     } else {
       // User signed out
@@ -117,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUserRole(null);
       setCompanies([]);
       setError(null);
-      setLoading(false);
+      finalizeAuth();
     }
   }, [fetchUserProfile]);
 
