@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { useMobileOptimizations } from './useMobileOptimizations';
-import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Enhanced hook to handle mobile app focus/refresh scenarios
@@ -15,7 +14,7 @@ export const useVisibilityRefresh = () => {
   const inFlightRef = useRef(false);
   const MIN_INTERVAL = 15000; // 15s throttle between refreshes
 
-  const tryRefresh = async (reason: string) => {
+  const tryRefresh = (reason: string) => {
     if (!user) return;
     const now = Date.now();
     if (inFlightRef.current) return;
@@ -24,17 +23,12 @@ export const useVisibilityRefresh = () => {
     inFlightRef.current = true;
     console.log(`🔄 Auth refresh triggered (${reason})`);
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        await refreshAuth();
-      }
-    } catch (e) {
-      console.warn('Auth refresh error (ignored):', e);
-    } finally {
-      lastRefreshRef.current = Date.now();
-      inFlightRef.current = false;
-    }
+    Promise.resolve(refreshAuth())
+      .catch((e) => console.warn('Auth refresh error (ignored):', e))
+      .finally(() => {
+        lastRefreshRef.current = Date.now();
+        inFlightRef.current = false;
+      });
   };
 
   useEffect(() => {
