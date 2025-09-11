@@ -283,6 +283,34 @@ export function usePerformanceMonitor() {
     return summary;
   }, [location.pathname, collectMetrics]);
 
+  // Auth-specific tracking methods
+  const trackAuthInit = useCallback(() => {
+    mark('auth-init');
+  }, [mark]);
+
+  const trackAuthComplete = useCallback(() => {
+    mark('auth-complete');
+    measure('auth-init-duration', 'auth-init', 'auth-complete');
+  }, [mark, measure]);
+
+  const trackProfileFetch = useCallback(() => {
+    mark('profile-fetch-start');
+  }, [mark]);
+
+  const trackProfileComplete = useCallback(() => {
+    mark('profile-fetch-complete');
+    measure('profile-fetch-duration', 'profile-fetch-start', 'profile-fetch-complete');
+  }, [mark, measure]);
+
+  const trackTotalLoad = useCallback(() => {
+    mark('total-auth-load-start');
+  }, [mark]);
+
+  const trackTotalComplete = useCallback(() => {
+    mark('total-auth-load-complete');
+    measure('total-auth-load-duration', 'total-auth-load-start', 'total-auth-load-complete');
+  }, [mark, measure]);
+
   return {
     mark,
     measure,
@@ -290,6 +318,13 @@ export function usePerformanceMonitor() {
     trackInteraction,
     logPerformanceEvent,
     getPerformanceSummary,
-    sessionId: sessionId.current
+    sessionId: sessionId.current,
+    // Auth-specific methods
+    trackAuthInit,
+    trackAuthComplete,
+    trackProfileFetch,
+    trackProfileComplete,
+    trackTotalLoad,
+    trackTotalComplete
   };
 }

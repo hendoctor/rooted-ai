@@ -7,6 +7,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useVisibilityRefresh } from "@/hooks/useVisibilityRefresh";
+import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -24,36 +26,86 @@ import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 import RBACDemo from "./pages/RBACDemo";
 
-// Simplified loading wrapper
+// Enhanced loading wrapper with mobile optimizations
 const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { loading, error, refreshAuth, clearError } = useAuth();
+  const { loading, error, refreshAuth, clearError, user, userRole } = useAuth();
+  const performance = usePerformanceMonitor();
+  
+  // Progressive loading states
+  const loadingState = useProgressiveLoading(loading, !!user, !!userRole);
   
   // Enable mobile-specific auth refresh on visibility changes
   useVisibilityRefresh();
 
-  // Show error with recovery options
+  // Track performance
+  React.useEffect(() => {
+    if (loading) {
+      performance.trackTotalLoad();
+    } else {
+      performance.trackTotalComplete();
+    }
+  }, [loading, performance]);
+
+  // Show error with enhanced recovery options
   if (error) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 p-8">
         <div className="text-center space-y-2">
           <h2 className="text-lg font-semibold text-foreground">Authentication Error</h2>
           <p className="text-sm text-muted-foreground max-w-md">{error}</p>
+          <div className="text-xs text-muted-foreground/70 mt-2">
+            Try refreshing or check your connection
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={refreshAuth}>Retry</Button>
-          <Button variant="outline" onClick={clearError}>Continue</Button>
-          <Button variant="ghost" onClick={() => window.location.reload()}>Refresh Page</Button>
+        <div className="flex gap-2 flex-wrap justify-center">
+          <Button onClick={refreshAuth} size="sm">Retry</Button>
+          <Button variant="outline" onClick={clearError} size="sm">Continue</Button>
+          <Button variant="ghost" onClick={() => window.location.reload()} size="sm">
+            Refresh Page
+          </Button>
         </div>
       </div>
     );
   }
 
-  // Show loading spinner
+  // Show progressive loading with enhanced messages
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        <div className="text-sm text-muted-foreground">Loading your account...</div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="text-sm text-muted-foreground">{loadingState.message}</div>
+          
+          {/* Progress bar */}
+          <div className="w-32 h-1 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-500 ease-out"
+              style={{ width: `${loadingState.progress}%` }}
+            />
+          </div>
+          
+          {/* Stage indicator */}
+          <div className="text-xs text-muted-foreground/70">
+            {loadingState.stage === 'checking' && '🔍'}
+            {loadingState.stage === 'authenticating' && '🔐'}
+            {loadingState.stage === 'loading-profile' && '👤'}
+            {loadingState.stage === 'almost-ready' && '✨'}
+          </div>
+        </div>
+        
+        {/* Fallback after extended loading */}
+        {loadingState.progress > 50 && (
+          <div className="mt-4 text-center">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => window.location.reload()}
+              className="text-xs"
+            >
+              Taking too long? Refresh page
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

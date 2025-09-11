@@ -1,8 +1,9 @@
-// Simplified and reliable authentication hook - best practices implementation
+// Mobile-optimized authentication hook - best practices implementation
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 
 interface Company {
   id: string;
@@ -40,8 +41,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const performance = usePerformanceMonitor();
 
-  // Fetch user profile data
+  // Fetch user profile data with timeout and retry
   const fetchUserProfile = useCallback(async (userId: string): Promise<{ role: string; companies: Company[] }> => {
     if (!userId) {
       console.warn('No userId provided to fetchUserProfile');
@@ -50,42 +52,58 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     console.log('👤 Fetching user profile for:', userId);
 
-    try {
-      const { data, error } = await supabase.rpc('get_user_profile', {
-        p_user_id: userId
-      });
+    return new Promise((resolve, reject) => {
+      // 5-second timeout for profile fetch
+      const profileTimeout = setTimeout(() => {
+        console.warn('⚠️ Profile fetch timeout - using defaults');
+        resolve({ role: 'Client', companies: [] });
+      }, 5000);
 
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        throw error;
-      }
+      const fetchProfile = async () => {
+        try {
+          const { data, error } = await supabase.rpc('get_user_profile', {
+            p_user_id: userId
+          });
 
-      if (!data || data.length === 0) {
-        console.warn('No user profile data returned');
-        return { role: 'Client', companies: [] };
-      }
+          clearTimeout(profileTimeout);
 
-      const profileData = data[0];
-      const role = profileData.user_role || 'Client';
-      
-      // Parse companies from jsonb
-      let companiesData: Company[] = [];
-      if (profileData.companies && Array.isArray(profileData.companies)) {
-        companiesData = profileData.companies.map((company: any) => ({
-          id: company.id,
-          name: company.name,
-          slug: company.slug,
-          userRole: company.userRole,
-          isAdmin: company.isAdmin
-        }));
-      }
+          if (error) {
+            console.error('Error fetching user profile:', error);
+            throw error;
+          }
 
-      console.log('✅ User profile loaded successfully:', { role, companiesCount: companiesData.length });
-      return { role, companies: companiesData };
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error);
-      throw error;
-    }
+          if (!data || data.length === 0) {
+            console.warn('No user profile data returned');
+            resolve({ role: 'Client', companies: [] });
+            return;
+          }
+
+          const profileData = data[0];
+          const role = profileData.user_role || 'Client';
+          
+          // Parse companies from jsonb
+          let companiesData: Company[] = [];
+          if (profileData.companies && Array.isArray(profileData.companies)) {
+            companiesData = profileData.companies.map((company: any) => ({
+              id: company.id,
+              name: company.name,
+              slug: company.slug,
+              userRole: company.userRole,
+              isAdmin: company.isAdmin
+            }));
+          }
+
+          console.log('✅ User profile loaded successfully:', { role, companiesCount: companiesData.length });
+          resolve({ role, companies: companiesData });
+        } catch (error) {
+          clearTimeout(profileTimeout);
+          console.error('Failed to fetch user profile:', error);
+          reject(error);
+        }
+      };
+
+      fetchProfile();
+    });
   }, []);
 
   // Handle auth state changes - SYNCHRONOUS to prevent deadlocks
@@ -101,13 +119,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Defer profile fetching to prevent auth listener deadlock
       setTimeout(() => {
+        performance.trackProfileFetch();
         fetchUserProfile(newSession.user.id)
           .then(({ role, companies: companiesData }) => {
+            performance.trackProfileComplete();
             setUserRole(role);
             setCompanies(companiesData);
             console.log('✅ User profile loaded successfully');
           })
           .catch((error) => {
+            performance.trackProfileComplete();
             console.error('Error loading user profile:', error);
             // Set default values on profile fetch failure
             setUserRole('Client');
@@ -178,6 +199,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const initAuth = async () => {
       try {
+        performance.trackAuthInit();
+        
         // Set 10-second timeout to prevent infinite loading
         authTimeout = setTimeout(() => {
           if (mounted) {
@@ -207,9 +230,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (session?.user) {
           console.log('✅ Found existing session');
+          performance.trackAuthComplete();
           handleAuthStateChange('INITIAL_SESSION', session);
         } else {
           console.log('❌ No existing session');
+          performance.trackAuthComplete();
           setLoading(false);
         }
 
