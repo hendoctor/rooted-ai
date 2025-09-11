@@ -23,7 +23,15 @@ interface PerformanceEvent {
 }
 
 export function usePerformanceMonitor() {
-  const location = useLocation();
+  // Safely handle useLocation - might be called outside Router context
+  let location: { pathname: string } | null = null;
+  try {
+    location = useLocation();
+  } catch (error) {
+    // Component is not inside Router context - use fallback
+    location = { pathname: window.location.pathname };
+  }
+  
   const sessionId = useRef(crypto.randomUUID());
   const navigationStartTime = useRef<number>();
   const routeChangeTime = useRef<number>();
@@ -158,7 +166,7 @@ export function usePerformanceMonitor() {
       const event: PerformanceEvent = {
         type,
         timestamp: Date.now(),
-        route: location.pathname,
+        route: location?.pathname || '/',
         metrics,
         userAgent: navigator.userAgent,
         sessionId: sessionId.current
@@ -198,7 +206,7 @@ export function usePerformanceMonitor() {
     } catch (error) {
       console.warn('Failed to log performance event:', error);
     }
-  }, [location.pathname, collectMetrics]);
+  }, [location?.pathname, collectMetrics]);
 
   // Track navigation start
   useEffect(() => {
@@ -221,7 +229,7 @@ export function usePerformanceMonitor() {
     }
     
     routeChangeTime.current = performance.now();
-  }, [location.pathname, mark, measure, logPerformanceEvent]);
+  }, [location?.pathname, mark, measure, logPerformanceEvent]);
 
   // Track page load completion
   useEffect(() => {
@@ -272,7 +280,7 @@ export function usePerformanceMonitor() {
     const metrics = await collectMetrics();
     
     const summary = {
-      route: location.pathname,
+      route: location?.pathname || '/',
       loadTime: navigationStartTime.current ? performance.now() - navigationStartTime.current : null,
       coreWebVitals: metrics.coreWebVitals,
       resourceCount: metrics.resourceTiming?.length || 0,
@@ -281,7 +289,7 @@ export function usePerformanceMonitor() {
     };
 
     return summary;
-  }, [location.pathname, collectMetrics]);
+  }, [location?.pathname, collectMetrics]);
 
   // Auth-specific tracking methods
   const trackAuthInit = useCallback(() => {
