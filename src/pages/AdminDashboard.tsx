@@ -59,6 +59,25 @@ interface NewsletterSubscription {
 const AdminDashboard: React.FC = () => {
   const { user, loading, userRole } = useAuth();
   const isAdmin = userRole === 'Admin';
+  
+  // Show loading or access denied immediately if auth isn't ready
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pt-16 lg:pt-20">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-muted-foreground">Loading admin dashboard...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user || !isAdmin) {
+    return <AccessDenied />;
+  }
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRole[]>([]);
   const [allCompanies, setAllCompanies] = useState<CompanyWithCount[]>([]);
   const [newsletterSubscriptions, setNewsletterSubscriptions] = useState<NewsletterSubscription[]>([]);
@@ -83,23 +102,37 @@ const AdminDashboard: React.FC = () => {
   const [userToAdd, setUserToAdd] = useState('');
   const { toast } = useToast();
 
-  // Simplified data loading
+  // Enhanced data loading with auth state handling
   useEffect(() => {
-    console.log('📊 AdminDashboard effect:', { loading, user: !!user, isAdmin });
+    console.log('📊 AdminDashboard effect:', { loading, user: !!user, isAdmin, userRole });
     
-    if (loading) return;
+    // Still loading auth state - wait
+    if (loading) {
+      console.log('⏳ Auth still loading, waiting...');
+      return;
+    }
     
-    if (!user || !isAdmin) {
-      console.log('❌ Not admin or no user, stopping data load');
+    // Auth loaded but no user - clear loading
+    if (!user) {
+      console.log('❌ No user found after auth load');
       setLoadingData(false);
       return;
     }
     
+    // User exists but not admin - clear loading
+    if (!isAdmin) {
+      console.log('❌ User is not admin, role:', userRole);
+      setLoadingData(false);
+      return;
+    }
+    
+    // Admin authenticated - fetch data
     console.log('✅ Admin authenticated, fetching data...');
+    setLoadingData(true); // Ensure loading state is set
     fetchAllData();
     const cleanup = setupRealtimeSubscriptions();
     return cleanup;
-  }, [user, loading, isAdmin]);
+  }, [user, loading, isAdmin, userRole]);
 
   const fetchAllData = async () => {
     try {

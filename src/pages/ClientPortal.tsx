@@ -18,10 +18,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const ClientPortal: React.FC = () => {
-  const { user, userRole, companies } = useAuth();
+  const { user, userRole, companies, loading: authLoading } = useAuth();
   const { hasRoleForCompany, isMemberOfCompany } = usePermissions();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  
+  // Show loading if auth is still loading
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background pt-16 lg:pt-20">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-muted-foreground">Loading your portal...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user || !userRole) {
+    return <AccessDenied />;
+  }
 
   // State
   const [company, setCompany] = useState<{ id: string; name?: string; slug: string } | null>(null);
@@ -41,11 +60,19 @@ const ClientPortal: React.FC = () => {
   useEffect(() => {
     const initializeCompany = async () => {
       try {
+        console.log('🏢 Initializing company:', { user: !!user, userRole, companiesCount: companies.length, slug });
         setLoading(true);
         setError(null);
 
+        // Wait for auth to be ready
+        if (!user || !userRole) {
+          console.log('⏳ Waiting for auth to be ready...');
+          return;
+        }
+
         // If no slug provided, redirect to first company
         if (!slug && companies.length > 0) {
+          console.log(`🔀 No slug, redirecting to first company: ${companies[0].slug}`);
           navigate(`/${companies[0].slug}`, { replace: true });
           return;
         }
@@ -60,9 +87,11 @@ const ClientPortal: React.FC = () => {
         const userCompany = companies.find(c => c.slug === slug);
         
         if (userCompany) {
+          console.log(`✅ Found user company: ${userCompany.name || userCompany.slug}`);
           setCompany(userCompany);
         } else if (userRole === 'Admin') {
           // Admin can access any company - fetch it
+          console.log(`🔍 Admin accessing company by slug: ${slug}`);
           const { data, error } = await supabase
             .from('companies')
             .select('id, name, slug')
@@ -76,8 +105,10 @@ const ClientPortal: React.FC = () => {
             return;
           }
 
+          console.log(`✅ Admin found company: ${data.name || data.slug}`);
           setCompany(data);
         } else {
+          console.log('❌ Access denied to company:', slug);
           setError('Access denied to this company');
           setLoading(false);
           return;
@@ -90,9 +121,7 @@ const ClientPortal: React.FC = () => {
       }
     };
 
-    if (user && userRole) {
-      initializeCompany();
-    }
+    initializeCompany();
   }, [user, userRole, companies, slug, navigate]);
 
   // Load portal data when company is available
