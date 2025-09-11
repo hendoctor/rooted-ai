@@ -40,8 +40,7 @@ export default defineConfig(({ mode }) => ({
           // Component chunks
           'admin-components': [
             './src/pages/AdminDashboard.tsx',
-            './src/components/admin/AdminInvitationManager.tsx',
-            './src/components/admin/ClientInvitationManager.tsx',
+            './src/components/admin/UserInvitationManager.tsx',
             './src/components/admin/PortalContentManager.tsx'
           ],
           'client-components': [
