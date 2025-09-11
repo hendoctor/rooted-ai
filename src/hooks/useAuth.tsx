@@ -130,10 +130,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           .catch((error) => {
             performance.trackProfileComplete();
             console.error('Error loading user profile:', error);
-            // Set default values on profile fetch failure
-            setUserRole('Client');
-            setCompanies([]);
-            setError('Profile data unavailable, using defaults');
+            // CRITICAL: Only set default role if no existing role (first login)
+            // For refresh scenarios, preserve existing role to prevent admin -> client regression
+            setUserRole(prevRole => {
+              if (prevRole && prevRole !== 'Client') {
+                console.warn('⚠️ Profile fetch failed - preserving existing role:', prevRole);
+                return prevRole;
+              }
+              return 'Client';
+            });
+            setCompanies(prevCompanies => prevCompanies || []);
+            setError('Profile data unavailable, using existing data');
           });
       }, 0);
     } else {
