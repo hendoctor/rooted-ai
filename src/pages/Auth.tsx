@@ -28,7 +28,7 @@ const AuthSimplified = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { user, authReady, userRole } = useAuth();
+  const { user, authReady, userRole, companies } = useAuth();
   const authManager = useAuthManager();
 
   // Enhanced navigation logic for authenticated users
@@ -41,18 +41,20 @@ const AuthSimplified = () => {
         navigate('/admin', { replace: true });
         return;
       }
-      
+
       if (userRole === 'Client') {
-        // For clients, redirect to their company page
-        // This will be handled by the main app navigation
-        navigate('/', { replace: true });
+        if (companies.length > 0) {
+          navigate(`/${companies[0].slug}`, { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
         return;
       }
-      
+
       // Default fallback
       navigate('/', { replace: true });
     }
-  }, [user, authReady, userRole, navigate]);
+  }, [user, authReady, userRole, companies, navigate]);
 
   useEffect(() => {
     // Check if this is a password recovery flow
