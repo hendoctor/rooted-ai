@@ -153,7 +153,7 @@ const AdminPermissionDebugger: React.FC = () => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-forest-green">
             <Bug className="h-5 w-5" />
             Permission Debugger
           </CardTitle>
