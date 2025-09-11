@@ -60,28 +60,10 @@ const AdminDashboard: React.FC = () => {
   const { user, loading, userRole } = useAuth();
   const isAdmin = userRole === 'Admin';
   
-  // Show loading or access denied immediately if auth isn't ready
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background pt-16 lg:pt-20">
-        <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-4">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-muted-foreground">Loading admin dashboard...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!user || !isAdmin) {
-    return <AccessDenied />;
-  }
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRole[]>([]);
   const [allCompanies, setAllCompanies] = useState<CompanyWithCount[]>([]);
   const [newsletterSubscriptions, setNewsletterSubscriptions] = useState<NewsletterSubscription[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(false); // Start as false, only set true when actually fetching
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [editForm, setEditForm] = useState({
     display_name: '',
@@ -102,6 +84,31 @@ const AdminDashboard: React.FC = () => {
   const [userToAdd, setUserToAdd] = useState('');
   const { toast } = useToast();
 
+  // Unified loading state - show loading only if auth is loading OR we're fetching data
+  const showLoading = loading || loadingData;
+
+  // Show loading screen for any loading state
+  if (showLoading) {
+    return (
+      <div className="min-h-screen bg-background pt-16 lg:pt-20">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-muted-foreground">
+              {loading ? 'Authenticating admin access...' : 'Loading dashboard data...'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show access denied only after auth is complete
+  if (!user || !isAdmin) {
+    return <AccessDenied />;
+  }
+
   // Enhanced data loading with auth state handling
   useEffect(() => {
     console.log('📊 AdminDashboard effect:', { loading, user: !!user, isAdmin, userRole });
@@ -112,23 +119,21 @@ const AdminDashboard: React.FC = () => {
       return;
     }
     
-    // Auth loaded but no user - clear loading
+    // Auth loaded but no user - no need to fetch data
     if (!user) {
       console.log('❌ No user found after auth load');
-      setLoadingData(false);
       return;
     }
     
-    // User exists but not admin - clear loading
+    // User exists but not admin - no need to fetch data
     if (!isAdmin) {
       console.log('❌ User is not admin, role:', userRole);
-      setLoadingData(false);
       return;
     }
     
     // Admin authenticated - fetch data
     console.log('✅ Admin authenticated, fetching data...');
-    setLoadingData(true); // Ensure loading state is set
+    setLoadingData(true); // Set loading only when we start fetching
     fetchAllData();
     const cleanup = setupRealtimeSubscriptions();
     return cleanup;
@@ -758,20 +763,6 @@ const AdminDashboard: React.FC = () => {
       initialWidth: 170,
     },
   ];
-
-  if (loading || loadingData) {
-    console.log('AdminDashboard: Loading state - loading:', loading, 'loadingData:', loadingData);
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="xl" text="Loading admin dashboard..." />
-      </div>
-    );
-  }
-
-  if (!user || !isAdmin) {
-    console.log('AdminDashboard: Access denied - user:', !!user, 'role:', userRole, 'isAdmin:', isAdmin);
-    return <AccessDenied />;
-  }
 
   return (
     <div className="min-h-screen bg-background">
