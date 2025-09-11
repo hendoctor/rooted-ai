@@ -165,6 +165,14 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
     }
   };
 
+  const handleRefresh = () => {
+    loadActivityLogs(currentPage);
+    toast({
+      title: 'Activity logs refreshed',
+      description: 'Latest activity logs loaded',
+    });
+  };
+
   // Load data on mount and filter changes
   useEffect(() => {
     loadActivityLogs(1);
@@ -348,14 +356,22 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Activity Logs
-        </CardTitle>
-        <CardDescription>
-          Monitor user authentication and activity across your platform. 
-          Showing {activityLogs.length} of {totalCount} activities.
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Activity Logs
+            </CardTitle>
+            <CardDescription>
+              Monitor user authentication and activity across your platform.
+              Showing {activityLogs.length} of {totalCount} activities.
+            </CardDescription>
+          </div>
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Filters */}
@@ -442,10 +458,6 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
             Clear Filters
           </Button>
 
-          <Button variant="outline" onClick={() => loadActivityLogs(currentPage)}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
         </div>
 
         {/* Table */}

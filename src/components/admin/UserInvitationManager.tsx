@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Mail, User, Shield, Building, Plus, X, ExternalLink, Clock } from 'lucide-react';
+import { UserPlus, Mail, User, Shield, Building, Plus, X, ExternalLink, Clock, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Invitation {
@@ -70,6 +70,14 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
   useEffect(() => {
     fetchInvitations();
   }, [fetchInvitations]);
+
+  const handleRefresh = () => {
+    fetchInvitations();
+    toast({
+      title: 'Invitations refreshed',
+      description: 'Latest invitations loaded',
+    });
+  };
 
   const sendInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,26 +291,30 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
 
   return (
     <Card>
-      <CardHeader className="space-y-4">
-        <CardTitle className="text-forest-green flex items-center gap-2">
-          <UserPlus className="h-5 w-5" />
-          User Invitations
-        </CardTitle>
-        <p className="text-slate-gray text-sm">
-          Invite administrators or clients to the platform
-        </p>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-forest-green hover:bg-forest-green/90 w-fit">
-              <Plus className="h-4 w-4 mr-2" />
-              Invite User
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Invite New User</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={sendInvitation} className="space-y-4">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-forest-green flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              User Invitations
+            </CardTitle>
+            <p className="text-slate-gray text-sm">
+              Invite administrators or clients to the platform
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-forest-green hover:bg-forest-green/90">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Invite User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Invite New User</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={sendInvitation} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
@@ -407,9 +419,15 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
                   Cancel
                 </Button>
               </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Button onClick={handleRefresh} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         {invitations.length === 0 ? (

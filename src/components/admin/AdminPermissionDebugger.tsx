@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-import { Bug, User } from 'lucide-react';
+import { Bug, User, RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserDebugData {
   id: string;
@@ -40,6 +41,7 @@ const AdminPermissionDebugger: React.FC = () => {
   const [debugData, setDebugData] = useState<UserDebugData | null>(null);
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
@@ -57,6 +59,14 @@ const AdminPermissionDebugger: React.FC = () => {
     } catch (error) {
       console.error('Error fetching users:', error);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchUsers();
+    toast({
+      title: 'Users refreshed',
+      description: 'Latest users loaded',
+    });
   };
 
   const fetchUserDebugData = async (userId: string) => {
@@ -142,10 +152,16 @@ const AdminPermissionDebugger: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bug className="h-5 w-5" />
-          Permission Debugger
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Bug className="h-5 w-5" />
+            Permission Debugger
+          </CardTitle>
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

@@ -17,7 +17,8 @@ import {
   HelpCircle,
   Plus,
   FileText,
-  Bot
+  Bot,
+  RefreshCw
 } from 'lucide-react';
 import SortableTable, { Column } from './SortableTable';
 import { supabase } from '@/integrations/supabase/client';
@@ -131,6 +132,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       toast.error('Failed to load data');
     }
     setLoading(false);
+  };
+
+  const handleRefresh = () => {
+    fetchAllData();
+    toast.success('Content data refreshed');
   };
 
   const fetchAnnouncements = async () => {
@@ -1021,11 +1027,19 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-forest-green">
-            <FileText className="h-5 w-5" />
-            Content Management
-          </CardTitle>
-          <CardDescription>Manage portal content for client companies.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-forest-green">
+                <FileText className="h-5 w-5" />
+                Content Management
+              </CardTitle>
+              <CardDescription>Manage portal content for client companies.</CardDescription>
+            </div>
+            <Button onClick={handleRefresh} variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-8">
           {/* Announcements */}

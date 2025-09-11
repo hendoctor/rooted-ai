@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, Edit2, Users, Building2, Crown, UserPlus, X, ExternalLink, MessageSquare, Plus } from 'lucide-react';
+import { Trash2, Edit2, Users, Building2, Crown, UserPlus, X, ExternalLink, MessageSquare, Plus, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -317,6 +317,22 @@ const AdminDashboard: React.FC = () => {
     } catch (error) {
       console.error('Error fetching newsletter subscriptions:', error);
     }
+  };
+
+  const handleRefreshUsers = () => {
+    fetchUsersWithRoles();
+    toast({
+      title: 'Users refreshed',
+      description: 'Latest users loaded',
+    });
+  };
+
+  const handleRefreshSubscriptions = () => {
+    fetchNewsletterSubscriptions();
+    toast({
+      title: 'Subscriptions refreshed',
+      description: 'Latest subscriptions loaded',
+    });
   };
 
   const openCompanyDialog = (company?: CompanyWithCount) => {
@@ -918,13 +934,21 @@ const AdminDashboard: React.FC = () => {
         {/* User Management Section */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-forest-green">
-              <Users className="h-5 w-5" />
-              User Management
-            </CardTitle>
-            <CardDescription>
-              Real-time view of all authenticated user profiles with full management capabilities.
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-forest-green">
+                  <Users className="h-5 w-5" />
+                  User Management
+                </CardTitle>
+                <CardDescription>
+                  Real-time view of all authenticated user profiles with full management capabilities.
+                </CardDescription>
+              </div>
+              <Button onClick={handleRefreshUsers} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {loadingData ? (
@@ -1026,22 +1050,32 @@ const AdminDashboard: React.FC = () => {
 
         {/* Newsletter Subscriptions Section */}
         <Card>
-          <CardHeader className="space-y-4">
-            <CardTitle className="flex items-center gap-2 text-forest-green">
-              <MessageSquare className="h-5 w-5" />
-              Newsletter Subscriptions
-            </CardTitle>
-            <CardDescription>
-              Manage newsletter subscriptions and subscriber status.
-            </CardDescription>
-            <Button
-              size="sm"
-              onClick={openNewsletterDialog}
-              className="bg-forest-green hover:bg-forest-green/90 mt-4 w-fit"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Subscriber
-            </Button>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-forest-green">
+                  <MessageSquare className="h-5 w-5" />
+                  Newsletter Subscriptions
+                </CardTitle>
+                <CardDescription>
+                  Manage newsletter subscriptions and subscriber status.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={openNewsletterDialog}
+                  className="bg-forest-green hover:bg-forest-green/90"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Subscriber
+                </Button>
+                <Button onClick={handleRefreshSubscriptions} variant="outline" size="sm">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {loadingData ? (
