@@ -293,7 +293,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         // No valid stored data - fetch fresh profile
         console.log('🔍 No valid stored data, fetching fresh profile...');
-        setLoading(false); // Clear loading state immediately for responsive UI
+        // Keep loading true until profile is fetched to prevent premature rendering
         
         setTimeout(() => {
           performance.trackProfileFetch();
@@ -304,6 +304,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setUserRole(role);
               setCompanies(companiesData);
               persistAuthData(role, companiesData);
+              setLoading(false); // Only set loading false AFTER userRole is set
               
               // Log login activity for fresh profile
               const primaryCompany = companiesData.length > 0 ? companiesData[0] : null;
@@ -327,6 +328,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setUserRole(fallbackRole);
               setCompanies(fallbackCompanies);
               setError('Profile data temporarily unavailable');
+              setLoading(false); // Set loading false after fallback data is set
             });
         }, 0);
       }

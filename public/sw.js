@@ -1,4 +1,4 @@
-const CACHE_VERSION = '1.4.0';
+const CACHE_VERSION = '1.5.0';
 const CACHE_NAME = `rooted-ai-v${CACHE_VERSION}`;
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const API_CACHE = `${CACHE_NAME}-api`;
@@ -58,9 +58,17 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Always hit the network for Supabase auth and API calls
+  // Always hit the network for Supabase auth and API calls with error handling
   if (event.request.url.includes('supabase.co')) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch((error) => {
+        console.warn('Supabase request failed:', error);
+        return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
     return;
   }
 

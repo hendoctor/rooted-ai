@@ -18,17 +18,29 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
   fallback,
   children 
 }) => {
-  const { canAccessPage, hasRoleForCompany } = usePermissions();
+  const { canAccessPage, hasRoleForCompany, userRole } = usePermissions();
+
+  // Wait for auth to be ready (userRole loaded)
+  if (userRole === undefined) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="text-sm text-muted-foreground">Loading permissions...</div>
+        </div>
+      </div>
+    );
+  }
 
   // Check page access
   if (page && !canAccessPage(page)) {
-    console.log(`🚫 Access denied to page "${page}" for role "${usePermissions().userRole}"`);
+    console.log(`🚫 Access denied to page "${page}" for role "${userRole}"`);
     return fallback || <Navigate to="/access-denied" replace />;
   }
 
   // Check role requirements
   if (requiredRoles.length > 0 && !hasRoleForCompany(requiredRoles, companyId)) {
-    console.log(`🚫 Access denied - required roles: ${requiredRoles.join(', ')}, user role: "${usePermissions().userRole}"`);
+    console.log(`🚫 Access denied - required roles: ${requiredRoles.join(', ')}, user role: "${userRole}"`);
     return fallback || <Navigate to="/access-denied" replace />;
   }
 
