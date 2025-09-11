@@ -212,10 +212,10 @@ export default function CompanyPage() {
     <div className="min-h-screen bg-background pt-16 lg:pt-20">
       <Header />
 
-      <div className="container mx-auto py-8 max-w-4xl">
+      <div className="container mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Company Settings</h1>
               <p className="text-muted-foreground mt-2">
@@ -333,7 +333,7 @@ export default function CompanyPage() {
 
               {/* Action Buttons - Only show if user can edit */}
               {canEdit && (
-                <div className="flex gap-2 pt-4">
+                <div className="flex flex-col sm:flex-row gap-2 pt-4">
                   {!editing ? (
                     <Button onClick={() => setEditing(true)}>
                       Edit Information
