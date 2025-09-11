@@ -13,7 +13,7 @@ interface Company {
 interface CachedContext {
   role: string;
   companies: Company[];
-  permissions: any;
+  permissions: Record<string, unknown>;
   timestamp: number;
 }
 
@@ -86,15 +86,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthReady(true);
   }, []);
 
-  const refreshAuth = useCallback(async () => {
-    if (!user?.id) return;
-    try {
-      await fetchContext(user.id);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to refresh auth');
-    }
-  }, [user, fetchContext]);
+    const refreshAuth = useCallback(async () => {
+      if (!user?.id) return;
+      try {
+        await fetchContext(user.id);
+        setError(null);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to refresh auth';
+        setError(message);
+      }
+    }, [user, fetchContext]);
 
   const handleSession = useCallback(
     async (sess: Session | null) => {
@@ -118,7 +119,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setUserRole(null);
         setCompanies([]);
-        setAuthReady(false);
+        // For public users without a session, mark auth as ready immediately
+        // so the application can render public routes without waiting
+        setAuthReady(true);
         clearCache();
         setLoading(false);
       }
@@ -126,17 +129,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [refreshAuth]
   );
 
-  useEffect(() => {
-    let subscription: any;
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      await handleSession(session);
-      subscription = supabase.auth.onAuthStateChange((_event, newSession) => {
-        handleSession(newSession);
-      }).data.subscription;
-    })();
-    return () => subscription?.unsubscribe();
-  }, [handleSession]);
+    useEffect(() => {
+      let subscription: { unsubscribe: () => void } | null = null;
+      (async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        await handleSession(session);
+        subscription = supabase.auth.onAuthStateChange((_event, newSession) => {
+          handleSession(newSession);
+        }).data.subscription;
+      })();
+      return () => subscription?.unsubscribe();
+    }, [handleSession]);
 
   const signOut = useCallback(async () => {
     try {
