@@ -13,7 +13,7 @@ import {
   storeCSRFToken, 
   getCSRFToken 
 } from '@/utils/inputValidation';
-import { z } from 'zod';
+import { ZodError } from 'zod';
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -114,7 +114,7 @@ const ContactForm = () => {
     } catch (error) {
       console.error('Contact form error:', error);
       
-      if (error instanceof z.ZodError) {
+      if (error instanceof ZodError) {
         const firstError = error.errors[0];
         toast({
           title: "Validation Error",

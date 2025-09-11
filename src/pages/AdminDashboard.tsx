@@ -112,7 +112,12 @@ const AdminDashboard: React.FC = () => {
     console.log('✅ Admin authenticated, fetching data...');
     setLoadingData(true); // Set loading only when we start fetching
     fetchAllData();
-    const cleanup = setupRealtimeSubscriptions();
+    let cleanup: (() => void) | undefined;
+    try {
+      cleanup = setupRealtimeSubscriptions();
+    } catch (err) {
+      console.warn('Realtime unavailable, continuing without live updates:', err);
+    }
 
     // Log admin dashboard access
     if (user?.id && user?.email) {

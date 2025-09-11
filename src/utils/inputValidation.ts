@@ -1,7 +1,7 @@
-import { z } from 'zod';
+import { z as zod } from 'zod';
 
 // Enhanced email validation schema
-export const emailSchema = z.string()
+export const emailSchema = zod.string()
   .email('Invalid email format')
   .min(1, 'Email is required')
   .max(254, 'Email is too long')
@@ -17,7 +17,7 @@ export const emailSchema = z.string()
   }, 'Email contains invalid characters');
 
 // Enhanced name validation schema
-export const nameSchema = z.string()
+export const nameSchema = zod.string()
   .min(1, 'Name is required')
   .max(100, 'Name is too long')
   .regex(/^[a-zA-Z\s\-'\.]+$/, 'Name contains invalid characters')
@@ -33,7 +33,7 @@ export const nameSchema = z.string()
   }, 'Name contains forbidden content');
 
 // Enhanced message validation schema
-export const messageSchema = z.string()
+export const messageSchema = zod.string()
   .min(10, 'Message must be at least 10 characters')
   .max(5000, 'Message is too long')
   .trim()
@@ -54,20 +54,20 @@ export const messageSchema = z.string()
   }, 'Message contains forbidden content');
 
 // Role validation schema
-export const roleSchema = z.enum(['Admin', 'Client', 'Public'], {
+export const roleSchema = zod.enum(['Admin', 'Client', 'Public'], {
   errorMap: () => ({ message: 'Invalid role specified' })
 });
 
 // Contact form validation schema
-export const contactFormSchema = z.object({
+export const contactFormSchema = zod.object({
   name: nameSchema,
   email: emailSchema,
   message: messageSchema,
-  service_type: z.string().optional()
+  service_type: zod.string().optional()
 });
 
 // User role update schema
-export const userRoleUpdateSchema = z.object({
+export const userRoleUpdateSchema = zod.object({
   email: emailSchema,
   role: roleSchema
 });
@@ -114,13 +114,13 @@ export const rateLimitCheck = (
 };
 
 // Validate UUID format
-export const uuidSchema = z.string().uuid('Invalid UUID format');
+export const uuidSchema = zod.string().uuid('Invalid UUID format');
 
 // Validate VAPID key format
-export const vapidPublicKeySchema = z.string()
+export const vapidPublicKeySchema = zod.string()
   .regex(/^[A-Za-z0-9_-]{87}=$/, 'Invalid VAPID public key format');
 
-export const vapidPrivateKeySchema = z.string()
+export const vapidPrivateKeySchema = zod.string()
   .regex(/^[A-Za-z0-9_-]{43}=$/, 'Invalid VAPID private key format');
 
 // CSRF token generation and validation
