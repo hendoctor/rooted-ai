@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Users, FileText, MessageSquare, Brain, HelpCircle, GraduationCap, BarChart3 } from 'lucide-react';
+import { ExternalLink, Users, FileText, MessageSquare, Brain, HelpCircle, GraduationCap, BarChart3, Edit2, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PortalStats {
@@ -22,9 +22,12 @@ interface PortalStats {
 
 interface PortalStatsCardProps {
   stats: PortalStats;
+  onEditCompany?: (company: { id: string; name: string; slug: string }) => void;
+  onDeleteCompany?: (id: string) => void;
+  onManageUsers?: (company: { id: string; name: string; slug: string }) => void;
 }
 
-const PortalStatsCard: React.FC<PortalStatsCardProps> = ({ stats }) => {
+const PortalStatsCard: React.FC<PortalStatsCardProps> = ({ stats, onEditCompany, onDeleteCompany, onManageUsers }) => {
   const totalContent = stats.announcement_count + stats.resource_count + stats.useful_link_count + 
                       stats.ai_tool_count + stats.faq_count + stats.coaching_count + stats.kpi_count;
 
@@ -92,8 +95,66 @@ const PortalStatsCard: React.FC<PortalStatsCardProps> = ({ stats }) => {
           </div>
         )}
 
+        {/* Management Actions */}
+        <div className="pt-4 border-t border-border/50">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="w-full text-xs"
+            >
+              <Link
+                to={`/${stats.company_slug}`}
+                className="flex items-center justify-center"
+              >
+                <ExternalLink className="w-3 h-3 mr-1" />
+                View Portal
+              </Link>
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onManageUsers?.({ 
+                id: stats.company_id, 
+                name: stats.company_name, 
+                slug: stats.company_slug 
+              })}
+              className="w-full text-xs"
+            >
+              <Users className="w-3 h-3 mr-1" />
+              Users
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEditCompany?.({ 
+                id: stats.company_id, 
+                name: stats.company_name, 
+                slug: stats.company_slug 
+              })}
+              className="w-full text-xs"
+            >
+              <Edit2 className="w-3 h-3 mr-1" />
+              Edit
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDeleteCompany?.(stats.company_id)}
+              className="w-full text-xs hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
+            >
+              <Trash2 className="w-3 h-3 mr-1" />
+              Delete
+            </Button>
+          </div>
+        </div>
+
         {/* Last Updated */}
-        <div className="pt-2 border-t border-border/50">
+        <div className="pt-2 border-t border-border/50 mt-4">
           <p className="text-xs text-muted-foreground">
             Last updated: {lastUpdated}
           </p>

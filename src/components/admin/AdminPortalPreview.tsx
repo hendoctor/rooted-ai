@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Search, RefreshCw, AlertCircle, Eye } from 'lucide-react';
+import { Search, RefreshCw, AlertCircle, Building2, Plus } from 'lucide-react';
 import PortalStatsCard from './PortalStatsCard';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,7 +24,19 @@ interface PortalStats {
   last_updated: string;
 }
 
-const AdminPortalPreview: React.FC = () => {
+interface AdminPortalPreviewProps {
+  onAddCompany?: () => void;
+  onEditCompany?: (company: { id: string; name: string; slug: string }) => void;
+  onDeleteCompany?: (id: string) => void;
+  onManageUsers?: (company: { id: string; name: string; slug: string }) => void;
+}
+
+const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({ 
+  onAddCompany, 
+  onEditCompany, 
+  onDeleteCompany, 
+  onManageUsers 
+}) => {
   const [portalStats, setPortalStats] = useState<PortalStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,11 +92,11 @@ const AdminPortalPreview: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Eye className="w-5 h-5" />
-            Client Portal Previews
+            <Building2 className="w-5 h-5" />
+            Company Portals
           </CardTitle>
           <CardDescription>
-            View and access all client portals
+            Loading portal statistics...
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -101,8 +113,8 @@ const AdminPortalPreview: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Eye className="w-5 h-5" />
-            Client Portal Previews
+            <Building2 className="w-5 h-5" />
+            Company Portals
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -125,17 +137,23 @@ const AdminPortalPreview: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Eye className="w-5 h-5" />
-              Client Portal Previews
+              <Building2 className="w-5 h-5" />
+              Company Portals
             </CardTitle>
             <CardDescription>
-              View and access all client portals ({portalStats.length} total)
+              Access and manage all registered company portals ({portalStats.length} total)
             </CardDescription>
           </div>
-          <Button onClick={handleRefresh} variant="outline" size="sm">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={onAddCompany} variant="default" size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Company
+            </Button>
+            <Button onClick={handleRefresh} variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
         
         {portalStats.length > 6 && (
@@ -154,7 +172,7 @@ const AdminPortalPreview: React.FC = () => {
       <CardContent>
         {filteredStats.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <Building2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
             {searchTerm ? (
               <>
                 <h3 className="text-lg font-medium mb-2">No portals found</h3>
@@ -162,7 +180,7 @@ const AdminPortalPreview: React.FC = () => {
               </>
             ) : (
               <>
-                <h3 className="text-lg font-medium mb-2">No client portals</h3>
+                <h3 className="text-lg font-medium mb-2">No company portals</h3>
                 <p>Create companies to see their portals here</p>
               </>
             )}
@@ -170,7 +188,13 @@ const AdminPortalPreview: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredStats.map((stats) => (
-              <PortalStatsCard key={stats.company_id} stats={stats} />
+              <PortalStatsCard 
+                key={stats.company_id} 
+                stats={stats}
+                onEditCompany={onEditCompany}
+                onDeleteCompany={onDeleteCompany}
+                onManageUsers={onManageUsers}
+              />
             ))}
           </div>
         )}

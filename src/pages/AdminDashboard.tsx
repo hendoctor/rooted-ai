@@ -809,98 +809,13 @@ const AdminDashboard: React.FC = () => {
           </p>
         </div>
 
-        {/* Company Portals Section */}
-        <Card>
-          <CardHeader className="space-y-4">
-            <CardTitle className="flex items-center gap-2 text-forest-green">
-              <Building2 className="h-5 w-5" />
-              Company Portals
-            </CardTitle>
-            <CardDescription>
-              Access and manage all registered company portals and their user counts.
-            </CardDescription>
-            <Button
-              size="sm"
-              onClick={() => openCompanyDialog()}
-              className="bg-forest-green hover:bg-forest-green/90 mt-4 w-fit"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add Company
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {loadingData ? (
-              <InlineLoader text="Loading companies..." />
-            ) : allCompanies.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No companies found.</p>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {allCompanies.map((company) => (
-                  <Card key={company.id} className="border border-border/50">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg break-words text-forest-green">
-                        {company.name}
-                      </CardTitle>
-                      <CardDescription className="break-words">
-                        /{company.slug}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-2 mb-4">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          {company.userCount} user{company.userCount !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                          className="w-full text-xs sm:text-sm"
-                        >
-                          <Link
-                            to={`/${company.slug}`}
-                            className="flex items-center justify-center"
-                          >
-                            <ExternalLink className="h-3 w-3 mr-1" />
-                            View Portal
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openCompanyUsersDialog(company)}
-                          className="w-full text-xs sm:text-sm"
-                        >
-                          <Users className="h-3 w-3 mr-1" />
-                          Users
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openCompanyDialog(company)}
-                          className="w-full text-xs sm:text-sm"
-                        >
-                          <Edit2 className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteCompany(company.id)}
-                          className="w-full text-xs sm:text-sm"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Company Portals Section - Now handled by AdminPortalPreview */}
+        <AdminPortalPreview 
+          onAddCompany={() => openCompanyDialog()}
+          onEditCompany={(company) => openCompanyDialog({ id: company.id, name: company.name, slug: company.slug, userCount: 0 })}
+          onDeleteCompany={deleteCompany}
+          onManageUsers={openCompanyUsersDialog}
+        />
 
         <Dialog open={isCompanyDialogOpen} onOpenChange={setIsCompanyDialogOpen}>
           <DialogContent>
@@ -1179,9 +1094,6 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        
-        <AdminPortalPreview />
-        
         <AdminInvitationManager />
         
         <ClientInvitationManager companies={allCompanies} />
