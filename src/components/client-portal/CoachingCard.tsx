@@ -11,7 +11,7 @@ const CoachingCard: React.FC<CoachingCardProps> = ({ nextSession }) => {
   }
 
   return (
-    <p className="text-sm text-slate-gray">Next session: {nextSession}</p>
+    <p className="text-sm text-slate-gray dark:text-slate-300">Next session: {nextSession}</p>
   );
 };
 

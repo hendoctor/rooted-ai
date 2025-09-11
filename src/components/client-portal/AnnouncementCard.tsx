@@ -36,7 +36,7 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
               <Badge className="bg-forest-green/10 text-forest-green">{status}</Badge>
             )}
           </div>
-          <p className="text-xs text-slate-gray">{date}</p>
+          <p className="text-xs text-slate-gray dark:text-slate-400">{date}</p>
         </div>
       </DialogTrigger>
       <DialogContent className="max-w-lg">
@@ -44,9 +44,9 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="mt-2 space-y-2">
-          {summary && <p className="text-sm text-slate-gray">{summary}</p>}
+          {summary && <p className="text-sm text-slate-gray dark:text-slate-300">{summary}</p>}
           {content && (
-            <p className="text-sm text-slate-700 whitespace-pre-wrap">{content}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{content}</p>
           )}
           {url && (
             <Button

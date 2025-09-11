@@ -246,7 +246,7 @@ const ClientPortal: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-16 lg:pt-20">
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
@@ -264,7 +264,7 @@ const ClientPortal: React.FC = () => {
 
   if (!company) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-16 lg:pt-20">
         <Header />
         <div className="container mx-auto py-8">
           <EmptyState 
@@ -276,9 +276,9 @@ const ClientPortal: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16 lg:pt-20">
       <Header />
-      
+
       <div className="container mx-auto py-8 space-y-8">
         {/* Welcome Section */}
         <div className="text-center space-y-4">
