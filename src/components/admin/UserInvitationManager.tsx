@@ -32,11 +32,16 @@ interface CompanyOption {
 interface UserInvitationManagerProps {
   onInvitationSent?: () => void;
   companies: CompanyOption[];
+  /**
+   * When true, renders the invitation manager without the outer Card wrapper
+   * so it can be embedded inside another component.
+   */
+  embedded?: boolean;
 }
 
 const ROOT_COMPANY_NAME = 'RootedAI';
 
-const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitationSent, companies }) => {
+const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitationSent, companies, embedded = false }) => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -399,32 +404,37 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
     },
   ];
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-forest-green flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              User Invitations
-            </CardTitle>
-            <p className="text-slate-gray text-sm">
-              Invite administrators or clients to the platform
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-forest-green hover:bg-forest-green/90">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Invite User
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Invite New User</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={sendInvitation} className="space-y-4">
+  const headerContent = (
+    <div className="flex items-center justify-between">
+      <div>
+        {embedded ? (
+          <h3 className="text-forest-green flex items-center gap-2 text-lg font-semibold">
+            <UserPlus className="h-5 w-5" />
+            User Invitations
+          </h3>
+        ) : (
+          <CardTitle className="text-forest-green flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            User Invitations
+          </CardTitle>
+        )}
+        <p className="text-slate-gray text-sm">
+          Invite administrators or clients to the platform
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-forest-green hover:bg-forest-green/90">
+              <Plus className="h-4 w-4 mr-2" />
+              Invite User
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invite New User</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={sendInvitation} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
@@ -529,115 +539,133 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
                   Cancel
                 </Button>
               </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-            <Button onClick={handleRefresh} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+        <Button onClick={handleRefresh} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
+    </div>
+  );
+
+  const tableContent = invitations.length === 0 ? (
+    <p className="text-center text-muted-foreground">No invitations sent yet</p>
+  ) : (
+    <SortableTable data={invitations} columns={columns} />
+  );
+
+  const editDialog = (
+    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Invitation</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={updateInvitation} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="edit_email" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Email Address
+            </Label>
+            <Input
+              id="edit_email"
+              type="email"
+              value={editFormData.email}
+              onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+              required
+            />
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {invitations.length === 0 ? (
-          <p className="text-center text-muted-foreground">No invitations sent yet</p>
-        ) : (
-          <SortableTable data={invitations} columns={columns} />
-        )}
-      </CardContent>
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Invitation</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={updateInvitation} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit_email" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Email Address
-              </Label>
-              <Input
-                id="edit_email"
-                type="email"
-                value={editFormData.email}
-                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                required
-              />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit_full_name" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Full Name
-              </Label>
-              <Input
-                id="edit_full_name"
-                type="text"
-                value={editFormData.full_name}
-                onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
-                required
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit_full_name" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Full Name
+            </Label>
+            <Input
+              id="edit_full_name"
+              type="text"
+              value={editFormData.full_name}
+              onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+              required
+            />
+          </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="edit_role" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Role
+            </Label>
+            <Select
+              value={editFormData.role}
+              onValueChange={(value) => setEditFormData({ ...editFormData, role: value, companyId: value === 'Client' ? editFormData.companyId : '' })}
+            >
+              <SelectTrigger id="edit_role">
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Admin">Admin</SelectItem>
+                <SelectItem value="Client">Client</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {editFormData.role === 'Client' && (
             <div className="space-y-2">
-              <Label htmlFor="edit_role" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Role
+              <Label htmlFor="edit_company" className="flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Company
               </Label>
               <Select
-                value={editFormData.role}
-                onValueChange={(value) => setEditFormData({ ...editFormData, role: value, companyId: value === 'Client' ? editFormData.companyId : '' })}
+                value={editFormData.companyId}
+                onValueChange={(value) => setEditFormData({ ...editFormData, companyId: value })}
               >
-                <SelectTrigger id="edit_role">
-                  <SelectValue placeholder="Select role" />
+                <SelectTrigger id="edit_company">
+                  <SelectValue placeholder="Select company" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                  <SelectItem value="Client">Client</SelectItem>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+          )}
 
-            {editFormData.role === 'Client' && (
-              <div className="space-y-2">
-                <Label htmlFor="edit_company" className="flex items-center gap-2">
-                  <Building className="h-4 w-4" />
-                  Company
-                </Label>
-                <Select
-                  value={editFormData.companyId}
-                  onValueChange={(value) => setEditFormData({ ...editFormData, companyId: value })}
-                >
-                  <SelectTrigger id="edit_company">
-                    <SelectValue placeholder="Select company" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" className="flex-1 bg-forest-green hover:bg-forest-green/90">
+              Save Changes
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
 
-            <div className="flex gap-2 pt-4">
-              <Button type="submit" className="flex-1 bg-forest-green hover:bg-forest-green/90">
-                Save Changes
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+  if (embedded) {
+    return (
+      <div className="space-y-4">
+        {headerContent}
+        {tableContent}
+        {editDialog}
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>{headerContent}</CardHeader>
+      <CardContent>{tableContent}</CardContent>
+      {editDialog}
     </Card>
   );
 };
