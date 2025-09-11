@@ -725,9 +725,8 @@ const AdminDashboard: React.FC = () => {
                   ({company.userRole})
                 </span>
                 <Button
-                  variant="ghost"
+                  variant="destructive"
                   size="sm"
-                  className="h-auto p-1"
                   onClick={() => removeUserFromCompany(user.auth_user_id, company.id)}
                 >
                   <X className="h-3 w-3" />
@@ -800,12 +799,11 @@ const AdminDashboard: React.FC = () => {
             {s.status === 'active' ? 'Active' : 'Inactive'}
           </span>
           <Button
-            variant="ghost"
+            variant="destructive"
             size="sm"
-            className="h-auto p-1"
             onClick={() => deleteNewsletterSubscription(s.id)}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       ),
@@ -887,9 +885,8 @@ const AdminDashboard: React.FC = () => {
                     <span>{u.display_name || u.email}</span>
                     {selectedCompanyId && (
                       <Button
-                        variant="ghost"
+                        variant="destructive"
                         size="sm"
-                        className="h-auto p-1"
                         onClick={() => removeUserFromCompany(u.auth_user_id, selectedCompanyId)}
                       >
                         <X className="h-3 w-3" />

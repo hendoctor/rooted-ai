@@ -774,11 +774,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditAnnouncement(item)}>
-            <Pencil className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => handleEditAnnouncement(item)}>
+            <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => deleteAnnouncement(item.id)}>
-            <Trash2 className="h-4 w-4 text-red-500" />
+          <Button variant="destructive" size="sm" onClick={() => deleteAnnouncement(item.id)}>
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       )
@@ -812,11 +812,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditResource(item)}>
-            <Pencil className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => handleEditResource(item)}>
+            <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => deleteResource(item.id)}>
-            <Trash2 className="h-4 w-4 text-red-500" />
+          <Button variant="destructive" size="sm" onClick={() => deleteResource(item.id)}>
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       )
@@ -858,11 +858,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditLink(item)}>
-            <Pencil className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => handleEditLink(item)}>
+            <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => deleteLink(item.id)}>
-            <Trash2 className="h-4 w-4 text-red-500" />
+          <Button variant="destructive" size="sm" onClick={() => deleteLink(item.id)}>
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       )
@@ -897,11 +897,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditCoaching(item)}>
-            <Pencil className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => handleEditCoaching(item)}>
+            <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => deleteCoaching(item.id)}>
-            <Trash2 className="h-4 w-4 text-red-500" />
+          <Button variant="destructive" size="sm" onClick={() => deleteCoaching(item.id)}>
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       )
@@ -936,11 +936,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditReport(item)}>
-            <Pencil className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => handleEditReport(item)}>
+            <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => deleteReport(item.id)}>
-            <Trash2 className="h-4 w-4 text-red-500" />
+          <Button variant="destructive" size="sm" onClick={() => deleteReport(item.id)}>
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       )
@@ -989,11 +989,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditFaq(item)}>
-            <Pencil className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => handleEditFaq(item)}>
+            <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => deleteFaq(item.id)}>
-            <Trash2 className="h-4 w-4 text-red-500" />
+          <Button variant="destructive" size="sm" onClick={() => deleteFaq(item.id)}>
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       )
@@ -1012,11 +1012,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       initialWidth: 80,
       render: (item) => (
         <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => handleEditAiTool(item)}>
-            <Pencil className="h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => handleEditAiTool(item)}>
+            <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-auto p-1" onClick={() => deleteAiTool(item.id)}>
-            <Trash2 className="h-4 w-4 text-red-500" />
+          <Button variant="destructive" size="sm" onClick={() => deleteAiTool(item.id)}>
+            <Trash2 className="h-3 w-3" />
           </Button>
         </div>
       )
