@@ -46,23 +46,15 @@ const PortalStatsCard: React.FC<PortalStatsCardProps> = ({ stats, onEditCompany,
   return (
     <Card className="relative overflow-hidden border border-border/50 hover:border-border transition-all duration-200 hover:shadow-lg">
       <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-lg font-semibold">{stats.company_name}</CardTitle>
-            <CardDescription className="flex items-center gap-2">
-              <code className="text-xs bg-muted px-2 py-1 rounded">/{stats.company_slug}</code>
-              <Badge variant="outline" className="text-xs">
-                <Users className="w-3 h-3 mr-1" />
-                {stats.user_count} {stats.user_count === 1 ? 'user' : 'users'}
-              </Badge>
-            </CardDescription>
-          </div>
-          <Link to={`/${stats.company_slug}`}>
-            <Button size="sm" variant="outline" className="gap-2">
-              <ExternalLink className="w-4 h-4" />
-              View Portal
-            </Button>
-          </Link>
+        <div className="space-y-1">
+          <CardTitle className="text-lg font-semibold">{stats.company_name}</CardTitle>
+          <CardDescription className="flex items-center gap-2">
+            <code className="text-xs bg-muted px-2 py-1 rounded">/{stats.company_slug}</code>
+            <Badge variant="outline" className="text-xs">
+              <Users className="w-3 h-3 mr-1" />
+              {stats.user_count} {stats.user_count === 1 ? 'user' : 'users'}
+            </Badge>
+          </CardDescription>
         </div>
       </CardHeader>
       
