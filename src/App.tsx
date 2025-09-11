@@ -113,15 +113,21 @@ const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Global admin redirect hook
+// Global admin redirect hook - only redirect from root and auth pages
 const useAdminRedirect = () => {
   const { user, authReady, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   React.useEffect(() => {
-    if (authReady && user && userRole === 'Admin' && location.pathname !== '/admin') {
-      console.log('🔄 Global admin redirect from', location.pathname, 'to /admin');
+    // Only redirect admins from root (/) or auth (/auth) pages, allow access to client portals
+    const shouldRedirect = authReady && 
+      user && 
+      userRole === 'Admin' && 
+      (location.pathname === '/' || location.pathname === '/auth');
+      
+    if (shouldRedirect) {
+      console.log('🔄 Admin redirect from', location.pathname, 'to /admin');
       navigate('/admin', { replace: true });
     }
   }, [user, authReady, userRole, navigate, location.pathname]);
