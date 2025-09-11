@@ -73,17 +73,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
 
   const fetchContext = useCallback(async (id: string) => {
-    const { data, error } = await supabase.rpc('get_user_context_optimized', {
-      p_user_id: id,
-    });
-    if (error) throw error;
-    const ctx = data && data[0];
-    const companiesData: Company[] = Array.isArray(ctx?.companies) ? ctx.companies : [];
-    const role = ctx?.role ?? null;
-    setUserRole(role);
-    setCompanies(companiesData);
-    saveCache({ role, companies: companiesData, permissions: ctx?.permissions ?? {}, timestamp: Date.now() });
-    setAuthReady(true);
+    try {
+      const { data, error } = await supabase.rpc('get_user_context_optimized', {
+        p_user_id: id,
+      });
+      if (error) throw error;
+      
+      const ctx = data && data[0];
+      // Safely parse companies from Supabase Json type
+      const rawCompanies = ctx?.companies;
+      const companiesData: Company[] = Array.isArray(rawCompanies) 
+        ? (rawCompanies as any[]).map(company => ({
+            id: String(company.company_id || company.id || ''),
+            name: String(company.company_name || company.name || ''),
+            slug: String(company.company_slug || company.slug || ''),
+            userRole: String(company.user_role || company.userRole || 'Member'),
+            isAdmin: Boolean(company.is_admin || company.isAdmin || false)
+          }))
+        : [];
+      
+      const role = typeof ctx?.role === 'string' ? ctx.role : null;
+      // Safely parse permissions from Supabase Json type
+      const permissions = ctx?.permissions && typeof ctx.permissions === 'object' 
+        ? ctx.permissions as Record<string, unknown>
+        : {};
+      
+      setUserRole(role);
+      setCompanies(companiesData);
+      saveCache({ role, companies: companiesData, permissions, timestamp: Date.now() });
+      setAuthReady(true);
+    } catch (err) {
+      console.error('Failed to fetch user context:', err);
+      // Set defaults and mark as ready even on error to prevent hanging
+      setUserRole(null);
+      setCompanies([]);
+      setAuthReady(true);
+      throw err;
+    }
   }, []);
 
     const refreshAuth = useCallback(async () => {

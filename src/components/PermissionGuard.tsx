@@ -2,6 +2,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PermissionGuardProps {
   page?: string;
@@ -18,10 +19,11 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
   fallback,
   children 
 }) => {
+  const { authReady, loading } = useAuth();
   const { canAccessPage, hasRoleForCompany, userRole } = usePermissions();
 
-  // Wait for auth to be ready (userRole loaded)
-  if (userRole === undefined) {
+  // Wait for auth to be fully ready and not loading
+  if (!authReady || loading || userRole === undefined) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">

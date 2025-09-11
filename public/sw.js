@@ -58,53 +58,8 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Enhanced network handling for Supabase requests
+  // Skip service worker for all Supabase requests to prevent auth interference
   if (event.request.url.includes('supabase.co')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          // Clone the response for caching if successful
-          if (response.ok && event.request.method === 'GET') {
-            const responseClone = response.clone();
-            caches.open(API_CACHE).then(cache => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch((error) => {
-          console.warn('Supabase request failed, checking cache:', error);
-          
-          // Try to serve from cache for GET requests
-          if (event.request.method === 'GET') {
-            return caches.match(event.request).then(cachedResponse => {
-              if (cachedResponse) {
-                console.log('Serving cached Supabase response');
-                return cachedResponse;
-              }
-              
-              // Return controlled error response
-              return new Response(JSON.stringify({ 
-                error: 'Network unavailable', 
-                cached: false,
-                retry: true 
-              }), {
-                status: 503,
-                headers: { 'Content-Type': 'application/json' }
-              });
-            });
-          }
-          
-          // For non-GET requests, return error
-          return new Response(JSON.stringify({ 
-            error: 'Service temporarily unavailable',
-            method: event.request.method
-          }), {
-            status: 503,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        })
-    );
     return;
   }
 
