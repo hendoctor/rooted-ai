@@ -9,6 +9,7 @@ export const usePermissions = () => {
   // Check if user can access a page
   const canAccessPage = useCallback((page: string): boolean => {
     if (!userRole) return false;
+    // Map Client role to User for RBAC system, but preserve Admin
     const role = (userRole === 'Client' ? 'User' : userRole) as Role | null;
     return canUser(role, page);
   }, [userRole]);
@@ -16,6 +17,7 @@ export const usePermissions = () => {
   // Check if user can perform CRUD operation on resource
   const canPerformAction = useCallback((resource: string, action: 'create' | 'read' | 'update' | 'delete'): boolean => {
     if (!userRole) return false;
+    // Map Client role to User for RBAC system, but preserve Admin
     const role = (userRole === 'Client' ? 'User' : userRole) as Role | null;
     return canCRUD(role, resource, action);
   }, [userRole]);
@@ -65,9 +67,11 @@ export const usePermissions = () => {
       canViewReports: false,
       canManageCompanies: false,
       canAccessAdmin: false,
-      isAdmin: false
+      isAdmin: false,
+      isClient: false
     };
 
+    // Map Client role to User for RBAC system
     const role = (userRole === 'Client' ? 'User' : userRole) as Role | null;
 
     return {
@@ -75,7 +79,8 @@ export const usePermissions = () => {
       canViewReports: canCRUD(role, 'reports', 'read'),
       canManageCompanies: canCRUD(role, 'companies', 'create') || canCRUD(role, 'companies', 'update'),
       canAccessAdmin: canUser(role, 'dashboard'),
-      isAdmin: userRole === 'Admin'
+      isAdmin: userRole === 'Admin',
+      isClient: userRole === 'Client'
     };
   }, [userRole]);
 

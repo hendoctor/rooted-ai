@@ -176,8 +176,8 @@ export default function CompanyPage() {
     setEditing(false);
   };
 
-  // Check access
-  const hasAccess = hasRoleForCompany(['Admin'], company?.id);
+  // Check access - Allow Admins and Clients to edit their own companies
+  const hasAccess = hasRoleForCompany(['Admin', 'Client'], company?.id) || userRole === 'Admin';
 
   if (loading) {
     return (

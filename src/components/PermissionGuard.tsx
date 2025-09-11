@@ -22,11 +22,13 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
 
   // Check page access
   if (page && !canAccessPage(page)) {
+    console.log(`🚫 Access denied to page "${page}" for role "${usePermissions().userRole}"`);
     return fallback || <Navigate to="/access-denied" replace />;
   }
 
   // Check role requirements
   if (requiredRoles.length > 0 && !hasRoleForCompany(requiredRoles, companyId)) {
+    console.log(`🚫 Access denied - required roles: ${requiredRoles.join(', ')}, user role: "${usePermissions().userRole}"`);
     return fallback || <Navigate to="/access-denied" replace />;
   }
 

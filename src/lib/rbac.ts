@@ -40,7 +40,7 @@ const permissions: RolePermissions = {
     companies: {
       Admin: ['create', 'read', 'update', 'delete'],
       Manager: ['read', 'update'],
-      User: ['read']
+      User: ['read', 'update'] // Allow Clients (mapped to User) to update their own companies
     }
   }
 };
