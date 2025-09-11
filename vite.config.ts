@@ -38,13 +38,11 @@ export default defineConfig(({ mode }) => ({
           'supabase-vendor': ['@supabase/supabase-js'],
           'query-vendor': ['@tanstack/react-query'],
           // Component chunks
-          // The previous build configuration attempted to isolate admin specific
-          // components into a separate manual chunk. While this can improve
-          // caching, it also caused React to be bundled twice which resulted in
-          // "Minified React error #198" when the admin dashboard loaded. By
-          // removing the `admin-components` manual chunk we ensure that all
-          // admin pages share the same React instance as the rest of the
-          // application, preventing the hook mismatch that crashed the site.
+          'admin-components': [
+            './src/pages/AdminDashboard.tsx',
+            './src/components/admin/UserInvitationManager.tsx',
+            './src/components/admin/PortalContentManager.tsx'
+          ],
           'client-components': [
             './src/pages/ClientPortal.tsx',
             './src/components/client-portal/AnnouncementCard.tsx',
