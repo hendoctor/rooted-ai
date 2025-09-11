@@ -39,6 +39,37 @@ export interface LogActivityParams {
 }
 
 class ActivityLogger {
+  private queue: Array<() => Promise<void>> = [];
+  private processing = false;
+
+  // Process queued activities in background
+  private async processQueue() {
+    if (this.processing || this.queue.length === 0) return;
+    
+    this.processing = true;
+    
+    while (this.queue.length > 0) {
+      const activity = this.queue.shift();
+      if (activity) {
+        try {
+          await activity();
+        } catch (error) {
+          console.warn('Activity logging failed:', error);
+          // Don't break the queue processing for failed logs
+        }
+      }
+    }
+    
+    this.processing = false;
+  }
+
+  // Queue an activity to be logged (non-blocking)
+  private queueActivity(activity: () => Promise<void>) {
+    this.queue.push(activity);
+    // Process in next tick to avoid blocking current execution
+    setTimeout(() => this.processQueue(), 0);
+  }
+
   private getUserIP(): string | null {
     // In a browser environment, we can't get the real IP
     // This would be better handled server-side
@@ -58,36 +89,36 @@ class ActivityLogger {
     companyName,
     metadata = {}
   }: LogActivityParams): Promise<void> {
-    try {
-      const { error } = await supabase.rpc('log_user_activity', {
-        p_user_id: userId,
-        p_user_email: userEmail,
-        p_company_id: companyId || null,
-        p_company_name: companyName || null,
-        p_activity_type: activityType,
-        p_activity_description: description || null,
-        p_ip_address: this.getUserIP(),
-        p_user_agent: this.getUserAgent(),
-        p_metadata: {
-          ...metadata,
-          timestamp: new Date().toISOString(),
-          url: window.location.href,
-          referrer: document.referrer || null
+    return new Promise((resolve) => {
+      this.queueActivity(async () => {
+        const { error } = await supabase.rpc('log_user_activity', {
+          p_user_id: userId,
+          p_user_email: userEmail,
+          p_company_id: companyId || null,
+          p_company_name: companyName || null,
+          p_activity_type: activityType,
+          p_activity_description: description || null,
+          p_ip_address: this.getUserIP(),
+          p_user_agent: this.getUserAgent(),
+          p_metadata: {
+            ...metadata,
+            timestamp: new Date().toISOString(),
+            url: window.location.href,
+            referrer: document.referrer || null
+          }
+        });
+
+        if (error) {
+          console.error('Failed to log activity:', error);
         }
       });
-
-      if (error) {
-        console.error('Failed to log activity:', error);
-      }
-    } catch (error) {
-      console.error('Activity logging error:', error);
-      // Don't throw error to avoid disrupting user experience
-    }
+      resolve(); // Resolve immediately (fire-and-forget)
+    });
   }
 
   // Convenience methods for common activities
   async logLogin(userId: string, userEmail: string, userRole: string, companyId?: string, companyName?: string): Promise<void> {
-    await this.logActivity({
+    return this.logActivity({
       userId,
       userEmail,
       activityType: 'LOGIN',
@@ -99,7 +130,7 @@ class ActivityLogger {
   }
 
   async logLogout(userId: string, userEmail: string): Promise<void> {
-    await this.logActivity({
+    return this.logActivity({
       userId,
       userEmail,
       activityType: 'LOGOUT',
@@ -108,7 +139,7 @@ class ActivityLogger {
   }
 
   async logPageView(userId: string, userEmail: string, pageName: string, companyId?: string, companyName?: string): Promise<void> {
-    await this.logActivity({
+    return this.logActivity({
       userId,
       userEmail,
       activityType: 'PAGE_VIEW',
@@ -120,7 +151,7 @@ class ActivityLogger {
   }
 
   async logAdminAction(userId: string, userEmail: string, action: string, details?: Record<string, any>): Promise<void> {
-    await this.logActivity({
+    return this.logActivity({
       userId,
       userEmail,
       activityType: 'ADMIN_ACTION',
@@ -130,7 +161,7 @@ class ActivityLogger {
   }
 
   async logCompanyAccess(userId: string, userEmail: string, companyId: string, companyName: string): Promise<void> {
-    await this.logActivity({
+    return this.logActivity({
       userId,
       userEmail,
       activityType: 'COMPANY_ACCESS',
@@ -141,7 +172,7 @@ class ActivityLogger {
   }
 
   async logPortalView(userId: string, userEmail: string, companyId: string, companyName: string, sections: string[]): Promise<void> {
-    await this.logActivity({
+    return this.logActivity({
       userId,
       userEmail,
       activityType: 'PORTAL_VIEW',
@@ -150,6 +181,15 @@ class ActivityLogger {
       companyName,
       metadata: { sectionsViewed: sections }
     });
+  }
+
+  // Flush remaining activities (useful for cleanup)
+  async flush(): Promise<void> {
+    while (this.queue.length > 0 || this.processing) {
+      await this.processQueue();
+      // Small delay to avoid busy waiting
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
   }
 }
 

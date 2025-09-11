@@ -1,11 +1,9 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuthOptimized';
+import { usePortalContent } from '@/hooks/usePortalContent';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, AlertCircle, Settings, Phone, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,7 +11,7 @@ import { activityLogger } from '@/utils/activityLogger';
 import Header from '@/components/Header';
 import AccessDenied from './AccessDenied';
 
-// Lazy load components for better performance
+// Reduced lazy loading - only for heavy components
 const AnnouncementCard = React.lazy(() => import('@/components/client-portal/AnnouncementCard'));
 const ResourceCard = React.lazy(() => import('@/components/client-portal/ResourceCard'));
 const UsefulLinkCard = React.lazy(() => import('@/components/client-portal/UsefulLinkCard'));
@@ -22,167 +20,85 @@ const KPITile = React.lazy(() => import('@/components/client-portal/KPITile'));
 const EmptyState = React.lazy(() => import('@/components/client-portal/EmptyState'));
 const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCard'));
 
-interface PortalContent {
-  announcements: any[];
-  resources: any[];
-  useful_links: any[];
-  ai_tools: any[];
-  faqs: any[];
-  coaching: any[];
-  kpis: any[];
-}
-
 const ClientPortal: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { user, userRole, companies, loading: authLoading } = useAuth();
+  const { user, userRole, companies, loading: authLoading, authReady } = useAuth();
   const navigate = useNavigate();
   
-  // State management
   const [currentCompany, setCurrentCompany] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [portalContent, setPortalContent] = useState<PortalContent>({
-    announcements: [],
-    resources: [],
-    useful_links: [],
-    ai_tools: [],
-    faqs: [],
-    coaching: [],
-    kpis: []
+  const [resolving, setResolving] = useState(true);
+  const [accessError, setAccessError] = useState<string | null>(null);
+
+  // Use optimized portal content hook
+  const { content, loading: contentLoading, error: contentError, refresh } = usePortalContent({
+    companyId: currentCompany?.id || null,
+    enabled: !!currentCompany && authReady
   });
 
-  // Initialize company and handle redirects
+  // Single effect for company resolution and access control
   useEffect(() => {
-    if (authLoading) return;
+    if (!authReady) return;
     
+    setResolving(true);
+    setAccessError(null);
+
+    // Handle unauthenticated users
     if (!user) {
       navigate('/access-denied');
       return;
     }
 
-    // Find the current company by slug
+    // Find company by slug
     const company = companies?.find(c => c.slug === slug);
     
     if (!company) {
       if (companies && companies.length === 1) {
-        // If user has only one company, redirect to it
+        // Single company - redirect
         navigate(`/client-portal/${companies[0].slug}`, { replace: true });
         return;
       } else if (!companies || companies.length === 0) {
-        // No companies assigned
-        setError('No company access assigned. Please contact your administrator.');
-        setLoading(false);
-        return;
+        setAccessError('No company access assigned. Please contact your administrator.');
       } else {
-        // Multiple companies but invalid slug
-        setError('Company not found or access denied.');
-        setLoading(false);
-        return;
+        setAccessError('Company not found or access denied.');
       }
+      setResolving(false);
+      return;
     }
 
+    // Set current company
     setCurrentCompany(company);
-    
-    // Log company access
-    if (company) {
-      activityLogger.logCompanyAccess(
-        user.id, 
-        user.email || '', 
-        company.id, 
-        company.name
-      ).catch(console.error);
-    }
-  }, [authLoading, user, companies, slug, navigate]);
+    setResolving(false);
 
-  // Load portal content using optimized RPC
+    // Fire-and-forget activity logging to prevent blocking
+    if (user?.id && user?.email) {
+      setTimeout(() => {
+        activityLogger.logCompanyAccess(
+          user.id, 
+          user.email, 
+          company.id, 
+          company.name
+        ).catch(console.error);
+      }, 0);
+    }
+  }, [authReady, user, companies, slug, navigate]);
+
+  // Log portal view after content loads (fire-and-forget)
   useEffect(() => {
-    if (!currentCompany) return;
-
-    const loadPortalContent = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Ensure user membership for current company
-        const { data: membershipData, error: membershipError } = await supabase
-          .rpc('ensure_membership_for_current_user');
-
-        if (membershipError) {
-          console.error('Membership check failed:', membershipError);
-        }
-
-        // Load all content in a single optimized call
-        const { data: contentData, error: contentError } = await supabase
-          .rpc('get_company_portal_content', { p_company_id: currentCompany.id });
-
-        if (contentError) {
-          throw contentError;
-        }
-
-        // Type cast the JSON response
-        const content = contentData as any;
-        
-        if (content?.error) {
-          throw new Error(content.error);
-        }
-
-        // Set all content at once
-        setPortalContent({
-          announcements: content?.announcements || [],
-          resources: content?.resources || [],
-          useful_links: content?.useful_links || [],
-          ai_tools: content?.ai_tools || [],
-          faqs: content?.faqs || [],
-          coaching: content?.coaching || [],
-          kpis: content?.kpis || []
-        });
-
-        // Log portal view activity
-        if (user?.id && user?.email) {
-          activityLogger.logPortalView(
-            user.id, 
-            user.email, 
-            currentCompany.id, 
-            currentCompany.name,
-            []
-          ).catch(console.error);
-        }
-
-      } catch (error) {
-        console.error('Portal content loading failed:', error);
-        setError('Failed to load portal content. Please try again.');
-        toast.error('Failed to load portal content');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPortalContent();
-  }, [currentCompany, user]);
-
-  const refresh = () => {
-    if (currentCompany) {
-      setLoading(true);
-      setError(null);
-      // The useEffect will trigger a reload
-      setCurrentCompany({ ...currentCompany });
+    if (currentCompany && user?.id && user?.email && !contentLoading && !contentError) {
+      setTimeout(() => {
+        activityLogger.logPortalView(
+          user.id, 
+          user.email, 
+          currentCompany.id, 
+          currentCompany.name,
+          []
+        ).catch(console.error);
+      }, 0);
     }
-  };
+  }, [currentCompany, user, contentLoading, contentError]);
 
-  // Loading skeleton component
-  const LoadingSkeleton = () => (
-    <div className="space-y-6">
-      <Skeleton className="h-32 w-full" />
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => (
-          <Skeleton key={i} className="h-48 w-full" />
-        ))}
-      </div>
-    </div>
-  );
-
-  // Show loading spinner if still authenticating
-  if (authLoading) {
+  // Show initial loading only during auth
+  if (!authReady) {
     return (
       <div className="min-h-screen bg-background pt-16 lg:pt-20">
         <Header />
@@ -201,8 +117,8 @@ const ClientPortal: React.FC = () => {
     return <AccessDenied />;
   }
 
-  // Show loading while resolving company
-  if (!currentCompany && !error) {
+  // Show company resolution loading
+  if (resolving) {
     return (
       <div className="min-h-screen bg-background pt-16 lg:pt-20">
         <Header />
@@ -216,8 +132,8 @@ const ClientPortal: React.FC = () => {
     );
   }
 
-  // Show error state
-  if (error) {
+  // Show access error
+  if (accessError) {
     return (
       <div className="min-h-screen bg-background pt-16 lg:pt-20">
         <Header />
@@ -226,12 +142,12 @@ const ClientPortal: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-destructive" />
-                Error
+                Access Error
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-muted-foreground">{error}</p>
-              <Button onClick={refresh} className="w-full">
+              <p className="text-muted-foreground">{accessError}</p>
+              <Button onClick={() => window.location.reload()} className="w-full">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Try Again
               </Button>
@@ -242,7 +158,7 @@ const ClientPortal: React.FC = () => {
     );
   }
 
-  // Determine user access level
+  // Check company access
   const isCompanyMember = companies?.some(c => c.id === currentCompany?.id);
   const isAdmin = userRole === 'Admin';
   const hasAccess = isAdmin || isCompanyMember;
@@ -251,14 +167,40 @@ const ClientPortal: React.FC = () => {
     return <AccessDenied />;
   }
 
+  // Handle content error
+  if (contentError && !contentLoading) {
+    return (
+      <div className="min-h-screen bg-background pt-16 lg:pt-20">
+        <Header />
+        <div className="container mx-auto py-8">
+          <Card className="max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                Content Error
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">{contentError}</p>
+              <Button onClick={refresh} className="w-full">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Reload Content
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   const hasAnyContent = 
-    portalContent.announcements.length > 0 || 
-    portalContent.resources.length > 0 || 
-    portalContent.useful_links.length > 0 || 
-    portalContent.coaching.length > 0 || 
-    portalContent.kpis.length > 0 || 
-    portalContent.faqs.length > 0 || 
-    portalContent.ai_tools.length > 0;
+    content.announcements.length > 0 || 
+    content.resources.length > 0 || 
+    content.useful_links.length > 0 || 
+    content.coaching.length > 0 || 
+    content.kpis.length > 0 || 
+    content.faqs.length > 0 || 
+    content.ai_tools.length > 0;
 
   return (
     <div className="min-h-screen bg-background pt-16 lg:pt-20">
@@ -284,23 +226,26 @@ const ClientPortal: React.FC = () => {
           )}
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="text-center py-12">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading portal content...</p>
+        {/* Content Loading State */}
+        {contentLoading && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-48 w-full" />
+              ))}
+            </div>
           </div>
         )}
 
         {/* Portal Content */}
-        {!loading && (
+        {!contentLoading && (
           <div className="space-y-8">
             {/* KPIs Section */}
-            {portalContent.kpis.length > 0 && (
+            {content.kpis.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold">Key Performance Indicators</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {portalContent.kpis.map((kpi: any, index: number) => (
+                  {content.kpis.map((kpi: any, index: number) => (
                     <Suspense key={index} fallback={<Skeleton className="h-48 w-full" />}>
                       <KPITile 
                         label={kpi.name || 'KPI'} 
@@ -314,11 +259,11 @@ const ClientPortal: React.FC = () => {
             )}
 
             {/* Coaching Section */}
-            {portalContent.coaching.length > 0 && (
+            {content.coaching.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold">Upcoming Sessions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {portalContent.coaching.map((session) => (
+                  {content.coaching.map((session) => (
                     <Card key={session.id}>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -341,11 +286,11 @@ const ClientPortal: React.FC = () => {
             )}
 
             {/* Announcements Section */}
-            {portalContent.announcements.length > 0 && (
+            {content.announcements.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold">Announcements</h2>
                 <div className="space-y-4">
-                  {portalContent.announcements.map((announcement: any) => (
+                  {content.announcements.map((announcement: any) => (
                     <Suspense key={announcement.id} fallback={<Skeleton className="h-32 w-full" />}>
                       <AnnouncementCard 
                         title={announcement.title}
@@ -362,11 +307,11 @@ const ClientPortal: React.FC = () => {
             )}
 
             {/* Resources Section */}
-            {portalContent.resources.length > 0 && (
+            {content.resources.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold">Resources</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {portalContent.resources.map((resource: any) => (
+                  {content.resources.map((resource: any) => (
                     <Suspense key={resource.id} fallback={<Skeleton className="h-48 w-full" />}>
                       <ResourceCard 
                         title={resource.title}
@@ -380,11 +325,11 @@ const ClientPortal: React.FC = () => {
             )}
 
             {/* AI Tools Section */}
-            {portalContent.ai_tools.length > 0 && (
+            {content.ai_tools.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold">AI Tools</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {portalContent.ai_tools.map((tool: any) => (
+                  {content.ai_tools.map((tool: any) => (
                     <Suspense key={tool.id} fallback={<Skeleton className="h-48 w-full" />}>
                       <AiToolCard 
                         title={tool.ai_tool}
@@ -398,11 +343,11 @@ const ClientPortal: React.FC = () => {
             )}
 
             {/* Useful Links Section */}
-            {portalContent.useful_links.length > 0 && (
+            {content.useful_links.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-semibold">Useful Links</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {portalContent.useful_links.map((link: any) => (
+                  {content.useful_links.map((link: any) => (
                     <Suspense key={link.id} fallback={<Skeleton className="h-48 w-full" />}>
                       <UsefulLinkCard 
                         title={link.title}
@@ -414,8 +359,8 @@ const ClientPortal: React.FC = () => {
               </div>
             )}
 
-            {/* Show empty state if no content and not loading */}
-            {!hasAnyContent && !loading && (
+            {/* Empty State */}
+            {!hasAnyContent && (
               <Suspense fallback={<Skeleton className="h-48 w-full" />}>
                 <EmptyState message="No content available for this company portal." />
               </Suspense>

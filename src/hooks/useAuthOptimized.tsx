@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { CacheManager } from '@/lib/cacheManager';
 
 interface Company {
   id: string;
@@ -10,17 +11,7 @@ interface Company {
   isAdmin: boolean;
 }
 
-interface CachedContext {
-  role: string;
-  companies: Company[];
-  permissions: Record<string, unknown>;
-  timestamp: number;
-}
-
-const CACHE_KEY = 'auth_context_v2';
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-
-interface AuthContextType {
+interface AuthState {
   user: User | null;
   session: Session | null;
   userRole: string | null;
@@ -28,6 +19,9 @@ interface AuthContextType {
   loading: boolean;
   authReady: boolean;
   error: string | null;
+}
+
+interface AuthContextType extends AuthState {
   signOut: () => Promise<void>;
   refreshAuth: () => Promise<void>;
   clearError: () => void;
@@ -35,58 +29,83 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const loadCache = (): CachedContext | null => {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CachedContext;
-    if (Date.now() - parsed.timestamp > CACHE_TTL) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-};
-
-const saveCache = (ctx: CachedContext) => {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(ctx));
-  } catch {
-    // ignore
-  }
-};
-
-const clearCache = () => {
-  try {
-    localStorage.removeItem(CACHE_KEY);
-  } catch {
-    // ignore
-  }
-};
+const CACHE_KEY = 'auth_context_v3';
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutes - longer cache for better performance
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [authReady, setAuthReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Single state object to prevent multiple re-renders
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    session: null,
+    userRole: null,
+    companies: [],
+    loading: true,
+    authReady: false,
+    error: null,
+  });
 
-  const fetchContext = useCallback(async (id: string) => {
+  // Batch all auth updates into a single state change
+  const updateAuthState = useCallback((updates: Partial<AuthState>) => {
+    setAuthState(prev => ({ ...prev, ...updates }));
+  }, []);
+
+  const fetchContext = useCallback(async (userId: string) => {
     try {
-      // Ensure user membership exists before fetching context
-      await supabase.rpc('ensure_membership_for_current_user');
+      // Check cache first for instant loading
+      const cacheKey = `${CACHE_KEY}_${userId}`;
+      const cached = CacheManager.get<any>(cacheKey);
       
-      const { data, error } = await supabase.rpc('get_user_context_optimized', {
-        p_user_id: id,
+      if (cached) {
+        // Use cached data immediately
+        updateAuthState({
+          userRole: cached.role,
+          companies: cached.companies,
+          authReady: true,
+          loading: false,
+          error: null,
+        });
+        
+        // Background refresh if cache is getting stale
+        const cacheAge = Date.now() - cached.timestamp;
+        if (cacheAge > CACHE_TTL * 0.7) { // Refresh when 70% expired
+          // Background refresh without changing loading state
+          fetchContextFromServer(userId, false);
+        }
+        return;
+      }
+
+      // No cache - fetch from server
+      await fetchContextFromServer(userId, true);
+    } catch (err) {
+      console.error('Failed to fetch user context:', err);
+      updateAuthState({
+        userRole: null,
+        companies: [],
+        authReady: true,
+        loading: false,
+        error: err instanceof Error ? err.message : 'Authentication failed',
       });
-      if (error) throw error;
-      
-      const ctx = data && data[0];
-      // Safely parse companies from Supabase Json type
+    }
+  }, [updateAuthState]);
+
+  const fetchContextFromServer = useCallback(async (userId: string, updateLoading = true) => {
+    try {
+      if (updateLoading) {
+        updateAuthState({ loading: true, error: null });
+      }
+
+      // Parallel calls for better performance
+      const [membershipResult, contextResult] = await Promise.all([
+        supabase.rpc('ensure_membership_for_current_user'),
+        supabase.rpc('get_user_context_optimized', { p_user_id: userId })
+      ]);
+
+      if (contextResult.error) throw contextResult.error;
+
+      const ctx = contextResult.data?.[0];
       const rawCompanies = ctx?.companies;
       const companiesData: Company[] = Array.isArray(rawCompanies) 
-        ? (rawCompanies as any[]).map(company => ({
+        ? rawCompanies.map((company: any) => ({
             id: String(company.company_id || company.id || ''),
             name: String(company.company_name || company.name || ''),
             slug: String(company.company_slug || company.slug || ''),
@@ -94,118 +113,132 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isAdmin: Boolean(company.is_admin || company.isAdmin || false)
           }))
         : [];
-      
+
       const role = typeof ctx?.role === 'string' ? ctx.role : null;
-      // Safely parse permissions from Supabase Json type
       const permissions = ctx?.permissions && typeof ctx.permissions === 'object' 
         ? ctx.permissions as Record<string, unknown>
         : {};
-      
-      setUserRole(role);
-      setCompanies(companiesData);
-      saveCache({ role, companies: companiesData, permissions, timestamp: Date.now() });
-      setAuthReady(true);
+
+      // Cache the results
+      const cacheKey = `${CACHE_KEY}_${userId}`;
+      CacheManager.set(cacheKey, {
+        role,
+        companies: companiesData,
+        permissions,
+        timestamp: Date.now()
+      }, CACHE_TTL);
+
+      // Update state in single batch
+      updateAuthState({
+        userRole: role,
+        companies: companiesData,
+        authReady: true,
+        loading: false,
+        error: null,
+      });
     } catch (err) {
-      console.error('Failed to fetch user context:', err);
-      // Set defaults and mark as ready even on error to prevent hanging
-      setUserRole(null);
-      setCompanies([]);
-      setAuthReady(true);
-      throw err;
+      console.error('Server fetch failed:', err);
+      if (updateLoading) {
+        updateAuthState({
+          userRole: null,
+          companies: [],
+          authReady: true,
+          loading: false,
+          error: err instanceof Error ? err.message : 'Failed to load user data',
+        });
+      }
     }
-  }, []);
+  }, [updateAuthState]);
 
-    const refreshAuth = useCallback(async () => {
-      if (!user?.id) {
-        // No user - mark auth as ready so the app can render public routes
-        setAuthReady(true);
-        return;
-      }
-      try {
-        await fetchContext(user.id);
-        setError(null);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to refresh auth';
-        setError(message);
-        // Even if context fetch fails, allow the application to continue
-        // so the user can see error messages or retry actions
-        setAuthReady(true);
-      }
-    }, [user, fetchContext]);
+  const refreshAuth = useCallback(async () => {
+    if (!authState.user?.id) {
+      updateAuthState({ authReady: true, loading: false });
+      return;
+    }
+    
+    // Clear cache and fetch fresh data
+    const cacheKey = `${CACHE_KEY}_${authState.user.id}`;
+    CacheManager.invalidate(cacheKey);
+    await fetchContext(authState.user.id);
+  }, [authState.user, fetchContext]);
 
-  const handleSession = useCallback(
-    async (sess: Session | null) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) {
-        const cached = loadCache();
-        if (cached) {
-          setUserRole(cached.role);
-          setCompanies(cached.companies);
-          setAuthReady(true);
-          setLoading(false);
-          if (Date.now() - cached.timestamp > CACHE_TTL) {
-            refreshAuth();
-          }
-        } else {
-          setLoading(true);
-          await refreshAuth();
-          setLoading(false);
-        }
-      } else {
-        setUserRole(null);
-        setCompanies([]);
-        // For public users without a session, mark auth as ready immediately
-        // so the application can render public routes without waiting
-        setAuthReady(true);
-        clearCache();
-        setLoading(false);
-      }
-    },
-    [refreshAuth]
-  );
+  const handleSession = useCallback(async (sess: Session | null) => {
+    if (sess?.user) {
+      // User authenticated - batch update session and trigger context fetch
+      updateAuthState({
+        session: sess,
+        user: sess.user,
+        loading: true, // Only set loading once
+        error: null,
+      });
+      
+      // Set user context for cache management
+      CacheManager.setCurrentUser(sess.user.id);
+      
+      // Fetch user context (will check cache first)
+      await fetchContext(sess.user.id);
+    } else {
+      // User signed out - clear everything in one update
+      CacheManager.setCurrentUser(null);
+      updateAuthState({
+        session: null,
+        user: null,
+        userRole: null,
+        companies: [],
+        authReady: true,
+        loading: false,
+        error: null,
+      });
+    }
+  }, [fetchContext, updateAuthState]);
 
-    useEffect(() => {
-      let subscription: { unsubscribe: () => void } | null = null;
-      (async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        await handleSession(session);
-        subscription = supabase.auth.onAuthStateChange((_event, newSession) => {
-          handleSession(newSession);
-        }).data.subscription;
-      })();
-      return () => subscription?.unsubscribe();
-    }, [handleSession]);
+  useEffect(() => {
+    let subscription: { unsubscribe: () => void } | null = null;
+    
+    const initAuth = async () => {
+      // Get initial session
+      const { data: { session } } = await supabase.auth.getSession();
+      await handleSession(session);
+      
+      // Set up auth state listener
+      subscription = supabase.auth.onAuthStateChange((_event, newSession) => {
+        handleSession(newSession);
+      }).data.subscription;
+    };
+
+    initAuth();
+    return () => subscription?.unsubscribe();
+  }, [handleSession]);
 
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
     } finally {
-      clearCache();
-      setUser(null);
-      setSession(null);
-      setUserRole(null);
-      setCompanies([]);
-      setAuthReady(false);
+      CacheManager.clearUserData();
+      updateAuthState({
+        user: null,
+        session: null,
+        userRole: null,
+        companies: [],
+        authReady: false,
+        loading: false,
+        error: null,
+      });
     }
-  }, []);
+  }, [updateAuthState]);
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = useCallback(() => {
+    updateAuthState({ error: null });
+  }, [updateAuthState]);
 
-  const value: AuthContextType = {
-    user,
-    session,
-    userRole,
-    companies,
-    loading,
-    authReady,
-    error,
+  const contextValue: AuthContextType = {
+    ...authState,
     signOut,
     refreshAuth,
     clearError,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {
@@ -215,4 +248,3 @@ export const useAuth = (): AuthContextType => {
   }
   return ctx;
 };
-
