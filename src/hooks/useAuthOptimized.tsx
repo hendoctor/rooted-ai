@@ -87,13 +87,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
     const refreshAuth = useCallback(async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        // No user - mark auth as ready so the app can render public routes
+        setAuthReady(true);
+        return;
+      }
       try {
         await fetchContext(user.id);
         setError(null);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to refresh auth';
         setError(message);
+        // Even if context fetch fails, allow the application to continue
+        // so the user can see error messages or retry actions
+        setAuthReady(true);
       }
     }, [user, fetchContext]);
 
