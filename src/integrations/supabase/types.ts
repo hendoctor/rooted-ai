@@ -974,6 +974,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      get_admin_portal_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          ai_tool_count: number
+          announcement_count: number
+          coaching_count: number
+          company_id: string
+          company_name: string
+          company_slug: string
+          faq_count: number
+          kpi_count: number
+          last_updated: string
+          resource_count: number
+          useful_link_count: number
+          user_count: number
+        }[]
+      }
       get_company_members_minimal: {
         Args: { p_company_id: string }
         Returns: {

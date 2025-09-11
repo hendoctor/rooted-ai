@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { RefreshCw, AlertCircle, Settings, Phone, Calendar, Shield } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { RefreshCw, AlertCircle, Settings, Phone, Calendar, Shield, Eye, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { activityLogger } from '@/utils/activityLogger';
 import Header from '@/components/Header';
@@ -244,9 +245,20 @@ const ClientPortal: React.FC = () => {
           <div className="container mx-auto py-3">
             <Alert className="border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950">
               <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <AlertDescription className="text-amber-800 dark:text-amber-200">
-                <strong>Admin Simulation Mode:</strong> You're viewing this portal as an administrator. 
-                You're seeing the client experience for <strong>{currentCompany?.name}</strong>.
+              <AlertDescription className="flex items-center justify-between">
+                <div className="text-amber-800 dark:text-amber-200">
+                  <strong>Admin Simulation Mode:</strong> You're viewing this portal as an administrator. 
+                  You're seeing the client experience for <strong>{currentCompany?.name}</strong>.
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/admin')}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-900"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Admin
+                </Button>
               </AlertDescription>
             </Alert>
           </div>

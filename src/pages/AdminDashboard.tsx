@@ -23,6 +23,7 @@ import { activityLogger } from '@/utils/activityLogger';
 import { Link } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
 import ActivityLogsTable from '@/components/admin/ActivityLogsTable';
+import AdminPortalPreview from '@/components/admin/AdminPortalPreview';
 
 interface UserWithRole {
   id: string;
@@ -1178,6 +1179,9 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
+        
+        <AdminPortalPreview />
+        
         <AdminInvitationManager />
         
         <ClientInvitationManager companies={allCompanies} />
