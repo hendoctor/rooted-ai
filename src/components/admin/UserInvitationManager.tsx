@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, User, Building, Plus, X, ExternalLink, Clock } from 'lucide-react';
+import { UserPlus, Mail, User, Shield, Building, Plus, X, ExternalLink, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Invitation {
@@ -29,32 +29,30 @@ interface CompanyOption {
   name: string;
 }
 
-interface ClientInvitationManagerProps {
+interface UserInvitationManagerProps {
   onInvitationSent?: () => void;
   companies: CompanyOption[];
 }
 
-const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInvitationSent, companies }) => {
+const ROOT_COMPANY_NAME = 'RootedAI';
+
+const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitationSent, companies }) => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
+    role: 'Client',
     companyId: ''
   });
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchInvitations();
-  }, []);
-
-  const fetchInvitations = async () => {
+  const fetchInvitations = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('user_invitations')
         .select('*')
-        .eq('role', 'Client')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -67,7 +65,11 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
         variant: 'destructive'
       });
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchInvitations();
+  }, [fetchInvitations]);
 
   const sendInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,17 +81,23 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
         throw new Error('Not authenticated');
       }
 
-      const selectedCompany = companies.find(c => c.id === formData.companyId);
-      if (!selectedCompany) {
-        throw new Error('Please select a company');
+      let clientName = '';
+      if (formData.role === 'Admin') {
+        clientName = ROOT_COMPANY_NAME;
+      } else {
+        const selectedCompany = companies.find(c => c.id === formData.companyId);
+        if (!selectedCompany) {
+          throw new Error('Please select a company');
+        }
+        clientName = selectedCompany.name;
       }
 
       const { data, error } = await supabase.functions.invoke('send-invitation', {
         body: {
           email: formData.email,
           full_name: formData.full_name,
-          client_name: selectedCompany.name,
-          role: 'Client'
+          role: formData.role,
+          client_name: clientName
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -104,7 +112,7 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
         description: `Successfully sent invitation to ${formData.email}`,
       });
 
-      setFormData({ email: '', full_name: '', companyId: '' });
+      setFormData({ email: '', full_name: '', role: 'Client', companyId: '' });
       setIsDialogOpen(false);
       fetchInvitations();
       onInvitationSent?.();
@@ -143,7 +151,7 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
         title: 'Success',
         description: 'Invitation cancelled successfully',
       });
-      
+
       fetchInvitations();
     } catch (error) {
       console.error('Error cancelling invitation:', error);
@@ -166,11 +174,11 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
 
   const getStatusBadge = (status: string, expiresAt: string) => {
     const isExpired = new Date(expiresAt) < new Date();
-    
+
     if (status === 'pending' && isExpired) {
       return <Badge variant="destructive">Expired</Badge>;
     }
-    
+
     switch (status) {
       case 'pending':
         return <Badge variant="outline">Pending</Badge>;
@@ -188,19 +196,32 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
   const columns: Column<Invitation>[] = [
     {
       key: 'full_name',
-      label: 'Client',
+      label: 'User',
       render: (inv) => (
         <div>
-          <div className="font-medium">{inv.full_name}</div>
+          <div className="font-medium flex items-center gap-2">
+            {inv.role === 'Admin' ? (
+              <Shield className="h-4 w-4 text-forest-green" />
+            ) : (
+              <User className="h-4 w-4 text-muted-foreground" />
+            )}
+            {inv.full_name}
+          </div>
           <div className="text-sm text-muted-foreground">{inv.email}</div>
         </div>
       ),
-      initialWidth: 180,
+      initialWidth: 200,
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      render: (inv) => inv.role,
+      initialWidth: 100,
     },
     {
       key: 'client_name',
       label: 'Company',
-      render: (inv) => inv.client_name || 'No company',
+      render: (inv) => inv.client_name || (inv.role === 'Admin' ? ROOT_COMPANY_NAME : 'No company'),
       initialWidth: 150,
     },
     {
@@ -264,22 +285,22 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
     <Card>
       <CardHeader className="space-y-4">
         <CardTitle className="text-forest-green flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          Client Invitations
+          <UserPlus className="h-5 w-5" />
+          User Invitations
         </CardTitle>
         <p className="text-slate-gray text-sm">
-          Manage client invitations and portal access
+          Invite administrators or clients to the platform
         </p>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-forest-green hover:bg-forest-green/90 w-fit">
               <Plus className="h-4 w-4 mr-2" />
-              Invite Client
+              Invite User
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Invite New Client</DialogTitle>
+              <DialogTitle>Invite New User</DialogTitle>
             </DialogHeader>
             <form onSubmit={sendInvitation} className="space-y-4">
               <div className="space-y-2">
@@ -292,7 +313,7 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="client@company.com"
+                  placeholder="user@company.com"
                   required
                   disabled={isLoading}
                 />
@@ -315,42 +336,71 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="company" className="flex items-center gap-2">
-                  <Building className="h-4 w-4" />
-                  Company
+                <Label htmlFor="role" className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Role
                 </Label>
                 <Select
-                  value={formData.companyId}
-                  onValueChange={(value) => setFormData({ ...formData, companyId: value })}
+                  value={formData.role}
+                  onValueChange={(value) => setFormData({ ...formData, role: value, companyId: value === 'Client' ? formData.companyId : '' })}
                   disabled={isLoading}
                 >
-                  <SelectTrigger id="company">
-                    <SelectValue placeholder="Select company" />
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {companies.map((company) => (
-                      <SelectItem key={company.id} value={company.id}>
-                        {company.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="Client">Client</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-slate-gray">
-                  Client will be assigned to this company portal
-                </p>
               </div>
 
+              {formData.role === 'Client' ? (
+                <div className="space-y-2">
+                  <Label htmlFor="company" className="flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    Company
+                  </Label>
+                  <Select
+                    value={formData.companyId}
+                    onValueChange={(value) => setFormData({ ...formData, companyId: value })}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger id="company">
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-slate-gray">
+                    Client will be assigned to this company portal
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+                  <p className="text-sm text-amber-800">
+                    <Shield className="h-4 w-4 inline mr-1" />
+                    Admins are added to the {ROOT_COMPANY_NAME} company by default.
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-4">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={isLoading}
                   className="flex-1 bg-forest-green hover:bg-forest-green/90"
                 >
-                  {isLoading ? "Sending..." : "Send Invitation"}
+                  {isLoading ? 'Sending...' : 'Send Invitation'}
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setIsDialogOpen(false)}
                   disabled={isLoading}
                 >
@@ -372,4 +422,5 @@ const ClientInvitationManager: React.FC<ClientInvitationManagerProps> = ({ onInv
   );
 };
 
-export default ClientInvitationManager;
+export default UserInvitationManager;
+

@@ -16,8 +16,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { LoadingSpinner, InlineLoader } from '@/components/LoadingSpinner';
 import PortalContentManager from '@/components/admin/PortalContentManager';
-import ClientInvitationManager from '@/components/admin/ClientInvitationManager';
-import AdminInvitationManager from '@/components/admin/AdminInvitationManager';
+import UserInvitationManager from '@/components/admin/UserInvitationManager';
 import AdminPermissionDebugger from '@/components/admin/AdminPermissionDebugger';
 import { activityLogger } from '@/utils/activityLogger';
 import { Link } from 'react-router-dom';
@@ -1094,9 +1093,7 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        <AdminInvitationManager />
-        
-        <ClientInvitationManager companies={allCompanies} />
+        <UserInvitationManager companies={allCompanies} />
         
         <PortalContentManager companies={allCompanies} currentAdmin={user?.email || ""} />
         
