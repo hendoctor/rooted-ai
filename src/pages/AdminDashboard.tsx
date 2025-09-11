@@ -941,7 +941,7 @@ const AdminDashboard: React.FC = () => {
                   User Management
                 </CardTitle>
                 <CardDescription>
-                  Real-time view of all authenticated user profiles with full management capabilities.
+                  Manage users and invitations with full administrative capabilities.
                 </CardDescription>
               </div>
               <Button onClick={handleRefreshUsers} variant="outline" size="sm">
@@ -950,7 +950,7 @@ const AdminDashboard: React.FC = () => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-8">
             {loadingData ? (
               <InlineLoader text="Loading users..." />
             ) : usersWithRoles.length === 0 ? (
@@ -958,6 +958,7 @@ const AdminDashboard: React.FC = () => {
             ) : (
               <SortableTable data={usersWithRoles} columns={userColumns} />
             )}
+            <UserInvitationManager embedded companies={allCompanies} />
           </CardContent>
         </Card>
 
@@ -1127,8 +1128,6 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        <UserInvitationManager companies={allCompanies} />
-        
         <PortalContentManager companies={allCompanies} currentAdmin={user?.email || ""} />
         
         <AdminPermissionDebugger />
