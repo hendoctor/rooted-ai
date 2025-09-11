@@ -66,39 +66,47 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  
+  // Initialize from localStorage immediately to prevent state loss during refresh
   const [userRole, setUserRole] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(ROLE_STORAGE_KEY);
+      const stored = localStorage.getItem(ROLE_STORAGE_KEY);
+      console.log('🔄 Initial role from localStorage:', stored);
+      return stored;
     }
     return null;
   });
+  
   const [companies, setCompanies] = useState<Company[]>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(COMPANIES_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      const parsed = stored ? JSON.parse(stored) : [];
+      console.log('🔄 Initial companies from localStorage:', parsed.length);
+      return parsed;
     }
     return [];
   });
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const performance = usePerformanceMonitor();
 
-  // Fetch user profile data with timeout and retry logic
+  // Enhanced user profile fetch with better error handling and validation
   const fetchUserProfile = useCallback(async (userId: string, attempt = 1): Promise<{ role: string; companies: Company[] }> => {
     if (!userId) {
-      console.warn('No userId provided to fetchUserProfile');
+      console.warn('❌ No userId provided to fetchUserProfile');
       throw new Error('No user ID provided');
     }
 
     console.log(`👤 Fetching user profile for: ${userId} (attempt ${attempt})`);
 
     return new Promise((resolve, reject) => {
-      // 8-second timeout for profile fetch (increased for mobile)
+      // 12-second timeout for profile fetch (increased for mobile/slow connections)
       const profileTimeout = setTimeout(() => {
-        console.warn('⚠️ Profile fetch timeout - rejecting to preserve existing state');
+        console.warn('⚠️ Profile fetch timeout - preserving existing state');
         reject(new Error('Profile fetch timeout'));
-      }, 8000);
+      }, 12000);
 
       const fetchProfile = async () => {
         try {
@@ -109,45 +117,92 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           clearTimeout(profileTimeout);
 
           if (error) {
-            console.error('Error fetching user profile:', error);
+            console.error('❌ Error fetching user profile:', error);
             throw error;
           }
 
           if (!data || data.length === 0) {
-            console.warn('No user profile data returned');
+            console.warn('⚠️ No user profile data returned, checking database');
+            
+            // Fallback: try to ensure user exists in database
+            const { data: ensureData, error: ensureError } = await supabase.rpc('ensure_membership_for_current_user');
+            
+            if (ensureError) {
+              console.error('❌ Failed to ensure user membership:', ensureError);
+              throw new Error('Failed to create user profile');
+            }
+            
+            if (ensureData && typeof ensureData === 'object' && ensureData !== null) {
+              const ensureResult = ensureData as any;
+              console.log('✅ User profile ensured:', ensureResult);
+              
+              if (ensureResult.role) {
+                const companies: Company[] = ensureResult.company_id ? [{
+                  id: ensureResult.company_id,
+                  name: ensureResult.company_slug || 'Your Company',
+                  slug: ensureResult.company_slug || 'company',
+                  userRole: 'Member',
+                  isAdmin: ensureResult.role === 'Admin'
+                }] : [];
+                
+                resolve({ role: ensureResult.role, companies });
+                return;
+              }
+            }
+            
             throw new Error('No profile data found');
           }
 
           const profileData = data[0];
           const role = profileData.user_role;
           
-          // Validate role - reject if invalid to prevent downgrades
+          // Enhanced role validation
           if (!role || !['Admin', 'Client', 'Manager'].includes(role)) {
-            console.error('Invalid role returned from database:', role);
+            console.error('❌ Invalid role returned from database:', role);
+            
+            // Try to use stored role as fallback
+            const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+            if (storedRole && ['Admin', 'Client', 'Manager'].includes(storedRole)) {
+              console.log('🔄 Using stored role as fallback:', storedRole);
+              const storedCompanies = localStorage.getItem(COMPANIES_STORAGE_KEY);
+              const companies = storedCompanies ? JSON.parse(storedCompanies) : [];
+              resolve({ role: storedRole, companies });
+              return;
+            }
+            
             throw new Error('Invalid role data');
           }
           
-          // Parse companies from jsonb
+          // Parse companies from jsonb with better error handling
           let companiesData: Company[] = [];
-          if (profileData.companies && Array.isArray(profileData.companies)) {
-            companiesData = profileData.companies.map((company: any) => ({
-              id: company.id,
-              name: company.name,
-              slug: company.slug,
-              userRole: company.userRole,
-              isAdmin: company.isAdmin
-            }));
+          try {
+            if (profileData.companies && Array.isArray(profileData.companies)) {
+              companiesData = profileData.companies.map((company: any) => ({
+                id: company.id || '',
+                name: company.name || 'Unknown Company',
+                slug: company.slug || 'unknown',
+                userRole: company.userRole || 'Member',
+                isAdmin: company.isAdmin || false
+              })).filter(c => c.id); // Filter out invalid companies
+            }
+          } catch (parseError) {
+            console.warn('⚠️ Error parsing companies data:', parseError);
+            // Use empty array if parsing fails
           }
 
-          console.log('✅ User profile loaded successfully:', { role, companiesCount: companiesData.length });
+          console.log('✅ User profile loaded successfully:', { 
+            role, 
+            companiesCount: companiesData.length,
+            companies: companiesData.map(c => ({ name: c.name, slug: c.slug }))
+          });
           resolve({ role, companies: companiesData });
         } catch (error) {
           clearTimeout(profileTimeout);
-          console.error(`Failed to fetch user profile (attempt ${attempt}):`, error);
+          console.error(`❌ Failed to fetch user profile (attempt ${attempt}):`, error);
           
-          // Implement retry logic with exponential backoff
+          // Enhanced retry logic with exponential backoff
           if (attempt < 3) {
-            const retryDelay = Math.pow(2, attempt) * 1000; // 2s, 4s
+            const retryDelay = Math.pow(2, attempt) * 1500; // 1.5s, 3s, 6s
             console.log(`⏳ Retrying profile fetch in ${retryDelay}ms...`);
             setTimeout(() => {
               fetchUserProfile(userId, attempt + 1)
@@ -155,7 +210,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 .catch(reject);
             }, retryDelay);
           } else {
-            reject(error);
+            // Final attempt failed - check for stored data
+            const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+            const storedCompanies = localStorage.getItem(COMPANIES_STORAGE_KEY);
+            
+            if (storedRole && storedCompanies) {
+              console.log('🔄 All attempts failed, using stored data as final fallback');
+              try {
+                resolve({ 
+                  role: storedRole, 
+                  companies: JSON.parse(storedCompanies) 
+                });
+              } catch (parseError) {
+                reject(new Error('Failed to parse stored company data'));
+              }
+            } else {
+              reject(error);
+            }
           }
         }
       };
@@ -164,64 +235,83 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   }, []);
 
-  // Handle auth state changes - SYNCHRONOUS to prevent deadlocks
+  // Enhanced auth state change handler with better preservation logic
   const handleAuthStateChange = useCallback((event: string, newSession: Session | null) => {
-    console.log('🔄 Auth state change:', event, !!newSession?.user);
+    console.log('🔄 Auth state change:', event, !!newSession?.user, 'existing role:', userRole);
 
     if (newSession?.user) {
       // Set basic auth state immediately and synchronously
       setUser(newSession.user);
       setSession(newSession);
       setError(null);
-      setLoading(false); // Clear loading immediately for responsive UI
       
-      // Defer profile fetching to prevent auth listener deadlock
-      setTimeout(() => {
-        performance.trackProfileFetch();
-        fetchUserProfile(newSession.user.id)
-          .then(({ role, companies: companiesData }) => {
-            performance.trackProfileComplete();
-            setUserRole(role);
-            setCompanies(companiesData);
-            // Persist role and company info for reliable reloads
-            persistAuthData(role, companiesData);
-            console.log('✅ User profile loaded successfully');
-          })
-          .catch((error) => {
-            performance.trackProfileComplete();
-            console.error('Error loading user profile:', error);
-            // Enhanced fallback logic - preserve existing authenticated state
-            setUserRole(prevRole => {
-              // Get stored role from localStorage as backup
-              const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
-              
-              // Priority order: existing role > stored role > default
-              if (prevRole && prevRole !== 'Client') {
-                console.warn('⚠️ Profile fetch failed - preserving existing role:', prevRole);
-                return prevRole;
+      // Check if we have existing valid auth data from localStorage
+      const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+      const storedCompanies = localStorage.getItem(COMPANIES_STORAGE_KEY);
+      const hasValidStoredData = storedRole && storedCompanies;
+      
+      console.log('📦 Stored auth data check:', { 
+        storedRole, 
+        companiesCount: storedCompanies ? JSON.parse(storedCompanies).length : 0,
+        hasValidStoredData 
+      });
+      
+      // If we have valid stored data, use it immediately and clear loading
+      if (hasValidStoredData && storedRole !== 'Client') {
+        console.log('⚡ Using stored auth data for instant restore');
+        setUserRole(storedRole);
+        setCompanies(JSON.parse(storedCompanies));
+        setLoading(false);
+        
+        // Still fetch fresh profile data in background, but don't block UI
+        setTimeout(() => {
+          fetchUserProfile(newSession.user.id)
+            .then(({ role, companies: companiesData }) => {
+              console.log('🔄 Background profile refresh completed');
+              if (role !== storedRole || companiesData.length !== JSON.parse(storedCompanies).length) {
+                console.log('📊 Profile data changed, updating state');
+                setUserRole(role);
+                setCompanies(companiesData);
+                persistAuthData(role, companiesData);
               }
-              
-              if (storedRole && storedRole !== 'Client') {
-                console.warn('⚠️ Profile fetch failed - using stored role:', storedRole);
-                setUserRole(storedRole); // Ensure localStorage sync
-                return storedRole;
-              }
-              
-              // Only default to 'Client' for truly new users
-              console.log('📝 New user - defaulting to Client role');
-              return 'Client';
+            })
+            .catch((error) => {
+              console.warn('⚠️ Background profile refresh failed, keeping stored data:', error);
             });
-            setCompanies(prevCompanies => {
-              if (prevCompanies && prevCompanies.length > 0) return prevCompanies;
-              const stored = localStorage.getItem(COMPANIES_STORAGE_KEY);
-              return stored ? JSON.parse(stored) : [];
+        }, 100);
+      } else {
+        // No valid stored data or role is Client - fetch fresh profile
+        console.log('🔍 No valid stored data, fetching fresh profile...');
+        setLoading(false); // Clear loading state immediately for responsive UI
+        
+        setTimeout(() => {
+          performance.trackProfileFetch();
+          fetchUserProfile(newSession.user.id)
+            .then(({ role, companies: companiesData }) => {
+              performance.trackProfileComplete();
+              console.log('✅ Fresh profile loaded:', { role, companiesCount: companiesData.length });
+              setUserRole(role);
+              setCompanies(companiesData);
+              persistAuthData(role, companiesData);
+            })
+            .catch((error) => {
+              performance.trackProfileComplete();
+              console.error('❌ Fresh profile fetch failed:', error);
+              
+              // Enhanced fallback with better state preservation
+              const fallbackRole = storedRole || 'Client';
+              const fallbackCompanies = storedCompanies ? JSON.parse(storedCompanies) : [];
+              
+              console.log('🔄 Using fallback data:', { fallbackRole, companiesCount: fallbackCompanies.length });
+              setUserRole(fallbackRole);
+              setCompanies(fallbackCompanies);
+              setError('Profile data temporarily unavailable');
             });
-            setError('Profile data unavailable, using existing data');
-          });
-      }, 0);
+        }, 0);
+      }
     } else {
       // User signed out - synchronous cleanup
-      console.log('🚪 User signed out');
+      console.log('🚪 User signed out, clearing all auth data');
       setUser(null);
       setSession(null);
       setUserRole(null);
@@ -230,7 +320,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
       clearAuthData();
     }
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile, userRole]);
 
   // Enhanced refresh auth data with better state preservation
   const refreshAuth = useCallback(async () => {
@@ -315,7 +405,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Clear error
   const clearError = useCallback(() => setError(null), []);
 
-  // Initialize auth with timeout protection
+  // Enhanced auth initialization with session recovery
   useEffect(() => {
     console.log('🚀 Initializing auth...');
     let mounted = true;
@@ -325,40 +415,77 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         performance.trackAuthInit();
         
-        // Set 10-second timeout to prevent infinite loading
+        // Set 15-second timeout to prevent infinite loading (increased for mobile)
         authTimeout = setTimeout(() => {
           if (mounted) {
-            console.warn('⚠️ Auth initialization timeout - clearing loading state');
+            console.warn('⚠️ Auth initialization timeout - checking for stored data');
+            
+            // Check if we have valid stored auth data to restore
+            const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+            const storedCompanies = localStorage.getItem(COMPANIES_STORAGE_KEY);
+            
+            if (storedRole && storedCompanies) {
+              console.log('🔄 Restoring from stored auth data due to timeout');
+              setUserRole(storedRole);
+              setCompanies(JSON.parse(storedCompanies));
+              setError('Session restored from cache');
+            } else {
+              setError('Authentication took too long - please refresh');
+            }
             setLoading(false);
-            setError('Authentication took too long - please refresh');
           }
-        }, 10000);
+        }, 15000);
 
         // Set up auth listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Get current session with retry logic
+        let session = null;
+        let sessionAttempts = 0;
+        const maxSessionAttempts = 3;
+        
+        while (!session && sessionAttempts < maxSessionAttempts && mounted) {
+          try {
+            const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+            
+            if (error) {
+              console.warn(`Session error (attempt ${sessionAttempts + 1}):`, error);
+              if (sessionAttempts === maxSessionAttempts - 1) {
+                throw error;
+              }
+            } else {
+              session = currentSession;
+            }
+          } catch (error) {
+            console.error(`Session fetch attempt ${sessionAttempts + 1} failed:`, error);
+          }
+          
+          sessionAttempts++;
+          if (!session && sessionAttempts < maxSessionAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * sessionAttempts)); // Exponential backoff
+          }
+        }
         
         if (!mounted) return () => subscription.unsubscribe();
         
         // Clear timeout since we got a response
         clearTimeout(authTimeout);
         
-        if (error) {
-          console.warn('Session error:', error);
-          setError('Failed to restore session');
-          setLoading(false);
-          return () => subscription.unsubscribe();
-        }
-
         if (session?.user) {
-          console.log('✅ Found existing session');
+          console.log('✅ Found existing session for user:', session.user.email);
           performance.trackAuthComplete();
           handleAuthStateChange('INITIAL_SESSION', session);
         } else {
-          console.log('❌ No existing session');
+          console.log('❌ No existing session found');
           performance.trackAuthComplete();
+          
+          // Check if we have orphaned stored data (user was logged in but session expired)
+          const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+          if (storedRole) {
+            console.log('🧹 Clearing orphaned auth data');
+            clearAuthData();
+          }
+          
           setLoading(false);
         }
 
@@ -366,7 +493,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } catch (error) {
         if (mounted) {
           console.error('Auth init failed:', error);
-          setError('Failed to initialize authentication');
+          
+          // Try to restore from localStorage on init failure
+          const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+          const storedCompanies = localStorage.getItem(COMPANIES_STORAGE_KEY);
+          
+          if (storedRole && storedCompanies) {
+            console.log('🔄 Attempting to restore from stored data after init failure');
+            setUserRole(storedRole);
+            setCompanies(JSON.parse(storedCompanies));
+            setError('Session restored from cache - please refresh to verify');
+          } else {
+            setError('Failed to initialize authentication');
+          }
           setLoading(false);
         }
         return () => {};
@@ -380,7 +519,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       clearTimeout(authTimeout);
       cleanup?.then(unsub => unsub?.());
     };
-  }, [handleAuthStateChange]);
+  }, [handleAuthStateChange, performance]);
 
   const value: AuthContextType = {
     user,
