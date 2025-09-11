@@ -185,94 +185,208 @@ const ClientPortal: React.FC = () => {
           }
         };
 
-        const [
-          announcementsResult,
-          resourcesResult,
-          linksResult,
-          coachingResult,
-          reportsResult,
-          faqsResult,
-          aiToolsResult
-        ] = await Promise.allSettled([
-          loadWithRetry(async () => {
-            const result = await supabase
+        // Sequential, RLS-friendly loading using assignment tables first, then fetching records
+        let loadedCount = 0;
+        const totalSections = 7;
+        let failCount = 0;
+
+        const unique = <T,>(arr: T[]) => Array.from(new Set(arr));
+
+        // Announcements
+        try {
+          const { data: annMap, error: annMapErr } = await supabase
+            .from('announcement_companies')
+            .select('announcement_id')
+            .eq('company_id', company.id);
+          if (annMapErr) throw annMapErr;
+          const ids = unique((annMap || []).map((r: any) => r.announcement_id)).filter(Boolean);
+          if (ids.length > 0) {
+            const { data, error } = await supabase
               .from('announcements')
-              .select(`
-                id, title, summary, content, url, created_at,
-                announcement_companies!inner(company_id)
-              `)
-              .eq('announcement_companies.company_id', company.id)
+              .select('id, title, summary, content, url, created_at')
+              .in('id', ids)
               .order('created_at', { ascending: false });
-            return result;
-          }),
+            if (error) throw error;
+            const formatted = (data || []).map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              date: new Date(item.created_at).toLocaleDateString(),
+              summary: item.summary,
+              content: item.content,
+              url: item.url,
+              status: 'New' as const,
+            }));
+            setAnnouncements(formatted);
+          } else {
+            setAnnouncements([]);
+          }
+          loadedCount++;
+          console.log(`✅ Loaded announcements: ${ids.length}`);
+        } catch (err) {
+          console.error('❌ Announcements load error:', err);
+          failCount++;
+        }
 
-          loadWithRetry(async () => {
-            const result = await supabase
+        // Resources
+        try {
+          const { data: resMap, error: resMapErr } = await supabase
+            .from('portal_resource_companies')
+            .select('resource_id')
+            .eq('company_id', company.id);
+          if (resMapErr) throw resMapErr;
+          const ids = unique((resMap || []).map((r: any) => r.resource_id)).filter(Boolean);
+          if (ids.length > 0) {
+            const { data, error } = await supabase
               .from('portal_resources')
-              .select(`
-                id, title, description, link, category,
-                portal_resource_companies!inner(company_id)
-              `)
-              .eq('portal_resource_companies.company_id', company.id);
-            return result;
-          }),
+              .select('id, title, description, link, category')
+              .in('id', ids);
+            if (error) throw error;
+            const formatted = (data || []).map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              type: (item.category || 'Guide') as 'Guide' | 'Video' | 'Slide',
+              href: item.link,
+            }));
+            setResources(formatted);
+          } else {
+            setResources([]);
+          }
+          loadedCount++;
+          console.log(`✅ Loaded resources: ${ids.length}`);
+        } catch (err) {
+          console.error('❌ Resources load error:', err);
+          failCount++;
+        }
 
-          loadWithRetry(async () => {
-            const result = await supabase
+        // Useful links
+        try {
+          const { data: linkMap, error: linkMapErr } = await supabase
+            .from('useful_link_companies')
+            .select('link_id')
+            .eq('company_id', company.id);
+          if (linkMapErr) throw linkMapErr;
+          const ids = unique((linkMap || []).map((r: any) => r.link_id)).filter(Boolean);
+          if (ids.length > 0) {
+            const { data, error } = await supabase
               .from('useful_links')
-              .select(`
-                id, title, url, description,
-                useful_link_companies!inner(company_id)
-              `)
-              .eq('useful_link_companies.company_id', company.id);
-            return result;
-          }),
+              .select('id, title, url, description')
+              .in('id', ids);
+            if (error) throw error;
+            const formatted = (data || []).map((item: any) => ({ id: item.id, title: item.title, url: item.url }));
+            setUsefulLinks(formatted);
+          } else {
+            setUsefulLinks([]);
+          }
+          loadedCount++;
+          console.log(`✅ Loaded useful links: ${ids.length}`);
+        } catch (err) {
+          console.error('❌ Useful links load error:', err);
+          failCount++;
+        }
 
-          loadWithRetry(async () => {
-            const result = await supabase
+        // Coaching (next session)
+        try {
+          const { data: coachMap, error: coachMapErr } = await supabase
+            .from('adoption_coaching_companies')
+            .select('coaching_id')
+            .eq('company_id', company.id);
+          if (coachMapErr) throw coachMapErr;
+          const ids = unique((coachMap || []).map((r: any) => r.coaching_id)).filter(Boolean);
+          if (ids.length > 0) {
+            const { data, error } = await supabase
               .from('adoption_coaching')
-              .select(`
-                id, topic, description, steps, media, contact,
-                adoption_coaching_companies!inner(company_id)
-              `)
-              .eq('adoption_coaching_companies.company_id', company.id);
-            return result;
-          }),
+              .select('id, topic, description, steps, media, contact')
+              .in('id', ids);
+            if (error) throw error;
+            const topic = Array.isArray(data) && data[0]?.topic ? data[0].topic : undefined;
+            setNextSession(topic);
+          } else {
+            setNextSession(undefined);
+          }
+          loadedCount++;
+          console.log(`✅ Loaded coaching sessions: ${ids.length}`);
+        } catch (err) {
+          console.error('❌ Coaching load error:', err);
+          failCount++;
+        }
 
-          loadWithRetry(async () => {
-            const result = await supabase
+        // Reports (KPIs)
+        try {
+          const { data: repMap, error: repMapErr } = await supabase
+            .from('report_companies')
+            .select('report_id')
+            .eq('company_id', company.id);
+          if (repMapErr) throw repMapErr;
+          const ids = unique((repMap || []).map((r: any) => r.report_id)).filter(Boolean);
+          if (ids.length > 0) {
+            const { data, error } = await supabase
               .from('reports')
-              .select(`
-                id, name, period, kpis, notes, link,
-                report_companies!inner(company_id)
-              `)
-              .eq('report_companies.company_id', company.id)
+              .select('id, name, period, kpis, notes, link, created_at')
+              .in('id', ids)
               .order('created_at', { ascending: false });
-            return result;
-          }),
+            if (error) throw error;
+            const latest = Array.isArray(data) && data.length > 0 ? data[0] : null;
+            const kpiList = latest?.kpis && Array.isArray(latest.kpis) ? latest.kpis : [];
+            setKpis(kpiList as Array<{ name: string; value: string; target?: string }>);
+          } else {
+            setKpis([]);
+          }
+          loadedCount++;
+          console.log(`✅ Loaded reports: ${ids.length}`);
+        } catch (err) {
+          console.error('❌ Reports load error:', err);
+          failCount++;
+        }
 
-          loadWithRetry(async () => {
-            const result = await supabase
+        // FAQs
+        try {
+          const { data: faqMap, error: faqMapErr } = await supabase
+            .from('faq_companies')
+            .select('faq_id')
+            .eq('company_id', company.id);
+          if (faqMapErr) throw faqMapErr;
+          const ids = unique((faqMap || []).map((r: any) => r.faq_id)).filter(Boolean);
+          if (ids.length > 0) {
+            const { data, error } = await supabase
               .from('faqs')
-              .select(`
-                id, question, answer, category,
-                faq_companies!inner(company_id)
-              `)
-              .eq('faq_companies.company_id', company.id);
-            return result;
-          }),
+              .select('id, question, answer, category')
+              .in('id', ids);
+            if (error) throw error;
+            setFaqs((data || []) as Array<{ id: string; question: string; answer: string }>);
+          } else {
+            setFaqs([]);
+          }
+          loadedCount++;
+          console.log(`✅ Loaded FAQs: ${ids.length}`);
+        } catch (err) {
+          console.error('❌ FAQs load error:', err);
+          failCount++;
+        }
 
-          loadWithRetry(async () => {
-            const result = await supabase
+        // AI Tools
+        try {
+          const { data: toolsMap, error: toolsMapErr } = await supabase
+            .from('ai_tool_companies')
+            .select('ai_tool_id')
+            .eq('company_id', company.id);
+          if (toolsMapErr) throw toolsMapErr;
+          const ids = unique((toolsMap || []).map((r: any) => r.ai_tool_id)).filter(Boolean);
+          if (ids.length > 0) {
+            const { data, error } = await supabase
               .from('ai_tools')
-              .select(`
-                id, ai_tool, url, comments,
-                ai_tool_companies!inner(company_id)
-              `)
-              .eq('ai_tool_companies.company_id', company.id);
-            return result;
-          })
-        ]);
+              .select('id, ai_tool, url, comments')
+              .in('id', ids);
+            if (error) throw error;
+            setAiTools((data || []) as Array<{ id: string; ai_tool: string; url?: string; comments?: string }>);
+          } else {
+            setAiTools([]);
+          }
+          loadedCount++;
+          console.log(`✅ Loaded AI tools: ${ids.length}`);
+        } catch (err) {
+          console.error('❌ AI tools load error:', err);
+          failCount++;
+        }
 
         // Process results with robust error handling and no flicker
         let loadedCount = 0;
