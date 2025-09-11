@@ -192,7 +192,7 @@ export default function CompanyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pt-16 lg:pt-20">
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
@@ -209,9 +209,9 @@ export default function CompanyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16 lg:pt-20">
       <Header />
-      
+
       <div className="container mx-auto py-8 max-w-4xl">
         <div className="space-y-6">
           {/* Header */}
