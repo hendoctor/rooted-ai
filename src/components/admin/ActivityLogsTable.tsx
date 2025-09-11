@@ -222,7 +222,7 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
             {format(new Date(log.created_at), 'MMM dd, yyyy')}
           </div>
           <div className="text-muted-foreground">
-            {format(new Date(log.created_at), 'HH:mm:ss')}
+            {format(new Date(log.created_at), 'hh:mm a')}
           </div>
         </div>
       ),
@@ -298,7 +298,7 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
                   <div>
                     <label className="text-sm font-medium">Date & Time</label>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(log.created_at), 'PPPp')}
+                      {format(new Date(log.created_at), 'MMM dd, yyyy hh:mm a')}
                     </p>
                   </div>
                   <div>
