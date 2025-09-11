@@ -12,7 +12,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ message, actionLabel, actionHre
   return (
     <div className="flex flex-col items-center text-center py-6">
       <Leaf className="h-8 w-8 text-sage mb-4 shrink-0" />
-      <p className="text-sm text-slate-gray mb-4">{message}</p>
+      <p className="text-sm text-slate-gray dark:text-slate-300 mb-4">{message}</p>
       {actionLabel && actionHref && (
         <Button asChild className="bg-forest-green text-white">
           <a href={actionHref}>{actionLabel}</a>

@@ -12,11 +12,11 @@ const UsefulLinkCard: React.FC<UsefulLinkCardProps> = ({ title, url }) => {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block p-3 rounded-lg border border-sage/20 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-forest-green"
+      className="block p-3 rounded-lg border border-sage/20 dark:border-sage/30 hover:shadow-sm dark:hover:bg-sage/10 focus:outline-none focus:ring-2 focus:ring-forest-green"
     >
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-forest-green">{title}</p>
-        <ArrowRight className="h-4 w-4 text-forest-green" />
+        <p className="text-sm font-medium text-forest-green dark:text-sage">{title}</p>
+        <ArrowRight className="h-4 w-4 text-forest-green dark:text-sage" />
       </div>
     </a>
   );

@@ -16,11 +16,11 @@ const AiToolCard: React.FC<AiToolCardProps> = ({ title, url, comments }) => {
   };
 
   return (
-    <div className="p-3 border border-sage/20 rounded-lg hover:bg-sage/5 transition-colors">
+    <div className="p-3 border border-sage/20 dark:border-sage/30 rounded-lg hover:bg-sage/5 dark:hover:bg-sage/10 transition-colors">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
-          <Bot className="h-4 w-4 text-forest-green" />
-          <span className="text-sm font-medium text-forest-green">{title}</span>
+          <Bot className="h-4 w-4 text-forest-green dark:text-sage" />
+          <span className="text-sm font-medium text-forest-green dark:text-sage">{title}</span>
         </div>
         {url && (
           <Button
@@ -34,7 +34,7 @@ const AiToolCard: React.FC<AiToolCardProps> = ({ title, url, comments }) => {
         )}
       </div>
       {comments && (
-        <p className="text-xs text-slate-gray">{comments}</p>
+        <p className="text-xs text-slate-gray dark:text-slate-300">{comments}</p>
       )}
     </div>
   );
