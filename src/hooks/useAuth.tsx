@@ -148,7 +148,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [fetchUserProfile]);
 
-  // Refresh auth data
+  // Refresh auth data - preserve existing role on failure
   const refreshAuth = useCallback(async () => {
     if (!user?.id) {
       console.warn('No user ID available for refresh');
@@ -165,7 +165,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('✅ Auth data refreshed successfully');
     } catch (error) {
       console.error('Failed to refresh auth:', error);
-      setError('Failed to refresh authentication');
+      // CRITICAL: Don't reset role on refresh failure - preserve existing state
+      console.warn('⚠️ Preserving existing auth state due to refresh failure');
+      setError('Failed to refresh authentication data');
     }
   }, [user?.id, fetchUserProfile]);
 
