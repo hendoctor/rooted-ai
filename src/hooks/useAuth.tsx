@@ -88,45 +88,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Handle auth state changes
-  const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
+  // Handle auth state changes - SYNCHRONOUS to prevent deadlocks
+  const handleAuthStateChange = useCallback((event: string, newSession: Session | null) => {
     console.log('🔄 Auth state change:', event, !!newSession?.user);
 
-    // Always clear loading state regardless of outcome
-    const finalizeAuth = () => {
-      setLoading(false);
-    };
-
     if (newSession?.user) {
-      // Set basic auth state immediately
+      // Set basic auth state immediately and synchronously
       setUser(newSession.user);
       setSession(newSession);
       setError(null);
-
-      // Fetch user profile data
-      try {
-        const { role, companies: companiesData } = await fetchUserProfile(newSession.user.id);
-        setUserRole(role);
-        setCompanies(companiesData);
-        console.log('✅ User authenticated successfully');
-      } catch (error) {
-        console.error('Error loading user profile during auth change:', error);
-        // Set default values on profile fetch failure but still consider user authenticated
-        setUserRole('Client');
-        setCompanies([]);
-        setError('Profile data unavailable, using defaults');
-      } finally {
-        finalizeAuth();
-      }
+      setLoading(false); // Clear loading immediately for responsive UI
+      
+      // Defer profile fetching to prevent auth listener deadlock
+      setTimeout(() => {
+        fetchUserProfile(newSession.user.id)
+          .then(({ role, companies: companiesData }) => {
+            setUserRole(role);
+            setCompanies(companiesData);
+            console.log('✅ User profile loaded successfully');
+          })
+          .catch((error) => {
+            console.error('Error loading user profile:', error);
+            // Set default values on profile fetch failure
+            setUserRole('Client');
+            setCompanies([]);
+            setError('Profile data unavailable, using defaults');
+          });
+      }, 0);
     } else {
-      // User signed out
+      // User signed out - synchronous cleanup
       console.log('🚪 User signed out');
       setUser(null);
       setSession(null);
       setUserRole(null);
       setCompanies([]);
       setError(null);
-      finalizeAuth();
+      setLoading(false);
     }
   }, [fetchUserProfile]);
 
@@ -173,28 +170,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Clear error
   const clearError = useCallback(() => setError(null), []);
 
-  // Initialize auth
+  // Initialize auth with timeout protection
   useEffect(() => {
     console.log('🚀 Initializing auth...');
+    let mounted = true;
+    let authTimeout: NodeJS.Timeout;
 
     const initAuth = async () => {
       try {
-        // Set up auth listener
+        // Set 10-second timeout to prevent infinite loading
+        authTimeout = setTimeout(() => {
+          if (mounted) {
+            console.warn('⚠️ Auth initialization timeout - clearing loading state');
+            setLoading(false);
+            setError('Authentication took too long - please refresh');
+          }
+        }, 10000);
+
+        // Set up auth listener first
         const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
         // Get current session
         const { data: { session }, error } = await supabase.auth.getSession();
         
+        if (!mounted) return () => subscription.unsubscribe();
+        
+        // Clear timeout since we got a response
+        clearTimeout(authTimeout);
+        
         if (error) {
           console.warn('Session error:', error);
           setError('Failed to restore session');
           setLoading(false);
-          return;
+          return () => subscription.unsubscribe();
         }
 
         if (session?.user) {
           console.log('✅ Found existing session');
-          await handleAuthStateChange('INITIAL_SESSION', session);
+          handleAuthStateChange('INITIAL_SESSION', session);
         } else {
           console.log('❌ No existing session');
           setLoading(false);
@@ -202,14 +215,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         return () => subscription.unsubscribe();
       } catch (error) {
-        console.error('Auth init failed:', error);
-        setError('Failed to initialize authentication');
-        setLoading(false);
+        if (mounted) {
+          console.error('Auth init failed:', error);
+          setError('Failed to initialize authentication');
+          setLoading(false);
+        }
+        return () => {};
       }
     };
 
     const cleanup = initAuth();
+    
     return () => {
+      mounted = false;
+      clearTimeout(authTimeout);
       cleanup?.then(unsub => unsub?.());
     };
   }, [handleAuthStateChange]);

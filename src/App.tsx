@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useVisibilityRefresh } from "@/hooks/useVisibilityRefresh";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -26,6 +27,9 @@ import RBACDemo from "./pages/RBACDemo";
 // Simplified loading wrapper
 const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
   const { loading, error, refreshAuth, clearError } = useAuth();
+  
+  // Enable mobile-specific auth refresh on visibility changes
+  useVisibilityRefresh();
 
   // Show error with recovery options
   if (error) {

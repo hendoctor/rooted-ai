@@ -13,11 +13,32 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Configure client to persist sessions and auto refresh tokens even when
 // the tab is not focused. This helps prevent hanging auth state when the
 // user navigates away from the application.
-// Use IndexedDB for auth token storage to avoid exposing tokens via localStorage
+// Reliable auth storage with fallback for mobile/PWA
 const authStorage = {
-  getItem: (key: string) => get(key),
-  setItem: (key: string, value: string) => set(key, value),
-  removeItem: (key: string) => del(key),
+  getItem: async (key: string) => {
+    try {
+      return await get(key);
+    } catch (error) {
+      console.warn('IndexedDB failed, falling back to localStorage:', error);
+      return localStorage.getItem(key);
+    }
+  },
+  setItem: async (key: string, value: string) => {
+    try {
+      await set(key, value);
+    } catch (error) {
+      console.warn('IndexedDB failed, falling back to localStorage:', error);
+      localStorage.setItem(key, value);
+    }
+  },
+  removeItem: async (key: string) => {
+    try {
+      await del(key);
+    } catch (error) {
+      console.warn('IndexedDB failed, falling back to localStorage:', error);
+      localStorage.removeItem(key);
+    }
+  },
 };
 
 export const supabase = createClient<Database>(
