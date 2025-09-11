@@ -5,6 +5,10 @@ import type { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 
+// Keys used for persisting auth data across refreshes
+const ROLE_STORAGE_KEY = 'auth_user_role';
+const COMPANIES_STORAGE_KEY = 'auth_companies';
+
 interface Company {
   id: string;
   name: string;
@@ -36,8 +40,19 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(ROLE_STORAGE_KEY);
+    }
+    return null;
+  });
+  const [companies, setCompanies] = useState<Company[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(COMPANIES_STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -125,6 +140,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             performance.trackProfileComplete();
             setUserRole(role);
             setCompanies(companiesData);
+            // Persist role and company info for reliable reloads
+            try {
+              localStorage.setItem(ROLE_STORAGE_KEY, role);
+              localStorage.setItem(COMPANIES_STORAGE_KEY, JSON.stringify(companiesData));
+            } catch (e) {
+              console.warn('Unable to persist auth data:', e);
+            }
             console.log('✅ User profile loaded successfully');
           })
           .catch((error) => {
@@ -137,9 +159,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 console.warn('⚠️ Profile fetch failed - preserving existing role:', prevRole);
                 return prevRole;
               }
+              const storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+              if (storedRole) {
+                console.warn('⚠️ Profile fetch failed - using stored role:', storedRole);
+                return storedRole;
+              }
               return 'Client';
             });
-            setCompanies(prevCompanies => prevCompanies || []);
+            setCompanies(prevCompanies => {
+              if (prevCompanies && prevCompanies.length > 0) return prevCompanies;
+              const stored = localStorage.getItem(COMPANIES_STORAGE_KEY);
+              return stored ? JSON.parse(stored) : [];
+            });
             setError('Profile data unavailable, using existing data');
           });
       }, 0);
@@ -152,6 +183,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setCompanies([]);
       setError(null);
       setLoading(false);
+      try {
+        localStorage.removeItem(ROLE_STORAGE_KEY);
+        localStorage.removeItem(COMPANIES_STORAGE_KEY);
+      } catch (e) {
+        console.warn('Unable to clear persisted auth data:', e);
+      }
     }
   }, [fetchUserProfile]);
 
@@ -169,6 +206,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { role, companies: companiesData } = await fetchUserProfile(user.id);
       setUserRole(role);
       setCompanies(companiesData);
+      try {
+        localStorage.setItem(ROLE_STORAGE_KEY, role);
+        localStorage.setItem(COMPANIES_STORAGE_KEY, JSON.stringify(companiesData));
+      } catch (e) {
+        console.warn('Unable to persist refreshed auth data:', e);
+      }
       console.log('✅ Auth data refreshed successfully');
     } catch (error) {
       console.error('Failed to refresh auth:', error);
@@ -184,6 +227,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🚪 Signing out...');
       setLoading(true);
       await supabase.auth.signOut();
+      // Clear any persisted auth data
+      try {
+        localStorage.removeItem(ROLE_STORAGE_KEY);
+        localStorage.removeItem(COMPANIES_STORAGE_KEY);
+      } catch (e) {
+        console.warn('Unable to clear persisted auth data:', e);
+      }
       // State will be cleared by handleAuthStateChange
       window.location.href = '/';
     } catch (error) {
