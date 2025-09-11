@@ -21,6 +21,10 @@ interface SortableTableProps<T> {
   data: T[];
   columns: Column<T>[];
   toolbar?: (columnsButton: React.ReactNode) => React.ReactNode;
+  defaultSortKey?: string;
+  defaultAsc?: boolean;
+  rowClassName?: (item: T) => string;
+  scrollAreaClassName?: string;
 }
 
 function get(obj: unknown, path: string) {
@@ -29,9 +33,17 @@ function get(obj: unknown, path: string) {
     .reduce<unknown>((o, p) => (typeof o === 'object' && o !== null ? (o as Record<string, unknown>)[p] : undefined), obj) ?? '';
 }
 
-export function SortableTable<T extends { id: string }>({ data, columns, toolbar }: SortableTableProps<T>) {
-  const [sortKey, setSortKey] = useState<string>(columns[0]?.key);
-  const [asc, setAsc] = useState(true);
+export function SortableTable<T extends { id: string }>({
+  data,
+  columns,
+  toolbar,
+  defaultSortKey,
+  defaultAsc = true,
+  rowClassName,
+  scrollAreaClassName,
+}: SortableTableProps<T>) {
+  const [sortKey, setSortKey] = useState<string>(defaultSortKey || columns[0]?.key);
+  const [asc, setAsc] = useState(defaultAsc);
   const [visible, setVisible] = useState<string[]>(columns.map(c => c.key));
   const [widths, setWidths] = useState<Record<string, number>>(() => {
     const init: Record<string, number> = {};
@@ -119,7 +131,7 @@ export function SortableTable<T extends { id: string }>({ data, columns, toolbar
       ) : (
         <div className="flex justify-end mb-2">{columnsButton}</div>
       )}
-      <ScrollArea className="h-52">
+      <ScrollArea className={scrollAreaClassName || "h-52"}>
         <Table className="min-w-max">
           <TableHeader>
             <TableRow>
@@ -144,7 +156,7 @@ export function SortableTable<T extends { id: string }>({ data, columns, toolbar
           </TableHeader>
           <TableBody>
             {sorted.map(item => (
-              <TableRow key={item.id}>
+              <TableRow key={item.id} className={rowClassName ? rowClassName(item) : undefined}>
                 {visibleCols.map(col => (
                   <TableCell key={col.key} style={{ width: widths[col.key] }} className="border border-border">
                     {col.render ? col.render(item) : String(get(item, col.key))}

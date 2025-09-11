@@ -25,7 +25,7 @@ interface ActivityLog {
   activity_description?: string | null;
   ip_address?: string | null;
   user_agent?: string | null;
-  metadata: any; // Using any to handle Supabase Json type
+  metadata: Record<string, unknown>; // Using Record to handle Supabase Json type
   created_at: string;
 }
 
@@ -179,7 +179,10 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
   }, [filters]);
 
   // Handle filter changes
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = (
+    key: string,
+    value: string | Date | null
+  ) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
@@ -475,6 +478,10 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
           <SortableTable
             data={activityLogs}
             columns={columns}
+            defaultSortKey="created_at"
+            defaultAsc={false}
+            rowClassName={(log) => log.company_id ? 'bg-forest-green/10 dark:bg-forest-green/20' : ''}
+            scrollAreaClassName="h-96"
           />
         )}
 
