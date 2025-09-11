@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useVisibilityRefresh } from "@/hooks/useVisibilityRefresh";
 import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
@@ -113,7 +113,23 @@ const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Global admin redirect hook
+const useAdminRedirect = () => {
+  const { user, authReady, userRole } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  React.useEffect(() => {
+    if (authReady && user && userRole === 'Admin' && location.pathname !== '/admin') {
+      console.log('🔄 Global admin redirect from', location.pathname, 'to /admin');
+      navigate('/admin', { replace: true });
+    }
+  }, [user, authReady, userRole, navigate, location.pathname]);
+};
+
 const AppContent = () => {
+  useAdminRedirect();
+  
   return (
     <Routes>
       {/* Public routes */}
