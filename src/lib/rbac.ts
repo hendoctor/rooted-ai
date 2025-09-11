@@ -15,6 +15,7 @@ const roleHierarchy: Record<Role, Role[]> = {
 
 const permissions: RolePermissions = {
   pages: {
+    admin: ['Admin'],
     dashboard: ['Admin', 'Manager'],
     reports: ['Admin', 'Manager'],
     profile: ['Admin', 'Manager', 'User'],
