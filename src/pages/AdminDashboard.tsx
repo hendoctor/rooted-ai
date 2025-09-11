@@ -5,24 +5,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SortableTable, { Column } from '@/components/admin/SortableTable';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Trash2, Edit2, Users, Building2, Crown, UserPlus, X, ExternalLink, MessageSquare, Plus, RefreshCw } from 'lucide-react';
+import { Trash2, Edit2, Users, Building2, Crown, UserPlus, X, ExternalLink, MessageSquare, Plus, RefreshCw, Pencil, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { LoadingSpinner, InlineLoader } from '@/components/LoadingSpinner';
 import PortalContentManager from '@/components/admin/PortalContentManager';
-import UserInvitationManager from '@/components/admin/UserInvitationManager';
 import AdminPermissionDebugger from '@/components/admin/AdminPermissionDebugger';
 import { activityLogger } from '@/utils/activityLogger';
 import { Link } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
 import ActivityLogsTable from '@/components/admin/ActivityLogsTable';
 import AdminPortalPreview from '@/components/admin/AdminPortalPreview';
+import { format } from 'date-fns';
 
 interface UserWithRole {
   id: string;
@@ -58,6 +58,18 @@ interface NewsletterSubscription {
   source: string;
 }
 
+interface Invitation {
+  id: string;
+  email: string;
+  full_name: string;
+  client_name: string | null;
+  role: string;
+  status: string;
+  created_at: string;
+  expires_at: string;
+  invitation_token: string;
+}
+
 const AdminDashboard: React.FC = () => {
   const { user, loading, userRole } = useAuth();
   const isAdmin = userRole === 'Admin';
@@ -84,6 +96,13 @@ const AdminDashboard: React.FC = () => {
   const [selectedCompanyName, setSelectedCompanyName] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [userToAdd, setUserToAdd] = useState('');
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isEditInviteDialogOpen, setIsEditInviteDialogOpen] = useState(false);
+  const [editingInvitation, setEditingInvitation] = useState<Invitation | null>(null);
+  const [inviteForm, setInviteForm] = useState({ email: '', full_name: '', role: 'Client', companyId: '' });
+  const [editInviteForm, setEditInviteForm] = useState({ email: '', full_name: '', role: 'Client', companyId: '' });
+  const [inviteLoading, setInviteLoading] = useState(false);
   const { toast } = useToast();
 
   // Enhanced data loading with auth state handling
@@ -159,7 +178,8 @@ const AdminDashboard: React.FC = () => {
       await Promise.all([
         fetchUsersWithRoles(),
         fetchAllCompanies(),
-        fetchNewsletterSubscriptions()
+        fetchNewsletterSubscriptions(),
+        fetchInvitations()
       ]);
       
       console.log('✅ All admin data loaded successfully');
@@ -252,6 +272,25 @@ const AdminDashboard: React.FC = () => {
       console.error('Error in fetchUsersWithRoles:', error);
     }
   };
+
+  const fetchInvitations = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_invitations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setInvitations((data as Invitation[]) ?? []);
+    } catch (error) {
+      console.error('Error fetching invitations:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load invitations',
+        variant: 'destructive'
+      });
+    }
+  }, [toast]);
   // Role permissions are now managed directly in users table - no separate fetch needed
 
   const fetchAllCompanies = async () => {
@@ -321,10 +360,205 @@ const AdminDashboard: React.FC = () => {
 
   const handleRefreshUsers = () => {
     fetchUsersWithRoles();
+    fetchInvitations();
     toast({
       title: 'Users refreshed',
-      description: 'Latest users loaded',
+      description: 'Latest users and invitations loaded',
     });
+  };
+
+  const sendInvitation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInviteLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      let clientName = '';
+      if (inviteForm.role === 'Admin') {
+        clientName = 'RootedAI';
+      } else {
+        const selectedCompany = allCompanies.find(c => c.id === inviteForm.companyId);
+        if (!selectedCompany) throw new Error('Please select a company');
+        clientName = selectedCompany.name;
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-invitation', {
+        body: {
+          email: inviteForm.email,
+          full_name: inviteForm.full_name,
+          role: inviteForm.role,
+          client_name: clientName
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: 'Invitation Sent!',
+        description: `Successfully sent invitation to ${inviteForm.email}`,
+      });
+
+      setInviteForm({ email: '', full_name: '', role: 'Client', companyId: '' });
+      setIsInviteDialogOpen(false);
+      fetchInvitations();
+    } catch (error) {
+      console.error('Failed to send invitation:', error);
+      let description = 'Failed to send invitation';
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('rate limit')) {
+        description = 'Rate limit exceeded. Please wait before sending more invitations.';
+      } else if (message) {
+        description = message;
+      }
+      toast({ title: 'Error', description, variant: 'destructive' });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
+  const cancelInvitation = async (invitationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_invitations')
+        .update({ status: 'cancelled' })
+        .eq('id', invitationId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Invitation cancelled successfully',
+      });
+
+      fetchInvitations();
+    } catch (error) {
+      console.error('Error cancelling invitation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to cancel invitation',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const copyInvitationLink = (token: string) => {
+    const invitationUrl = `${window.location.origin}/auth?invite=${token}`;
+    navigator.clipboard.writeText(invitationUrl);
+    toast({
+      title: 'Copied!',
+      description: 'Invitation link copied to clipboard',
+    });
+  };
+
+  const handleEditInvitation = (invitation: Invitation) => {
+    setEditingInvitation(invitation);
+    let companyId = '';
+    if (invitation.role === 'Client' && invitation.client_name) {
+      const company = allCompanies.find(c => c.name === invitation.client_name);
+      if (company) companyId = company.id;
+    }
+    setEditInviteForm({
+      email: invitation.email,
+      full_name: invitation.full_name,
+      role: invitation.role,
+      companyId
+    });
+    setIsEditInviteDialogOpen(true);
+  };
+
+  const updateInvitation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingInvitation) return;
+    try {
+      let clientName = '';
+      if (editInviteForm.role === 'Admin') {
+        clientName = 'RootedAI';
+      } else {
+        const selectedCompany = allCompanies.find(c => c.id === editInviteForm.companyId);
+        if (!selectedCompany) throw new Error('Please select a company');
+        clientName = selectedCompany.name;
+      }
+
+      const { error } = await supabase
+        .from('user_invitations')
+        .update({
+          email: editInviteForm.email,
+          full_name: editInviteForm.full_name,
+          role: editInviteForm.role,
+          client_name: clientName,
+        })
+        .eq('id', editingInvitation.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Invitation Updated',
+        description: 'Invitation updated successfully',
+      });
+
+      setIsEditInviteDialogOpen(false);
+      setEditingInvitation(null);
+      fetchInvitations();
+    } catch (error) {
+      console.error('Error updating invitation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update invitation',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteInvitation = async (invitationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_invitations')
+        .delete()
+        .eq('id', invitationId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Deleted',
+        description: 'Invitation deleted successfully',
+      });
+
+      fetchInvitations();
+    } catch (error) {
+      console.error('Error deleting invitation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete invitation',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const getStatusBadge = (status: string, expiresAt: string) => {
+    const isExpired = new Date(expiresAt) < new Date();
+
+    if (status === 'pending' && isExpired) {
+      return <Badge variant="destructive">Expired</Badge>;
+    }
+
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline">Pending</Badge>;
+      case 'accepted':
+        return <Badge variant="default">Accepted</Badge>;
+      case 'cancelled':
+        return <Badge variant="secondary">Cancelled</Badge>;
+      case 'expired':
+        return <Badge variant="destructive">Expired</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   const handleRefreshSubscriptions = () => {
@@ -446,6 +680,9 @@ const AdminDashboard: React.FC = () => {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'newsletter_subscriptions' }, () => {
         fetchNewsletterSubscriptions();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_invitations' }, () => {
+        fetchInvitations();
       })
       .subscribe();
 
@@ -695,70 +932,120 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const userColumns: Column<UserWithRole>[] = [
+  interface UserRow extends UserWithRole {
+    kind: 'user';
+    name: string;
+  }
+
+  interface InvitationRow extends Invitation {
+    kind: 'invitation';
+    name: string;
+  }
+
+  const userTableData: (UserRow | InvitationRow)[] = [
+    ...usersWithRoles.map(u => ({ ...u, kind: 'user' as const, name: u.display_name || u.email })),
+    ...invitations.map(inv => ({ ...inv, kind: 'invitation' as const, name: inv.full_name || inv.email }))
+  ];
+
+  const userColumns: Column<UserRow | InvitationRow>[] = [
     { key: 'email', label: 'Email', initialWidth: 200 },
     {
       key: 'role',
       label: 'Role',
-      render: (u) => (
-        <Badge variant={u.role === 'Admin' ? 'default' : 'secondary'}>
-          {u.role === 'Admin' && <Crown className="h-3 w-3 mr-1" />}
-          {u.role}
+      render: (item) => (
+        <Badge variant={item.role === 'Admin' ? 'default' : 'secondary'}>
+          {item.role === 'Admin' && <Crown className="h-3 w-3 mr-1" />}
+          {item.role}
         </Badge>
       ),
       initialWidth: 120,
     },
-    { key: 'display_name', label: 'Display Name', initialWidth: 150 },
+    { key: 'name', label: 'Name', initialWidth: 150 },
     {
-      key: 'companies',
-      label: 'Company Memberships',
+      key: 'companyOrStatus',
+      label: 'Company / Status',
       sortable: false,
-      render: (user) =>
-        user.companies && user.companies.length > 0 ? (
-          <div className="space-y-1">
-            {user.companies.map((company, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  {company.name}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  ({company.userRole})
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-1"
-                  onClick={() => removeUserFromCompany(user.auth_user_id, company.id)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <span className="text-muted-foreground">{user.client_name || 'No company'}</span>
-        ),
+      render: (item) =>
+        item.kind === 'user'
+          ? item.companies && item.companies.length > 0
+            ? (
+                <div className="space-y-1">
+                  {item.companies.map((company, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {company.name}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        ({company.userRole})
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto p-1"
+                        onClick={() => removeUserFromCompany(item.auth_user_id, company.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )
+            : (
+                <span className="text-muted-foreground">{item.client_name || 'No company'}</span>
+              )
+          : getStatusBadge(item.status, item.expires_at),
+    },
+    {
+      key: 'created_at',
+      label: 'Created',
+      render: (item) => (
+        <div className="flex items-center gap-1 text-sm">
+          <Clock className="h-3 w-3" />
+          {format(new Date(item.created_at), 'MMM dd, yyyy')}
+        </div>
+      ),
+      initialWidth: 150,
     },
     {
       key: 'actions',
       label: 'Actions',
       sortable: false,
-      render: (user) => (
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => openEditUser(user)}>
-            <Edit2 className="h-3 w-3" />
-          </Button>
-          {!user.display_name && (
-            <Button variant="outline" size="sm" onClick={() => createMissingProfile(user)}>
-              <UserPlus className="h-3 w-3" />
+      render: (item) =>
+        item.kind === 'user' ? (
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => openEditUser(item)}>
+              <Edit2 className="h-3 w-3" />
             </Button>
-          )}
-          <Button variant="destructive" size="sm" onClick={() => deleteUser(user.email)}>
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      ),
-      initialWidth: 150,
+            {!item.display_name && (
+              <Button variant="outline" size="sm" onClick={() => createMissingProfile(item)}>
+                <UserPlus className="h-3 w-3" />
+              </Button>
+            )}
+            <Button variant="destructive" size="sm" onClick={() => deleteUser(item.email)}>
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-2 justify-end">
+            <Button size="sm" variant="outline" onClick={() => handleEditInvitation(item)}>
+              <Pencil className="h-3 w-3" />
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => deleteInvitation(item.id)}>
+              <Trash2 className="h-3 w-3" />
+            </Button>
+            {item.status === 'pending' && (
+              <>
+                <Button size="sm" variant="outline" onClick={() => copyInvitationLink(item.invitation_token)}>
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => cancelInvitation(item.id)}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </>
+            )}
+          </div>
+        ),
+      initialWidth: 180,
     },
   ];
 
@@ -944,19 +1231,25 @@ const AdminDashboard: React.FC = () => {
                   Real-time view of all authenticated user profiles with full management capabilities.
                 </CardDescription>
               </div>
-              <Button onClick={handleRefreshUsers} variant="outline" size="sm">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setIsInviteDialogOpen(true)} size="sm">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Invite
+                </Button>
+                <Button onClick={handleRefreshUsers} variant="outline" size="sm">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
             {loadingData ? (
               <InlineLoader text="Loading users..." />
-            ) : usersWithRoles.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No users found.</p>
+            ) : userTableData.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">No users or invitations found.</p>
             ) : (
-              <SortableTable data={usersWithRoles} columns={userColumns} />
+              <SortableTable data={userTableData} columns={userColumns} />
             )}
           </CardContent>
         </Card>
@@ -1045,6 +1338,148 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
+        {/* Invite User Dialog */}
+        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invite User</DialogTitle>
+              <DialogDescription>Send an invitation to a new user.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={sendInvitation} className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="invite-email">Email</Label>
+                <Input
+                  id="invite-email"
+                  type="email"
+                  value={inviteForm.email}
+                  onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="invite-name">Full Name</Label>
+                <Input
+                  id="invite-name"
+                  value={inviteForm.full_name}
+                  onChange={(e) => setInviteForm({ ...inviteForm, full_name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="invite-role">Role</Label>
+                <Select
+                  value={inviteForm.role}
+                  onValueChange={(value) => setInviteForm({ ...inviteForm, role: value })}
+                >
+                  <SelectTrigger id="invite-role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Client">Client</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {inviteForm.role === 'Client' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="invite-company">Company</Label>
+                  <Select
+                    value={inviteForm.companyId}
+                    onValueChange={(value) => setInviteForm({ ...inviteForm, companyId: value })}
+                  >
+                    <SelectTrigger id="invite-company">
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allCompanies.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={inviteLoading}>
+                  {inviteLoading ? 'Sending...' : 'Send Invitation'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Invitation Dialog */}
+        <Dialog open={isEditInviteDialogOpen} onOpenChange={setIsEditInviteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Invitation</DialogTitle>
+              <DialogDescription>Update invitation details.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={updateInvitation} className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-invite-email">Email</Label>
+                <Input
+                  id="edit-invite-email"
+                  type="email"
+                  value={editInviteForm.email}
+                  onChange={(e) => setEditInviteForm({ ...editInviteForm, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-invite-name">Full Name</Label>
+                <Input
+                  id="edit-invite-name"
+                  value={editInviteForm.full_name}
+                  onChange={(e) => setEditInviteForm({ ...editInviteForm, full_name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-invite-role">Role</Label>
+                <Select
+                  value={editInviteForm.role}
+                  onValueChange={(value) => setEditInviteForm({ ...editInviteForm, role: value })}
+                >
+                  <SelectTrigger id="edit-invite-role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Client">Client</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {editInviteForm.role === 'Client' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-invite-company">Company</Label>
+                  <Select
+                    value={editInviteForm.companyId}
+                    onValueChange={(value) => setEditInviteForm({ ...editInviteForm, companyId: value })}
+                  >
+                    <SelectTrigger id="edit-invite-company">
+                      <SelectValue placeholder="Select company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allCompanies.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditInviteDialogOpen(false)}>Cancel</Button>
+                <Button type="submit">Update Invitation</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         {/* Activity Logs Section */}
         <ActivityLogsTable />
 
@@ -1127,8 +1562,6 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        <UserInvitationManager companies={allCompanies} />
-        
         <PortalContentManager companies={allCompanies} currentAdmin={user?.email || ""} />
         
         <AdminPermissionDebugger />
