@@ -74,6 +74,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchContext = useCallback(async (id: string) => {
     try {
+      // Ensure user membership exists before fetching context
+      await supabase.rpc('ensure_membership_for_current_user');
+      
       const { data, error } = await supabase.rpc('get_user_context_optimized', {
         p_user_id: id,
       });
