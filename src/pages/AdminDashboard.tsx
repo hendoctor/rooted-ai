@@ -19,8 +19,10 @@ import PortalContentManager from '@/components/admin/PortalContentManager';
 import ClientInvitationManager from '@/components/admin/ClientInvitationManager';
 import AdminInvitationManager from '@/components/admin/AdminInvitationManager';
 import AdminPermissionDebugger from '@/components/admin/AdminPermissionDebugger';
+import { activityLogger } from '@/utils/activityLogger';
 import { Link } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
+import ActivityLogsTable from '@/components/admin/ActivityLogsTable';
 
 interface UserWithRole {
   id: string;
@@ -136,6 +138,12 @@ const AdminDashboard: React.FC = () => {
     setLoadingData(true); // Set loading only when we start fetching
     fetchAllData();
     const cleanup = setupRealtimeSubscriptions();
+    
+    // Log admin dashboard access
+    if (user?.id && user?.email) {
+      activityLogger.logPageView(user.id, user.email, 'Admin Dashboard').catch(console.error);
+    }
+    
     return cleanup;
   }, [user, loading, isAdmin, userRole]);
 
@@ -432,6 +440,16 @@ const AdminDashboard: React.FC = () => {
       .eq('email', userEmail);
     
     if (!error) {
+      // Log admin action
+      if (user?.id && user?.email) {
+        await activityLogger.logAdminAction(
+          user.id,
+          user.email,
+          'update_user_role',
+          { targetUserEmail: userEmail, newRole, oldRole: 'previous_role' }
+        );
+      }
+      
       toast({
         title: "Success",
         description: `User role updated to ${newRole}`,
@@ -454,6 +472,16 @@ const AdminDashboard: React.FC = () => {
     });
     
     if (!error) {
+      // Log admin action
+      if (user?.id && user?.email) {
+        await activityLogger.logAdminAction(
+          user.id,
+          user.email,
+          'delete_user',
+          { deletedUserEmail: userEmail }
+        );
+      }
+      
       toast({
         title: "Success",
         description: "User deleted successfully",
@@ -1072,6 +1100,9 @@ const AdminDashboard: React.FC = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Activity Logs Section */}
+        <ActivityLogsTable />
 
         {/* Newsletter Subscriptions Section */}
         <Card>

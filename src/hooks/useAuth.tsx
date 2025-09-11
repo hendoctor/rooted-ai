@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
+import { activityLogger } from '@/utils/activityLogger';
 
 // Keys used for persisting auth data across refreshes
 const ROLE_STORAGE_KEY = 'auth_user_role';
@@ -274,6 +275,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setCompanies(companiesData);
                 persistAuthData(role, companiesData);
               }
+              
+              // Log login activity after successful auth
+              const primaryCompany = companiesData.length > 0 ? companiesData[0] : null;
+              activityLogger.logLogin(
+                newSession.user.id,
+                newSession.user.email || '',
+                role,
+                primaryCompany?.id,
+                primaryCompany?.name
+              ).catch(console.error);
             })
             .catch((error) => {
               console.warn('⚠️ Background profile refresh failed, keeping stored data:', error);
@@ -293,6 +304,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setUserRole(role);
               setCompanies(companiesData);
               persistAuthData(role, companiesData);
+              
+              // Log login activity for fresh profile
+              const primaryCompany = companiesData.length > 0 ? companiesData[0] : null;
+              activityLogger.logLogin(
+                newSession.user.id,
+                newSession.user.email || '',
+                role,
+                primaryCompany?.id,
+                primaryCompany?.name
+              ).catch(console.error);
             })
             .catch((error) => {
               performance.trackProfileComplete();
@@ -381,10 +402,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user?.id, userRole, companies, fetchUserProfile]);
 
-  // Sign out
+  // Sign out with activity logging
   const signOut = useCallback(async () => {
     try {
       console.log('🚪 Signing out...');
+      
+      // Log logout activity before clearing state
+      if (user?.id && user?.email) {
+        await activityLogger.logLogout(user.id, user.email);
+      }
+      
       setLoading(true);
       await supabase.auth.signOut();
       // Clear any persisted auth data

@@ -16,6 +16,7 @@ import EmptyState from '@/components/client-portal/EmptyState';
 import AiToolCard from '@/components/client-portal/AiToolCard';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { activityLogger } from '@/utils/activityLogger';
 
 const ClientPortal: React.FC = () => {
   const { user, userRole, companies, loading: authLoading } = useAuth();
@@ -91,6 +92,16 @@ const ClientPortal: React.FC = () => {
         if (userCompany) {
           console.log(`✅ Found user company: ${userCompany.name || userCompany.slug}`);
           setCompany(userCompany);
+          
+          // Log company access
+          if (user?.id && user?.email) {
+            activityLogger.logCompanyAccess(
+              user.id,
+              user.email,
+              userCompany.id,
+              userCompany.name || userCompany.slug
+            ).catch(console.error);
+          }
         } else if (userRole === 'Admin') {
           // Admin can access any company - fetch it
           console.log(`🔍 Admin accessing company by slug: ${slug}`);
@@ -347,6 +358,26 @@ const ClientPortal: React.FC = () => {
         }
 
         console.log(`✅ Portal data loading completed for ${company.name || company.slug}: ${loadedCount}/${totalSections} sections loaded successfully`);
+        
+        // Log portal view activity
+        if (user?.id && user?.email) {
+          const sectionsLoaded = [];
+          if (announcements.length > 0) sectionsLoaded.push('announcements');
+          if (resources.length > 0) sectionsLoaded.push('resources');
+          if (usefulLinks.length > 0) sectionsLoaded.push('useful_links');
+          if (aiTools.length > 0) sectionsLoaded.push('ai_tools');
+          if (nextSession) sectionsLoaded.push('coaching');
+          if (kpis.length > 0) sectionsLoaded.push('kpis');
+          if (faqs.length > 0) sectionsLoaded.push('faqs');
+          
+          activityLogger.logPortalView(
+            user.id,
+            user.email,
+            company.id,
+            company.name || company.slug,
+            sectionsLoaded
+          ).catch(console.error);
+        }
         
         // Show toast if some sections failed to load
         if (loadedCount < totalSections) {

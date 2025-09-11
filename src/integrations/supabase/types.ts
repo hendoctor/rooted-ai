@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          activity_description: string | null
+          activity_type: string
+          company_id: string | null
+          company_name: string | null
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          user_agent: string | null
+          user_email: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_description?: string | null
+          activity_type: string
+          company_id?: string | null
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_email: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_description?: string | null
+          activity_type?: string
+          company_id?: string | null
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_email?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       adoption_coaching: {
         Row: {
           contact: string | null
@@ -994,6 +1044,20 @@ export type Database = {
           event_type: string
           risk_level?: string
           user_id?: string
+        }
+        Returns: undefined
+      }
+      log_user_activity: {
+        Args: {
+          p_activity_description?: string
+          p_activity_type?: string
+          p_company_id?: string
+          p_company_name?: string
+          p_ip_address?: unknown
+          p_metadata?: Json
+          p_user_agent?: string
+          p_user_email: string
+          p_user_id: string
         }
         Returns: undefined
       }
