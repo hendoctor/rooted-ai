@@ -1,53 +1,61 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { useMobileOptimizations } from './useMobileOptimizations';
 
 /**
  * Enhanced hook to handle mobile app focus/refresh scenarios
- * Includes PWA-specific optimizations and pull-to-refresh detection
+ * Throttled to prevent rapid re-auth loops and UI flicker
  */
 export const useVisibilityRefresh = () => {
   const { refreshAuth, user } = useAuth();
   const { isPWA, isStandalone, isPullToRefresh, isOnline } = useMobileOptimizations();
 
+  const lastRefreshRef = useRef(0);
+  const inFlightRef = useRef(false);
+  const MIN_INTERVAL = 15000; // 15s throttle between refreshes
+
+  const tryRefresh = (reason: string) => {
+    if (!user) return;
+    const now = Date.now();
+    if (inFlightRef.current) return;
+    if (now - lastRefreshRef.current < MIN_INTERVAL) return;
+
+    inFlightRef.current = true;
+    console.log(`🔄 Auth refresh triggered (${reason})`);
+
+    Promise.resolve(refreshAuth())
+      .catch((e) => console.warn('Auth refresh error (ignored):', e))
+      .finally(() => {
+        lastRefreshRef.current = Date.now();
+        inFlightRef.current = false;
+      });
+  };
+
   useEffect(() => {
     const handleVisibilityChange = () => {
-      // Only refresh if user is authenticated and page becomes visible
-      if (!document.hidden && user) {
-        console.log('🔄 App regained focus - refreshing auth');
-        
-        // Add haptic feedback for PWA
+      // Only refresh if page becomes visible
+      if (!document.hidden) {
         if (isPWA && 'vibrate' in navigator) {
-          navigator.vibrate(50);
+          navigator.vibrate(30);
         }
-        
-        refreshAuth();
+        tryRefresh('visibilitychange');
       }
     };
 
     const handleOnline = () => {
-      // Refresh auth when coming back online
-      if (user && isOnline) {
-        console.log('🌐 App came online - refreshing auth');
-        refreshAuth();
+      if (isOnline) {
+        tryRefresh('online');
       }
     };
 
     const handleFocus = () => {
-      // Handle PWA focus events
-      if (user && (isPWA || isStandalone)) {
-        console.log('📱 PWA regained focus - refreshing auth');
-        refreshAuth();
+      if (isPWA || isStandalone) {
+        tryRefresh('focus');
       }
     };
 
-    // Listen for visibility changes (mobile focus/blur)
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Listen for online/offline events
     window.addEventListener('online', handleOnline);
-    
-    // Listen for PWA focus events
     window.addEventListener('focus', handleFocus);
 
     return () => {
@@ -55,13 +63,12 @@ export const useVisibilityRefresh = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [refreshAuth, user, isPWA, isStandalone, isOnline]);
+  }, [isPWA, isStandalone, isOnline, refreshAuth, user]);
 
-  // Handle pull-to-refresh specifically
+  // Handle pull-to-refresh specifically (also throttled)
   useEffect(() => {
-    if (isPullToRefresh && user) {
-      console.log('⬇️ Pull-to-refresh detected - refreshing auth');
-      refreshAuth();
+    if (isPullToRefresh) {
+      tryRefresh('pull-to-refresh');
     }
-  }, [isPullToRefresh, user, refreshAuth]);
+  }, [isPullToRefresh]);
 };

@@ -39,8 +39,23 @@ const ClientPortal: React.FC = () => {
     );
   }
   
-  if (!user || !userRole) {
+  if (!user) {
     return <AccessDenied />;
+  }
+
+  // If role is not yet resolved, keep showing a loading state (prevents AccessDenied flicker)
+  if (!userRole) {
+    return (
+      <div className="min-h-screen bg-background pt-16 lg:pt-20">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-muted-foreground">Loading your portal...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // State
@@ -154,14 +169,7 @@ const ClientPortal: React.FC = () => {
       setDataError(null);
 
       try {
-        // Clear existing data first to prevent stale data display
-        setAnnouncements([]);
-        setResources([]);
-        setUsefulLinks([]);
-        setNextSession(undefined);
-        setKpis([]);
-        setFaqs([]);
-        setAiTools([]);
+        // Keep existing data during refresh to avoid flicker
 
         // Load all portal data in parallel with retry logic
         const loadWithRetry = async (queryFn: () => Promise<any>, retries = 2): Promise<any> => {
@@ -266,123 +274,163 @@ const ClientPortal: React.FC = () => {
           })
         ]);
 
-        // Process results with better error handling
+        // Process results with robust error handling and no flicker
         let loadedCount = 0;
         const totalSections = 7;
+        let failCount = 0;
 
-        // Process announcements
-        if (announcementsResult.status === 'fulfilled' && announcementsResult.value?.data) {
-          const formattedAnnouncements = announcementsResult.value.data.map((item: any) => ({
-            id: item.id,
-            title: item.title,
-            date: new Date(item.created_at).toLocaleDateString(),
-            summary: item.summary,
-            content: item.content,
-            url: item.url,
-            status: 'New' as const
-          }));
-          setAnnouncements(formattedAnnouncements);
-          loadedCount++;
-          console.log(`✅ Loaded ${formattedAnnouncements.length} announcements`);
-        } else if (announcementsResult.status === 'rejected') {
-          console.error('❌ Failed to load announcements:', announcementsResult.reason);
-        }
-
-        // Process resources
-        if (resourcesResult.status === 'fulfilled' && resourcesResult.value?.data) {
-          const formattedResources = resourcesResult.value.data.map((item: any) => ({
-            id: item.id,
-            title: item.title,
-            type: item.category || 'Guide' as 'Guide' | 'Video' | 'Slide',
-            href: item.link
-          }));
-          setResources(formattedResources);
-          loadedCount++;
-          console.log(`✅ Loaded ${formattedResources.length} resources`);
-        } else if (resourcesResult.status === 'rejected') {
-          console.error('❌ Failed to load resources:', resourcesResult.reason);
-        }
-
-        // Process useful links
-        if (linksResult.status === 'fulfilled' && linksResult.value?.data) {
-          const formattedLinks = linksResult.value.data.map((item: any) => ({
-            id: item.id,
-            title: item.title,
-            url: item.url
-          }));
-          setUsefulLinks(formattedLinks);
-          loadedCount++;
-          console.log(`✅ Loaded ${formattedLinks.length} useful links`);
-        } else if (linksResult.status === 'rejected') {
-          console.error('❌ Failed to load useful links:', linksResult.reason);
-        }
-
-        // Process coaching (next session)
-        if (coachingResult.status === 'fulfilled' && coachingResult.value?.data && coachingResult.value.data.length > 0) {
-          const coaching = coachingResult.value.data[0];
-          setNextSession(coaching.topic);
-          loadedCount++;
-          console.log(`✅ Loaded coaching session: ${coaching.topic}`);
-        } else if (coachingResult.status === 'rejected') {
-          console.error('❌ Failed to load coaching:', coachingResult.reason);
-        }
-
-        // Process reports (KPIs)
-        if (reportsResult.status === 'fulfilled' && reportsResult.value?.data && reportsResult.value.data.length > 0) {
-          const latestReport = reportsResult.value.data[0];
-          if (latestReport.kpis && Array.isArray(latestReport.kpis)) {
-            setKpis(latestReport.kpis as Array<{ name: string; value: string; target?: string }>);
+        // Announcements
+        if (announcementsResult.status === 'fulfilled') {
+          const { data, error } = announcementsResult.value || {};
+          if (error) {
+            console.error('❌ Failed to load announcements:', error);
+            failCount++;
+          } else {
+            const formatted = (data || []).map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              date: new Date(item.created_at).toLocaleDateString(),
+              summary: item.summary,
+              content: item.content,
+              url: item.url,
+              status: 'New' as const,
+            }));
+            setAnnouncements(formatted);
             loadedCount++;
-            console.log(`✅ Loaded ${latestReport.kpis.length} KPIs`);
+            console.log(`✅ Loaded ${formatted.length} announcements`);
           }
-        } else if (reportsResult.status === 'rejected') {
+        } else {
+          console.error('❌ Failed to load announcements:', announcementsResult.reason);
+          failCount++;
+        }
+
+        // Resources
+        if (resourcesResult.status === 'fulfilled') {
+          const { data, error } = resourcesResult.value || {};
+          if (error) {
+            console.error('❌ Failed to load resources:', error);
+            failCount++;
+          } else {
+            const formatted = (data || []).map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              type: (item.category || 'Guide') as 'Guide' | 'Video' | 'Slide',
+              href: item.link,
+            }));
+            setResources(formatted);
+            loadedCount++;
+            console.log(`✅ Loaded ${formatted.length} resources`);
+          }
+        } else {
+          console.error('❌ Failed to load resources:', resourcesResult.reason);
+          failCount++;
+        }
+
+        // Useful links
+        if (linksResult.status === 'fulfilled') {
+          const { data, error } = linksResult.value || {};
+          if (error) {
+            console.error('❌ Failed to load useful links:', error);
+            failCount++;
+          } else {
+            const formatted = (data || []).map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              url: item.url,
+            }));
+            setUsefulLinks(formatted);
+            loadedCount++;
+            console.log(`✅ Loaded ${formatted.length} useful links`);
+          }
+        } else {
+          console.error('❌ Failed to load useful links:', linksResult.reason);
+          failCount++;
+        }
+
+        // Coaching (next session)
+        if (coachingResult.status === 'fulfilled') {
+          const { data, error } = coachingResult.value || {};
+          if (error) {
+            console.error('❌ Failed to load coaching:', error);
+            failCount++;
+          } else {
+            const topic = Array.isArray(data) && data[0]?.topic ? data[0].topic : undefined;
+            setNextSession(topic);
+            loadedCount++;
+            console.log(`✅ Loaded coaching session: ${topic ?? 'none'}`);
+          }
+        } else {
+          console.error('❌ Failed to load coaching:', coachingResult.reason);
+          failCount++;
+        }
+
+        // Reports (KPIs)
+        if (reportsResult.status === 'fulfilled') {
+          const { data, error } = reportsResult.value || {};
+          if (error) {
+            console.error('❌ Failed to load reports:', error);
+            failCount++;
+          } else {
+            const latest = Array.isArray(data) && data.length > 0 ? data[0] : null;
+            const kpiList = latest?.kpis && Array.isArray(latest.kpis) ? latest.kpis : [];
+            setKpis(kpiList as Array<{ name: string; value: string; target?: string }>);
+            loadedCount++;
+            console.log(`✅ Loaded ${kpiList.length} KPIs`);
+          }
+        } else {
           console.error('❌ Failed to load reports:', reportsResult.reason);
+          failCount++;
         }
 
-        // Process FAQs
-        if (faqsResult.status === 'fulfilled' && faqsResult.value?.data) {
-          setFaqs(faqsResult.value.data);
-          loadedCount++;
-          console.log(`✅ Loaded ${faqsResult.value.data.length} FAQs`);
-        } else if (faqsResult.status === 'rejected') {
+        // FAQs
+        if (faqsResult.status === 'fulfilled') {
+          const { data, error } = faqsResult.value || {};
+          if (error) {
+            console.error('❌ Failed to load FAQs:', error);
+            failCount++;
+          } else {
+            setFaqs((data || []) as Array<{ id: string; question: string; answer: string }>);
+            loadedCount++;
+            console.log(`✅ Loaded ${(data || []).length} FAQs`);
+          }
+        } else {
           console.error('❌ Failed to load FAQs:', faqsResult.reason);
+          failCount++;
         }
 
-        // Process AI Tools
-        if (aiToolsResult.status === 'fulfilled' && aiToolsResult.value?.data) {
-          setAiTools(aiToolsResult.value.data);
-          loadedCount++;
-          console.log(`✅ Loaded ${aiToolsResult.value.data.length} AI tools`);
-        } else if (aiToolsResult.status === 'rejected') {
+        // AI Tools
+        if (aiToolsResult.status === 'fulfilled') {
+          const { data, error } = aiToolsResult.value || {};
+          if (error) {
+            console.error('❌ Failed to load AI tools:', error);
+            failCount++;
+          } else {
+            setAiTools((data || []) as Array<{ id: string; ai_tool: string; url?: string; comments?: string }>);
+            loadedCount++;
+            console.log(`✅ Loaded ${(data || []).length} AI tools`);
+          }
+        } else {
           console.error('❌ Failed to load AI tools:', aiToolsResult.reason);
+          failCount++;
         }
 
-        console.log(`✅ Portal data loading completed for ${company.name || company.slug}: ${loadedCount}/${totalSections} sections loaded successfully`);
-        
-        // Log portal view activity
+        console.log(`✅ Portal data load complete for ${company.name || company.slug}: ${loadedCount}/${totalSections} successful, ${failCount} failures`);
+
+        // Log portal view activity (best-effort)
         if (user?.id && user?.email) {
-          const sectionsLoaded = [];
-          if (announcements.length > 0) sectionsLoaded.push('announcements');
-          if (resources.length > 0) sectionsLoaded.push('resources');
-          if (usefulLinks.length > 0) sectionsLoaded.push('useful_links');
-          if (aiTools.length > 0) sectionsLoaded.push('ai_tools');
-          if (nextSession) sectionsLoaded.push('coaching');
-          if (kpis.length > 0) sectionsLoaded.push('kpis');
-          if (faqs.length > 0) sectionsLoaded.push('faqs');
-          
           activityLogger.logPortalView(
             user.id,
             user.email,
             company.id,
             company.name || company.slug,
-            sectionsLoaded
+            []
           ).catch(console.error);
         }
-        
-        // Show toast if some sections failed to load
-        if (loadedCount < totalSections) {
+
+        // Show toast only if there were failures
+        if (failCount > 0) {
           toast.error(`Some content sections failed to load (${loadedCount}/${totalSections} loaded)`);
-          setDataError(`Only ${loadedCount} of ${totalSections} content sections loaded successfully`);
+          setDataError(`Loaded ${loadedCount} of ${totalSections} sections. Some failed to load.`);
         }
 
       } catch (err) {
@@ -395,7 +443,7 @@ const ClientPortal: React.FC = () => {
     };
 
     loadPortalData();
-  }, [company?.id, user, userRole, slug]); // Added user, userRole, slug as dependencies
+  }, [company?.id]); // Only reload when company changes to prevent flicker
 
   // Check access - Any member can view the portal
   const hasAccess = company?.id && (userRole === 'Admin' || isMemberOfCompany(company.id));
