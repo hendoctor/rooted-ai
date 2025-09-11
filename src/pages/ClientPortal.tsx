@@ -1,7 +1,9 @@
+// Simplified Client Portal - best practices implementation
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import AccessDenied from './AccessDenied';
 import Header from '@/components/Header';
@@ -13,67 +15,20 @@ import KPITile from '@/components/client-portal/KPITile';
 import EmptyState from '@/components/client-portal/EmptyState';
 import AiToolCard from '@/components/client-portal/AiToolCard';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const ClientPortal: React.FC = () => {
-  const { user, userRole, companies, loading } = useAuth();
+  const { user, userRole, companies } = useAuth();
+  const { hasRoleForCompany } = usePermissions();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  // Local admin override for accessing any company by slug
-  const [adminCompany, setAdminCompany] = useState<{ id: string; name?: string; slug: string } | null>(null);
-  const [adminCompanyLoading, setAdminCompanyLoading] = useState(false);
 
-  // Find the company by slug or use the first available company; admins can access any slug
-  const companyFromList = slug ? companies.find(c => c.slug === slug) : companies[0];
+  // State
+  const [company, setCompany] = useState<{ id: string; name?: string; slug: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (userRole === 'Admin' && slug && !companyFromList) {
-      let cancelled = false;
-      setAdminCompanyLoading(true);
-      (async () => {
-        try {
-          const { data } = await supabase
-            .from('companies')
-            .select('id, name, slug')
-            .eq('slug', slug)
-            .single();
-          if (!cancelled) setAdminCompany(data as any);
-        } catch (e) {
-          if (!cancelled) setAdminCompany(null);
-        } finally {
-          if (!cancelled) setAdminCompanyLoading(false);
-        }
-      })();
-      return () => { cancelled = true; };
-    } else {
-      setAdminCompany(null);
-    }
-  }, [userRole, slug, companyFromList]);
-
-  const company = companyFromList || (userRole === 'Admin' ? adminCompany : undefined);
-  // Navigation timeout ref
-  const navigationTimeoutRef = React.useRef<NodeJS.Timeout>();
-  
-  // Redirect to first company if no slug provided (with timeout protection)
-  useEffect(() => {
-    if (navigationTimeoutRef.current) {
-      clearTimeout(navigationTimeoutRef.current);
-    }
-    
-    if (!loading && !slug && companies.length > 0) {
-      navigationTimeoutRef.current = setTimeout(() => {
-        navigate(`/${companies[0].slug}`, { replace: true });
-      }, 100); // Small delay to prevent rapid navigation
-    }
-    
-    return () => {
-      if (navigationTimeoutRef.current) {
-        clearTimeout(navigationTimeoutRef.current);
-      }
-    };
-  }, [slug, companies, navigate, loading]);
-
-  const companySlug = company?.slug;
-
+  // Portal data
   const [announcements, setAnnouncements] = useState<Array<{ id: string; title: string; date: string; summary?: string; content?: string; url?: string; status?: 'New' | 'Important'; }>>([]);
   const [resources, setResources] = useState<Array<{ id: string; title: string; type: 'Guide' | 'Video' | 'Slide'; href?: string }>>([]);
   const [usefulLinks, setUsefulLinks] = useState<Array<{ id: string; title: string; url: string }>>([]);
@@ -82,418 +37,372 @@ const ClientPortal: React.FC = () => {
   const [faqs, setFaqs] = useState<Array<{ id: string; question: string; answer: string }>>([]);
   const [aiTools, setAiTools] = useState<Array<{ id: string; ai_tool: string; url?: string; comments?: string }>>([]);
 
-  // Data loading state
-  const [dataLoading, setDataLoading] = React.useState(false);
-  const loadingTimeoutRef = React.useRef<NodeJS.Timeout>();
-  const abortControllerRef = React.useRef<AbortController>();
-
+  // Initialize company and redirect if needed
   useEffect(() => {
-    if (!company?.id || dataLoading) return;
-    
-    const companyId = company.id;
-    
-    // Clear previous timeout and abort controller
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-    }
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
-    const signal = abortControllerRef.current.signal;
-
-    setDataLoading(true);
-    
-    // Set timeout protection (10 seconds)
-    loadingTimeoutRef.current = setTimeout(() => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        console.warn('Data loading timeout - aborting requests');
-        setDataLoading(false);
-      }
-    }, 10000);
-
-    const loadData = async () => {
-      console.log('Loading client portal content for company:', companyId);
-      
+    const initializeCompany = async () => {
       try {
-        if (signal.aborted) return;
-        // Announcements
-        const { data: annData, error: annError } = await supabase
-          .from('announcements')
-          .select('id, title, summary, content, url, created_at, announcement_companies!inner(company_id)')
-          .eq('announcement_companies.company_id', companyId)
-          .order('created_at', { ascending: false });
-        
-        console.log('Announcements query result:', { data: annData, error: annError });
-        
-        if (!annError && annData) {
-          setAnnouncements(
-            annData.map(a => ({
-              id: a.id,
-              title: a.title || '',
-              date: a.created_at ? new Date(a.created_at).toLocaleDateString() : '',
-              summary: a.summary || '',
-              content: a.content || '',
-              url: a.url || '',
-            }))
-          );
+        setLoading(true);
+        setError(null);
+
+        // If no slug provided, redirect to first company
+        if (!slug && companies.length > 0) {
+          navigate(`/${companies[0].slug}`, { replace: true });
+          return;
         }
 
-        // Resources
-        const { data: resData, error: resError } = await supabase
-          .from('portal_resources')
-          .select('id, title, link, category, portal_resource_companies!inner(company_id)')
-          .eq('portal_resource_companies.company_id', companyId);
-        
-        console.log('Resources query result:', { data: resData, error: resError });
-        
-        if (!resError && resData) {
-          setResources(
-            resData.map(r => ({
-              id: r.id,
-              title: r.title || '',
-              type: (r.category as 'Guide' | 'Video' | 'Slide') || 'Guide',
-              href: r.link || undefined,
-            }))
-          );
+        if (!slug) {
+          setError('No company specified');
+          setLoading(false);
+          return;
         }
 
-        // Useful Links
-        const { data: linkData, error: linkError } = await supabase
-          .from('useful_links')
-          .select('id, title, url, useful_link_companies!inner(company_id)')
-          .eq('useful_link_companies.company_id', companyId);
+        // Find company from user's companies
+        const userCompany = companies.find(c => c.slug === slug);
         
-        console.log('Useful Links query result:', { data: linkData, error: linkError });
-        
-        if (!linkError && linkData) {
-          setUsefulLinks(
-            linkData.map(l => ({
-              id: l.id,
-              title: l.title || '',
-              url: l.url || '',
-            }))
-          );
-        }
+        if (userCompany) {
+          setCompany(userCompany);
+        } else if (userRole === 'Admin') {
+          // Admin can access any company - fetch it
+          const { data, error } = await supabase
+            .from('companies')
+            .select('id, name, slug')
+            .eq('slug', slug)
+            .single();
 
-        // Adoption Coaching
-        const { data: coachingData, error: coachError } = await supabase
-          .from('adoption_coaching')
-          .select('topic, adoption_coaching_companies!inner(company_id)')
-          .eq('adoption_coaching_companies.company_id', companyId)
-          .order('created_at', { ascending: false })
-          .limit(1);
-        
-        console.log('Coaching query result:', { data: coachingData, error: coachError });
-        
-        if (!coachError && coachingData && coachingData[0]) {
-          setNextSession(coachingData[0].topic || undefined);
-        } else {
-          setNextSession(undefined);
-        }
-
-        // Reports & KPIs
-        const { data: reportData, error: reportError } = await supabase
-          .from('reports')
-          .select('kpis, report_companies!inner(company_id)')
-          .eq('report_companies.company_id', companyId)
-          .order('created_at', { ascending: false })
-          .limit(1);
-        
-        console.log('Reports query result:', { data: reportData, error: reportError });
-        
-        if (!reportError && reportData && reportData[0]) {
-          const kpiData = reportData[0].kpis;
-          if (Array.isArray(kpiData)) {
-            setKpis(kpiData as Array<{ name: string; value: string; target?: string }>);
-          } else {
-            setKpis([]);
+          if (error) {
+            console.error('Failed to fetch company:', error);
+            setError('Company not found');
+            setLoading(false);
+            return;
           }
+
+          setCompany(data);
         } else {
-          setKpis([]);
+          setError('Access denied to this company');
+          setLoading(false);
+          return;
         }
-
-        // FAQs
-        const { data: faqData, error: faqError } = await supabase
-          .from('faqs')
-          .select('id, question, answer, faq_companies!inner(company_id)')
-          .eq('faq_companies.company_id', companyId);
-        
-        console.log('FAQs query result:', { data: faqData, error: faqError });
-        
-        if (!faqError && faqData) {
-          setFaqs(
-            faqData.map(f => ({
-              id: f.id,
-              question: f.question || '',
-              answer: f.answer || '',
-            }))
-          );
-        }
-
-        // AI Tools
-        const { data: aiToolData, error: aiToolError } = await supabase
-          .from('ai_tools')
-          .select('id, ai_tool, url, comments, ai_tool_companies!inner(company_id)')
-          .eq('ai_tool_companies.company_id', companyId);
-        
-        console.log('AI Tools query result:', { data: aiToolData, error: aiToolError });
-        
-        if (!aiToolError && aiToolData) {
-          setAiTools(
-            aiToolData.map(t => ({
-              id: t.id,
-              ai_tool: t.ai_tool || '',
-              url: t.url || '',
-              comments: t.comments || '',
-            }))
-          );
-        }
-      } catch (error) {
-        if (!signal.aborted) {
-          console.error('Error loading client portal content:', error);
-        }
+      } catch (err) {
+        console.error('Error initializing company:', err);
+        setError('Failed to load company');
       } finally {
-        if (!signal.aborted) {
-          setDataLoading(false);
-          if (loadingTimeoutRef.current) {
-            clearTimeout(loadingTimeoutRef.current);
+        setLoading(false);
+      }
+    };
+
+    if (user && userRole) {
+      initializeCompany();
+    }
+  }, [user, userRole, companies, slug, navigate]);
+
+  // Load portal data when company is available
+  useEffect(() => {
+    const loadPortalData = async () => {
+      if (!company?.id) return;
+
+      console.log(`📊 Loading portal data for company: ${company.id}`);
+
+      try {
+        // Load all portal data in parallel
+        const [
+          announcementsResult,
+          resourcesResult,
+          linksResult,
+          coachingResult,
+          reportsResult,
+          faqsResult,
+          aiToolsResult
+        ] = await Promise.allSettled([
+          supabase
+            .from('announcements')
+            .select(`
+              id, title, summary, content, url, created_at,
+              announcement_companies!inner(company_id)
+            `)
+            .eq('announcement_companies.company_id', company.id)
+            .order('created_at', { ascending: false }),
+
+          supabase
+            .from('portal_resources')
+            .select(`
+              id, title, description, link, category,
+              portal_resource_companies!inner(company_id)
+            `)
+            .eq('portal_resource_companies.company_id', company.id),
+
+          supabase
+            .from('useful_links')
+            .select(`
+              id, title, url, description,
+              useful_link_companies!inner(company_id)
+            `)
+            .eq('useful_link_companies.company_id', company.id),
+
+          supabase
+            .from('adoption_coaching')
+            .select(`
+              id, topic, description, steps, media, contact,
+              adoption_coaching_companies!inner(company_id)
+            `)
+            .eq('adoption_coaching_companies.company_id', company.id),
+
+          supabase
+            .from('reports')
+            .select(`
+              id, name, period, kpis, notes, link,
+              report_companies!inner(company_id)
+            `)
+            .eq('report_companies.company_id', company.id)
+            .order('created_at', { ascending: false }),
+
+          supabase
+            .from('faqs')
+            .select(`
+              id, question, answer, category,
+              faq_companies!inner(company_id)
+            `)
+            .eq('faq_companies.company_id', company.id),
+
+          supabase
+            .from('ai_tools')
+            .select(`
+              id, ai_tool, url, comments,
+              ai_tool_companies!inner(company_id)
+            `)
+            .eq('ai_tool_companies.company_id', company.id)
+        ]);
+
+        // Process announcements
+        if (announcementsResult.status === 'fulfilled' && announcementsResult.value.data) {
+          const formattedAnnouncements = announcementsResult.value.data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            date: new Date(item.created_at).toLocaleDateString(),
+            summary: item.summary,
+            content: item.content,
+            url: item.url,
+            status: 'New' as const
+          }));
+          setAnnouncements(formattedAnnouncements);
+        }
+
+        // Process resources
+        if (resourcesResult.status === 'fulfilled' && resourcesResult.value.data) {
+          const formattedResources = resourcesResult.value.data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            type: item.category || 'Guide' as 'Guide' | 'Video' | 'Slide',
+            href: item.link
+          }));
+          setResources(formattedResources);
+        }
+
+        // Process useful links
+        if (linksResult.status === 'fulfilled' && linksResult.value.data) {
+          const formattedLinks = linksResult.value.data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            url: item.url
+          }));
+          setUsefulLinks(formattedLinks);
+        }
+
+        // Process coaching (next session)
+        if (coachingResult.status === 'fulfilled' && coachingResult.value.data && coachingResult.value.data.length > 0) {
+          const coaching = coachingResult.value.data[0];
+          setNextSession(coaching.topic);
+        }
+
+        // Process reports (KPIs)
+        if (reportsResult.status === 'fulfilled' && reportsResult.value.data && reportsResult.value.data.length > 0) {
+          const latestReport = reportsResult.value.data[0];
+          if (latestReport.kpis && Array.isArray(latestReport.kpis)) {
+            setKpis(latestReport.kpis as Array<{ name: string; value: string; target?: string }>);
           }
         }
+
+        // Process FAQs
+        if (faqsResult.status === 'fulfilled' && faqsResult.value.data) {
+          setFaqs(faqsResult.value.data);
+        }
+
+        // Process AI Tools
+        if (aiToolsResult.status === 'fulfilled' && aiToolsResult.value.data) {
+          setAiTools(aiToolsResult.value.data);
+        }
+
+        console.log(`✅ Portal data loaded successfully for ${company.name || company.slug}`);
+      } catch (err) {
+        console.error('Error loading portal data:', err);
+        toast.error('Failed to load some portal data');
       }
     };
 
-    loadData();
-    
-    // Cleanup function
-    return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-      }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [company?.id, dataLoading]);
+    loadPortalData();
+  }, [company?.id]);
 
-  if (loading || dataLoading) {
+  // Check access
+  const hasAccess = hasRoleForCompany(['Admin', 'Manager', 'Client'], company?.id);
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p>Loading your portal...</p>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-muted-foreground">Loading your portal...</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!user || (userRole !== 'Client' && userRole !== 'Admin')) {
+  if (error || !hasAccess) {
     return <AccessDenied />;
   }
 
   if (!company) {
-    if (userRole === 'Admin') {
-      if (adminCompanyLoading) {
-        return (
-          <div className="min-h-screen flex items-center justify-center">Loading...</div>
-        );
-      }
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center space-y-4">
-            <h2 className="text-lg font-semibold">Company Not Found</h2>
-            <p className="text-muted-foreground">This company slug does not exist.</p>
-          </div>
-        </div>
-      );
-    }
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h2 className="text-lg font-semibold">No Company Access</h2>
-          <p className="text-muted-foreground">You don't have access to any company portals yet.</p>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto py-8">
+          <EmptyState 
+            message="You don't have access to any companies yet."
+          />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-warm-beige">
+    <div className="min-h-screen bg-background">
       <Header />
-      <div className="mt-16 flex-1 flex flex-col">
-        <section className="bg-sage/10 text-center py-8">
-          <h1 className="text-xl font-semibold text-forest-green">Your AI journey with RootedAI</h1>
-          <p className="text-sm text-slate-gray mt-1">On track • Week 3 of Ability Building</p>
-        </section>
+      
+      <div className="container mx-auto py-8 space-y-8">
+        {/* Welcome Section */}
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold text-foreground">
+            Welcome to {company.name || company.slug}
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Your personalized portal for resources, updates, and tools.
+          </p>
+        </div>
 
-        <main className="flex-1 container mx-auto px-4 py-10 space-y-8">
-        {/* Company Settings Quick Access */}
-        {companySlug && (
-          <Card className="mb-6">
-            <CardContent className="flex items-center justify-between p-6">
-              <div>
-                <h3 className="text-lg font-semibold text-forest-green">Company Settings</h3>
-                <p className="text-sm text-slate-gray">Manage your company details and information</p>
-              </div>
-              <Link to={`/${companySlug}/settings`}>
-                <Button className="bg-forest-green hover:bg-forest-green/90 text-cream">
-                  Edit Company Details
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+        {/* KPI Dashboard */}
+        {kpis.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-foreground">Performance Overview</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {kpis.map((kpi, index) => (
+                <KPITile
+                  key={index}
+                  label={kpi.name}
+                  value={kpi.value}
+                  target={kpi.target}
+                />
+              ))}
+            </div>
+          </div>
         )}
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* Announcements */}
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-forest-green">Announcements</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1">
-              {announcements.length ? (
-                announcements.map(a => (
-                  <AnnouncementCard
-                    key={a.id}
-                    title={a.title}
-                    date={a.date}
-                    status={a.status}
-                    summary={a.summary}
-                    content={a.content}
-                    url={a.url}
-                  />
-                ))
-              ) : (
-                <EmptyState message="No announcements yet." />
-              )}
-            </CardContent>
-            <div className="px-6 pb-4">
-              <Button variant="outline" className="w-full text-forest-green">View all</Button>
-            </div>
-          </Card>
-
-          {/* Training & Resources */}
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-forest-green">Training & Resources</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-3">
-              {resources.length ? (
-                resources.map(r => (
-                  <ResourceCard key={r.id} title={r.title} type={r.type} href={r.href} />
-                ))
-              ) : (
-                <EmptyState message="Your first training pack arrives after kickoff." />
-              )}
-            </CardContent>
-            <div className="px-6 pb-4">
-              <Button variant="outline" className="w-full text-forest-green">Start training</Button>
-            </div>
-          </Card>
-
-          {/* Useful Links */}
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-forest-green">Useful Links</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-3">
-              {usefulLinks.length ? (
-                usefulLinks.map(l => (
-                  <UsefulLinkCard key={l.id} title={l.title} url={l.url} />
-                ))
-              ) : (
-                <EmptyState message="No useful links yet." />
-              )}
-            </CardContent>
-            <div className="px-6 pb-4">
-              <Button variant="outline" className="w-full text-forest-green">View all</Button>
-            </div>
-          </Card>
-
-          {/* Adoption Coaching */}
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-forest-green">Adoption Coaching</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <CoachingCard nextSession={nextSession} />
-            </CardContent>
-            <div className="px-6 pb-4">
-              <Button className="w-full bg-forest-green text-cream hover:bg-forest-green/90">
-                Book a 30-min session
-              </Button>
-            </div>
-          </Card>
-        </div>
-
-        {/* Secondary Row */}
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-forest-green">Reports & KPIs</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              {kpis.length ? (
-                kpis.map((kpi, idx) => (
-                  <KPITile key={idx} label={kpi.name} value={kpi.value} target={kpi.target} />
-                ))
-              ) : (
-                <EmptyState message="No reports yet." />
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-forest-green">FAQ</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {faqs.length ? (
-                faqs.map(f => (
-                  <div key={f.id} className="mb-4 last:mb-0">
-                    <p className="text-sm font-medium text-forest-green">{f.question}</p>
-                    <p className="text-sm text-slate-gray">{f.answer}</p>
-                  </div>
-                ))
-              ) : (
-                <EmptyState message="Short answers coming soon." />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* AI Tools */}
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-forest-green">AI Tools</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {aiTools.length ? (
-                aiTools.map(t => (
-                  <AiToolCard 
-                    key={t.id} 
-                    title={t.ai_tool} 
-                    url={t.url} 
-                    comments={t.comments} 
-                  />
-                ))
-              ) : (
-                <EmptyState message="No AI tools available yet." />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-
-        <footer className="bg-slate-gray text-cream text-center py-6 mt-10">
-          <p>Local Kansas City Experts • Microsoft-built solutions</p>
-          <div className="mt-2 flex justify-center gap-4">
-            <a href="mailto:support@rootedai.com" className="underline">Email Support</a>
-            <a href="#" className="underline">Schedule Discovery</a>
+        {/* Next Session */}
+        {nextSession && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-foreground">Upcoming Session</h2>
+            <CoachingCard 
+              nextSession={nextSession}
+            />
           </div>
-        </footer>
+        )}
+
+        {/* Announcements */}
+        {announcements.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-foreground">Latest Updates</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {announcements.slice(0, 4).map((announcement) => (
+                <AnnouncementCard
+                  key={announcement.id}
+                  title={announcement.title}
+                  date={announcement.date}
+                  summary={announcement.summary}
+                  status={announcement.status}
+                  url={announcement.url}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Resources */}
+        {resources.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-foreground">Resources</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {resources.map((resource) => (
+                <ResourceCard
+                  key={resource.id}
+                  title={resource.title}
+                  type={resource.type}
+                  href={resource.href}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* AI Tools */}
+        {aiTools.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-foreground">AI Tools</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {aiTools.map((tool) => (
+                <AiToolCard
+                  key={tool.id}
+                  title={tool.ai_tool}
+                  url={tool.url}
+                  comments={tool.comments}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Useful Links */}
+        {usefulLinks.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-foreground">Quick Links</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {usefulLinks.map((link) => (
+                <UsefulLinkCard
+                  key={link.id}
+                  title={link.title}
+                  url={link.url}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Company Settings Link for Admins */}
+        {userRole === 'Admin' && (
+          <div className="pt-8 border-t">
+            <Link to={`/${company.slug}/settings`}>
+              <Button variant="outline">
+                Company Settings
+              </Button>
+            </Link>
+          </div>
+        )}
+
+        {/* Empty state if no content */}
+        {announcements.length === 0 && resources.length === 0 && usefulLinks.length === 0 && aiTools.length === 0 && !nextSession && kpis.length === 0 && (
+          <EmptyState 
+            message="Your portal content is being prepared. Check back soon!"
+          />
+        )}
       </div>
     </div>
   );

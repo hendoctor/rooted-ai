@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import AuthGuard from "@/components/AuthGuard";
+import PermissionGuard from "@/components/PermissionGuard";
+import RBACGuard from "@/components/RBACGuard";
 
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -20,7 +22,6 @@ import CompanyPage from "./pages/CompanyPage";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 import RBACDemo from "./pages/RBACDemo";
-import RBACGuard from "@/components/RBACGuard";
 
 // Simplified loading wrapper
 const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -67,42 +68,52 @@ const AppContent = () => {
       <Route
         path="/admin"
         element={
-          <AuthGuard requiredRoles={["Admin"]}>
-            <AdminDashboard />
+          <AuthGuard>
+            <PermissionGuard requiredRoles={["Admin"]}>
+              <AdminDashboard />
+            </PermissionGuard>
           </AuthGuard>
         }
       />
       <Route
         path="/profile"
         element={
-          <AuthGuard requiredRoles={["Admin", "Client"]}>
-            <Profile />
+          <AuthGuard>
+            <PermissionGuard requiredRoles={["Admin", "Client"]}>
+              <Profile />
+            </PermissionGuard>
           </AuthGuard>
         }
       />
       <Route
         path="/rbac-demo"
         element={
-          <AuthGuard requiredRoles={["Admin", "Client"]}>
-            <RBACGuard page="rbac-demo">
-              <RBACDemo />
-            </RBACGuard>
+          <AuthGuard>
+            <PermissionGuard requiredRoles={["Admin", "Client"]}>
+              <RBACGuard page="rbac-demo">
+                <RBACDemo />
+              </RBACGuard>
+            </PermissionGuard>
           </AuthGuard>
         }
       />
       <Route
         path="/:slug/settings"
         element={
-          <AuthGuard requiredRoles={["Admin", "Client"]}>
-            <CompanyPage />
+          <AuthGuard>
+            <PermissionGuard requiredRoles={["Admin", "Client"]}>
+              <CompanyPage />
+            </PermissionGuard>
           </AuthGuard>
         }
       />
       <Route
         path="/:slug"
         element={
-          <AuthGuard requiredRoles={["Client", "Admin"]}>
-            <ClientPortal />
+          <AuthGuard>
+            <PermissionGuard requiredRoles={["Client", "Admin"]}>
+              <ClientPortal />
+            </PermissionGuard>
           </AuthGuard>
         }
       />

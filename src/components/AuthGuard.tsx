@@ -1,4 +1,4 @@
-// Simplified auth guard with proper loading states
+// Simplified auth guard - only handles authentication
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -7,23 +7,14 @@ import { Button } from '@/components/ui/button';
 
 interface AuthGuardProps {
   children: React.ReactNode;
-  requiredRoles?: string[];
-  companyId?: string;
   fallback?: React.ReactNode;
-}
-
-interface AuthWithForceRefresh {
-  forceRefresh: () => void;
 }
 
 const AuthGuard: React.FC<AuthGuardProps> = ({ 
   children, 
-  requiredRoles = [],
-  companyId,
   fallback
 }) => {
-  const authData = useAuth();
-  const { user, loading, error, requireRole, clearError } = authData;
+  const { user, loading, error, clearError } = useAuth();
   const location = useLocation();
   const [showRefreshOption, setShowRefreshOption] = React.useState(false);
 
@@ -37,7 +28,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
     }
   }, [loading]);
 
-  // Show loading state with recovery option and timeout
+  // Show loading state with recovery option
   if (loading) {
     return fallback || (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -92,14 +83,6 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
     // Redirect to auth page with return URL
     const returnUrl = location.pathname + location.search;
     return <Navigate to={`/auth?next=${encodeURIComponent(returnUrl)}`} replace />;
-  }
-
-  // Check authorization
-  if (requiredRoles.length > 0) {
-    const hasAccess = requireRole(requiredRoles, companyId);
-    if (!hasAccess) {
-      return <Navigate to="/access-denied" replace />;
-    }
   }
 
   return <>{children}</>;

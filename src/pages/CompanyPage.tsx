@@ -1,7 +1,9 @@
-import { useEffect, useState, useRef } from 'react';
-import { useParams, Navigate, Link, useNavigate } from 'react-router-dom';
+// Simplified Company Page - best practices implementation
+import { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
 import Header from '@/components/Header';
+import AccessDenied from './AccessDenied';
 import { generateSlug } from '@/lib/utils';
 
 interface CompanySettings {
@@ -31,12 +34,14 @@ interface Company {
 
 export default function CompanyPage() {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
-  const { user, userRole, companies, loading: authLoading, refreshAuth } = useAuth();
+  const { user, userRole, companies } = useAuth();
+  const { hasRoleForCompany } = usePermissions();
+  
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accessChecked, setAccessChecked] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -46,350 +51,306 @@ export default function CompanyPage() {
     address: ''
   });
 
-  // Add loading timeout protection
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  
+  // Initialize company data
   useEffect(() => {
-    if (!authLoading && user && slug && userRole) {
-      // Clear any existing timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      // Set timeout for loading protection
-      timeoutRef.current = setTimeout(() => {
-        if (loading) {
-          setLoading(false);
-          setAccessChecked(true);
-          console.warn('Company loading timeout - stopping loading state');
+    const initializeCompany = async () => {
+      if (!user || !slug) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Find company from user's companies first
+        const userCompany = companies.find(c => c.slug === slug);
+        
+        if (userCompany) {
+          // Fetch full company data
+          const { data, error } = await supabase
+            .from('companies')
+            .select('*')
+            .eq('id', userCompany.id)
+            .single();
+
+          if (error) throw error;
+          setCompany(data as Company);
+        } else if (userRole === 'Admin') {
+          // Admin can access any company
+          const { data, error } = await supabase
+            .from('companies')
+            .select('*')
+            .eq('slug', slug)
+            .single();
+
+          if (error) {
+            console.error('Failed to fetch company:', error);
+            setError('Company not found');
+            return;
+          }
+
+          setCompany(data as Company);
+        } else {
+          setError('Access denied to this company');
+          return;
         }
-      }, 8000);
-      
-      fetchCompany();
-    }
-    
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      } catch (err) {
+        console.error('Error initializing company:', err);
+        setError('Failed to load company');
+      } finally {
+        setLoading(false);
       }
     };
-  }, [user, authLoading, slug, userRole]);
 
-  const fetchCompany = async () => {
-    setLoading(true);
-    
-    try {
-      // Use maybeSingle() to avoid errors when no rows are returned due to RLS
-      const { data: company, error } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('slug', slug)
-        .maybeSingle();
+    initializeCompany();
+  }, [user, userRole, companies, slug]);
 
-      if (error) {
-        console.error('Database error:', error);
-        toast.error('Failed to load company details');
-        setLoading(false);
-        setAccessChecked(true);
-        return;
-      }
-
-      if (!company) {
-        // No company found or no access due to RLS
-        setLoading(false);
-        setAccessChecked(true);
-        return;
-      }
-
-      // Type assertion to handle JSON type from Supabase
-      const companyData = {
-        ...company,
-        settings: (company.settings as CompanySettings) || {}
-      };
-      
-      setCompany(companyData);
+  // Update form data when company loads
+  useEffect(() => {
+    if (company) {
       setFormData({
-        name: companyData.name || '',
-        description: companyData.settings.description || '',
-        website: companyData.settings.website || '',
-        industry: companyData.settings.industry || '',
-        phone: companyData.settings.phone || '',
-        address: companyData.settings.address || ''
+        name: company.name || '',
+        description: company.settings?.description || '',
+        website: company.settings?.website || '',
+        industry: company.settings?.industry || '',
+        phone: company.settings?.phone || '',
+        address: company.settings?.address || ''
       });
-      setAccessChecked(true);
-    } catch (error) {
-      console.error('Error fetching company:', error);
-      toast.error('Failed to load company details');
-      setAccessChecked(true);
-    } finally {
-      setLoading(false);
-      // Clear timeout when loading completes
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
     }
-  };
+  }, [company]);
 
-  // Remove this function since RLS policies handle access control
-  // The database will only return companies the user has access to
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleSave = async () => {
     if (!company) return;
 
-    const newSlug = generateSlug(formData.name);
-
     try {
-      // Ensure slug is unique
-      const { data: existing, error: slugError } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('slug', newSlug)
-        .neq('id', company.id);
+      setSaving(true);
 
-      if (slugError) throw slugError;
-      if (existing && existing.length > 0) {
-        toast.error('Company name already in use. Please choose a different name.');
-        return;
+      const updates: any = {
+        name: formData.name,
+        settings: {
+          description: formData.description,
+          website: formData.website,
+          industry: formData.industry,
+          phone: formData.phone,
+          address: formData.address
+        }
+      };
+
+      // Update slug if name changed
+      if (formData.name !== company.name) {
+        updates.slug = generateSlug(formData.name);
       }
 
       const { error } = await supabase
         .from('companies')
-        .update({
-          name: formData.name,
-          slug: newSlug,
-          settings: {
-            description: formData.description,
-            website: formData.website,
-            industry: formData.industry,
-            phone: formData.phone,
-            address: formData.address
-          },
-          updated_at: new Date().toISOString()
-        })
+        .update(updates)
         .eq('id', company.id);
 
       if (error) throw error;
 
-      toast.success('Company details updated successfully');
-      await refreshAuth();
+      // Update local state
+      setCompany(prev => prev ? { ...prev, ...updates } : null);
       setEditing(false);
-
-      if (newSlug !== company.slug) {
-        navigate(`/${newSlug}`, { replace: true });
-      } else {
-        fetchCompany(); // Refresh data
-      }
+      toast.success('Company settings updated successfully');
     } catch (error) {
-      console.error('Error updating company:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to update company details'
-      );
+      console.error('Failed to update company:', error);
+      toast.error('Failed to update company settings');
+    } finally {
+      setSaving(false);
     }
   };
 
-  if (authLoading || loading) {
-    return <LoadingSpinner />;
-  }
+  const handleCancel = () => {
+    if (company) {
+      setFormData({
+        name: company.name || '',
+        description: company.settings?.description || '',
+        website: company.settings?.website || '',
+        industry: company.settings?.industry || '',
+        phone: company.settings?.phone || '',
+        address: company.settings?.address || ''
+      });
+    }
+    setEditing(false);
+  };
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  // Check access
+  const hasAccess = hasRoleForCompany(['Admin'], company?.id);
 
-  // Show loading while auth data is loading
-  if (authLoading || !userRole || (userRole !== 'Admin' && companies.length === 0)) {
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-muted-foreground">Loading company portal...</p>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <LoadingSpinner />
+            <p className="text-muted-foreground">Loading company settings...</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  // Show access denied if access was checked and no company was found
-  if (accessChecked && !company) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>
-              You don't have permission to access this company's settings, or the company doesn't exist.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link to="/">
-              <Button variant="outline" className="w-full">
-                Return to Home
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!company) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Company Not Found</CardTitle>
-            <CardDescription>
-              The company you're looking for doesn't exist or you don't have access to it.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
+  if (error || !hasAccess || !company) {
+    return <AccessDenied />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-secondary/20">
+    <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto py-8 px-4 flex-1 mt-16">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
+      
+      <div className="container mx-auto py-8 max-w-4xl">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">{company.name}</h1>
-              <p className="text-muted-foreground">Company Dashboard</p>
+              <h1 className="text-3xl font-bold text-foreground">Company Settings</h1>
+              <p className="text-muted-foreground mt-2">
+                Manage your company information and preferences
+              </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Link to={`/${company.slug}`}>
-                  <Button variant="outline" className="w-full sm:w-auto">Back to Client Portal</Button>
-                </Link>
-              <Button
-                onClick={() => (editing ? handleSave() : setEditing(true))}
-                variant={editing ? 'default' : 'outline'}
-                className="w-full sm:w-auto"
-              >
-                {editing ? 'Save Changes' : 'Edit Details'}
+            <Link to={`/${company.slug}`}>
+              <Button variant="outline">
+                Back to Portal
               </Button>
-            </div>
+            </Link>
           </div>
 
-          <div className="grid gap-6">
-            {/* Company Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Company Information</CardTitle>
-                <CardDescription>
-                  Manage your company details and settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
+          {/* Company Information Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Company Information</CardTitle>
+              <CardDescription>
+                Basic information about your company
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="name">Company Name</Label>
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
                     disabled={!editing}
                   />
                 </div>
-
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                <div className="space-y-2">
+                  <Label htmlFor="industry">Industry</Label>
+                  <Input
+                    id="industry"
+                    value={formData.industry}
+                    onChange={(e) => handleInputChange('industry', e.target.value)}
                     disabled={!editing}
-                    placeholder="Tell us about your company..."
-                    rows={3}
+                    placeholder="e.g., Technology, Healthcare"
                   />
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="website">Website</Label>
-                    <Input
-                      id="website"
-                      value={formData.website}
-                      onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-                      disabled={!editing}
-                      placeholder="https://company.com"
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
+                  disabled={!editing}
+                  placeholder="Brief description of your company"
+                  rows={3}
+                />
+              </div>
 
-                  <div>
-                    <Label htmlFor="industry">Industry</Label>
-                    <Input
-                      id="industry"
-                      value={formData.industry}
-                      onChange={(e) => setFormData(prev => ({ ...prev, industry: e.target.value }))}
-                      disabled={!editing}
-                      placeholder="Technology, Healthcare, etc."
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      disabled={!editing}
-                      placeholder="+1 (555) 123-4567"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="address">Address</Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                      disabled={!editing}
-                      placeholder="Company address"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) => handleInputChange('website', e.target.value)}
+                    disabled={!editing}
+                    placeholder="https://www.example.com"
+                  />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    disabled={!editing}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+              </div>
 
-                {editing && (
-                  <div className="flex gap-2 pt-4">
-                    <Button onClick={handleSave}>Save Changes</Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setEditing(false);
-                        // Reset form data
-                        setFormData({
-                          name: company.name || '',
-                          description: company.settings?.description || '',
-                          website: company.settings?.website || '',
-                          industry: company.settings?.industry || '',
-                          phone: company.settings?.phone || '',
-                          address: company.settings?.address || ''
-                        });
-                      }}
-                    >
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Textarea
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => handleInputChange('address', e.target.value)}
+                  disabled={!editing}
+                  placeholder="Company address"
+                  rows={2}
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4">
+                {!editing ? (
+                  <Button onClick={() => setEditing(true)}>
+                    Edit Information
+                  </Button>
+                ) : (
+                  <>
+                    <Button onClick={handleSave} disabled={saving}>
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                    <Button variant="outline" onClick={handleCancel} disabled={saving}>
                       Cancel
                     </Button>
-                  </div>
+                  </>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Company Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Company Settings</CardTitle>
-                <CardDescription>
-                  Additional configuration options
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  <p><strong>Company ID:</strong> {company.id}</p>
-                  <p><strong>Company Slug:</strong> {company.slug}</p>
-                  <p><strong>Created:</strong> {new Date(company.created_at).toLocaleDateString()}</p>
-                  <p><strong>Last Updated:</strong> {new Date(company.updated_at).toLocaleDateString()}</p>
+          {/* Company Metadata */}
+          <Card>
+            <CardHeader>
+              <CardTitle>System Information</CardTitle>
+              <CardDescription>
+                Read-only system information
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Company ID</Label>
+                  <p className="text-sm text-foreground font-mono">{company.id}</p>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">URL Slug</Label>
+                  <p className="text-sm text-foreground font-mono">{company.slug}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Created</Label>
+                  <p className="text-sm text-foreground">
+                    {new Date(company.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Last Updated</Label>
+                  <p className="text-sm text-foreground">
+                    {new Date(company.updated_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

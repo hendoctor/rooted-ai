@@ -1,4 +1,4 @@
-// Simplified and reliable authentication hook
+// Simplified and reliable authentication hook - best practices implementation
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
@@ -23,8 +23,6 @@ interface AuthContextType {
   // Actions
   signOut: () => Promise<void>;
   refreshAuth: () => Promise<void>;
-  requireRole: (roles: string[], companyId?: string) => boolean;
-  getAccessibleRoutes: () => string[];
   clearError: () => void;
 }
 
@@ -41,33 +39,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
-  // Fetch user profile data using the new simplified function
-  const fetchUserProfile = useCallback(async (userId: string, abortSignal?: AbortSignal) => {
+  // Fetch user profile data
+  const fetchUserProfile = useCallback(async (userId: string): Promise<{ role: string; companies: Company[] }> => {
     if (!userId) {
       console.warn('No userId provided to fetchUserProfile');
       return { role: 'Client', companies: [] };
     }
 
-    if (isRefreshing) {
-      console.warn('Profile fetch already in progress, skipping');
-      return { role: userRole || 'Client', companies };
-    }
-
     console.log('👤 Fetching user profile for:', userId);
-    setError(null);
 
     try {
       const { data, error } = await supabase.rpc('get_user_profile', {
         p_user_id: userId
       });
-
-      if (abortSignal?.aborted) {
-        console.log('Profile fetch aborted');
-        return { role: 'Client', companies: [] };
-      }
 
       if (error) {
         console.error('Error fetching user profile:', error);
@@ -97,17 +83,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('✅ User profile loaded successfully:', { role, companiesCount: companiesData.length });
       return { role, companies: companiesData };
     } catch (error) {
-      if (abortSignal?.aborted) {
-        console.log('Profile fetch aborted');
-        return { role: 'Client', companies: [] };
-      }
       console.error('Failed to fetch user profile:', error);
-      setError('Failed to load user profile');
-      return { role: 'Client', companies: [] };
+      throw error;
     }
-  }, [isRefreshing, userRole, companies]);
+  }, []);
 
-  // Handle auth state changes with debouncing
+  // Handle auth state changes
   const handleAuthStateChange = useCallback(async (event: string, newSession: Session | null) => {
     console.log('🔄 Auth state change:', event, !!newSession?.user);
 
@@ -116,7 +97,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(newSession.user);
       setSession(newSession);
       setError(null);
-      setIsRefreshing(true);
 
       // Fetch user profile data
       try {
@@ -128,7 +108,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError('Failed to load user profile');
       } finally {
         setLoading(false);
-        setIsRefreshing(false);
       }
     } else {
       // User signed out
@@ -139,50 +118,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setCompanies([]);
       setError(null);
       setLoading(false);
-      setIsRefreshing(false);
     }
   }, [fetchUserProfile]);
 
-  // Check if user has required role
-  const requireRole = useCallback((roles: string[], companyId?: string): boolean => {
-    if (!userRole || !session) return false;
-
-    // Admin always has access
-    if (userRole === 'Admin') return true;
-
-    // Check global role
-    if (roles.includes(userRole)) {
-      // If company-specific check needed, verify access
-      if (companyId) {
-        return companies.some(c => c.id === companyId && roles.includes(c.userRole));
-      }
-      return true;
-    }
-
-    return false;
-  }, [userRole, session, companies]);
-
-  // Get accessible routes
-  const getAccessibleRoutes = useCallback((): string[] => {
-    const routes: string[] = ['/'];
-    if (!user) return routes;
-
-    routes.push('/profile');
-    if (userRole === 'Admin') routes.push('/admin');
-    companies.forEach(company => routes.push(`/${company.slug}`));
-
-    return routes;
-  }, [user, userRole, companies]);
-
-  // Refresh auth data with debouncing
+  // Refresh auth data
   const refreshAuth = useCallback(async () => {
-    if (!user?.id || isRefreshing) {
-      console.warn('No user ID available for refresh or already refreshing');
+    if (!user?.id) {
+      console.warn('No user ID available for refresh');
       return;
     }
 
     console.log('🔄 Refreshing auth data...');
-    setIsRefreshing(true);
     setError(null);
 
     try {
@@ -193,10 +139,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Failed to refresh auth:', error);
       setError('Failed to refresh authentication');
-    } finally {
-      setIsRefreshing(false);
     }
-  }, [user?.id, isRefreshing, fetchUserProfile]);
+  }, [user?.id, fetchUserProfile]);
 
   // Sign out
   const signOut = useCallback(async () => {
@@ -270,8 +214,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     error,
     signOut,
     refreshAuth,
-    requireRole,
-    getAccessibleRoutes,
     clearError
   };
 
@@ -292,8 +234,6 @@ export const useAuth = (): AuthContextType => {
       error: null,
       signOut: async () => {},
       refreshAuth: async () => {},
-      requireRole: () => false,
-      getAccessibleRoutes: () => ['/'],
       clearError: () => {}
     };
   }
