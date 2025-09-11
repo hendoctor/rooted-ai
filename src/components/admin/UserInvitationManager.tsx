@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { UserPlus, Mail, User, Shield, Building, Plus, X, ExternalLink, Clock, RefreshCw } from 'lucide-react';
+import { UserPlus, Mail, User, Shield, Building, Plus, X, ExternalLink, Clock, RefreshCw, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Invitation {
@@ -39,8 +39,16 @@ const ROOT_COMPANY_NAME = 'RootedAI';
 const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitationSent, companies }) => {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingInvitation, setEditingInvitation] = useState<Invitation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
+    email: '',
+    full_name: '',
+    role: 'Client',
+    companyId: ''
+  });
+  const [editFormData, setEditFormData] = useState({
     email: '',
     full_name: '',
     role: 'Client',
@@ -180,6 +188,94 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
     });
   };
 
+  const handleEdit = (invitation: Invitation) => {
+    setEditingInvitation(invitation);
+    let companyId = '';
+    if (invitation.role === 'Client' && invitation.client_name) {
+      const company = companies.find(c => c.name === invitation.client_name);
+      if (company) {
+        companyId = company.id;
+      }
+    }
+    setEditFormData({
+      email: invitation.email,
+      full_name: invitation.full_name,
+      role: invitation.role,
+      companyId
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const updateInvitation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingInvitation) return;
+    try {
+      let clientName = '';
+      if (editFormData.role === 'Admin') {
+        clientName = ROOT_COMPANY_NAME;
+      } else {
+        const selectedCompany = companies.find(c => c.id === editFormData.companyId);
+        if (!selectedCompany) {
+          throw new Error('Please select a company');
+        }
+        clientName = selectedCompany.name;
+      }
+
+      const { error } = await supabase
+        .from('user_invitations')
+        .update({
+          email: editFormData.email,
+          full_name: editFormData.full_name,
+          role: editFormData.role,
+          client_name: clientName,
+        })
+        .eq('id', editingInvitation.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Invitation Updated',
+        description: 'Invitation updated successfully',
+      });
+
+      setIsEditDialogOpen(false);
+      setEditingInvitation(null);
+      fetchInvitations();
+    } catch (error) {
+      console.error('Error updating invitation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update invitation',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const deleteInvitation = async (invitationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('user_invitations')
+        .delete()
+        .eq('id', invitationId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Deleted',
+        description: 'Invitation deleted successfully',
+      });
+
+      fetchInvitations();
+    } catch (error) {
+      console.error('Error deleting invitation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete invitation',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusBadge = (status: string, expiresAt: string) => {
     const isExpired = new Date(expiresAt) < new Date();
 
@@ -265,6 +361,20 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
       sortable: false,
       render: (inv) => (
         <div className="flex gap-2 justify-end">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleEdit(inv)}
+          >
+            <Pencil className="h-3 w-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => deleteInvitation(inv.id)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
           {inv.status === 'pending' && (
             <>
               <Button
@@ -285,7 +395,7 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
           )}
         </div>
       ),
-      initialWidth: 120,
+      initialWidth: 160,
     },
   ];
 
@@ -436,6 +546,98 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
           <SortableTable data={invitations} columns={columns} />
         )}
       </CardContent>
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Invitation</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={updateInvitation} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_email" className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Email Address
+              </Label>
+              <Input
+                id="edit_email"
+                type="email"
+                value={editFormData.email}
+                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_full_name" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Full Name
+              </Label>
+              <Input
+                id="edit_full_name"
+                type="text"
+                value={editFormData.full_name}
+                onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_role" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Role
+              </Label>
+              <Select
+                value={editFormData.role}
+                onValueChange={(value) => setEditFormData({ ...editFormData, role: value, companyId: value === 'Client' ? editFormData.companyId : '' })}
+              >
+                <SelectTrigger id="edit_role">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Admin">Admin</SelectItem>
+                  <SelectItem value="Client">Client</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {editFormData.role === 'Client' && (
+              <div className="space-y-2">
+                <Label htmlFor="edit_company" className="flex items-center gap-2">
+                  <Building className="h-4 w-4" />
+                  Company
+                </Label>
+                <Select
+                  value={editFormData.companyId}
+                  onValueChange={(value) => setEditFormData({ ...editFormData, companyId: value })}
+                >
+                  <SelectTrigger id="edit_company">
+                    <SelectValue placeholder="Select company" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies.map((company) => (
+                      <SelectItem key={company.id} value={company.id}>
+                        {company.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button type="submit" className="flex-1 bg-forest-green hover:bg-forest-green/90">
+                Save Changes
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
