@@ -9,8 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
+import { Lock, AlertCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import AccessDenied from './AccessDenied';
 import { generateSlug } from '@/lib/utils';
@@ -179,6 +181,7 @@ export default function CompanyPage() {
   // Check access and edit permissions
   const hasAccess = company?.id && (userRole === 'Admin' || isMemberOfCompany(company.id));
   const canEdit = company?.id && (userRole === 'Admin' || isAdminOfCompany(company.id));
+  const isCompanyMember = company?.id && isMemberOfCompany(company.id) && !isAdminOfCompany(company.id) && userRole !== 'Admin';
 
   if (loading) {
     return (
@@ -218,6 +221,17 @@ export default function CompanyPage() {
               </Button>
             </Link>
           </div>
+
+          {/* Permission Alert for Company Members */}
+          {isCompanyMember && (
+            <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+              <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
+                <strong>Read-only access:</strong> You're viewing company settings as a member. 
+                Only company administrators can edit these settings. Contact a company admin to make changes.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Company Information Card */}
           <Card>
@@ -320,12 +334,14 @@ export default function CompanyPage() {
               )}
               
               {/* Read-only message for non-admin clients */}
-              {!canEdit && hasAccess && (
-                <div className="pt-4">
-                  <p className="text-sm text-muted-foreground">
-                    You can view company information but cannot make changes. Contact an administrator to edit company details.
-                  </p>
-                </div>
+              {isCompanyMember && (
+                <Alert className="mt-4 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+                  <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <AlertDescription className="text-blue-800 dark:text-blue-200">
+                    <strong>Company Member Access:</strong> You can view all company information but editing is restricted to company administrators. 
+                    If you need to make changes, please contact a company admin.
+                  </AlertDescription>
+                </Alert>
               )}
             </CardContent>
           </Card>
