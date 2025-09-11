@@ -982,6 +982,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_company_portal_content: {
+        Args: { p_company_id: string }
+        Returns: Json
+      }
       get_current_user_client_name: {
         Args: Record<PropertyKey, never>
         Returns: string
