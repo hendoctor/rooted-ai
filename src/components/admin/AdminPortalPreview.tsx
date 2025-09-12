@@ -148,7 +148,7 @@ const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({
               Access and manage all registered company portals ({portalStats.length} total)
             </CardDescription>
           </div>
-          <div className="flex flex-col gap-2 w-full lg:w-auto lg:flex-row">
+          <div className="flex flex-col-reverse gap-2 w-full lg:w-auto lg:flex-row">
             <Button
               onClick={handleRefresh}
               variant="outline"

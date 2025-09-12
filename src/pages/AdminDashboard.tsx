@@ -1064,7 +1064,7 @@ const AdminDashboard: React.FC = () => {
                   Manage newsletter subscriptions and subscriber status.
                 </CardDescription>
               </div>
-              <div className="flex flex-col gap-2 w-full lg:w-auto lg:flex-row">
+              <div className="flex flex-col-reverse gap-2 w-full lg:w-auto lg:flex-row">
                 <Button
                   onClick={handleRefreshSubscriptions}
                   variant="outline"
