@@ -47,7 +47,7 @@ const PortalStatsCard: React.FC<PortalStatsCardProps> = ({ stats, onEditCompany,
     <Card className="relative overflow-hidden border border-border/50 hover:border-border transition-all duration-200 hover:shadow-lg h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="space-y-1">
-          <CardTitle className="text-lg font-semibold">{stats.company_name}</CardTitle>
+          <CardTitle className="text-lg font-semibold text-forest-green">{stats.company_name}</CardTitle>
           <CardDescription className="flex items-center gap-2">
             <code className="text-xs bg-muted px-2 py-1 rounded">/{stats.company_slug}</code>
             <Badge variant="outline" className="text-xs">

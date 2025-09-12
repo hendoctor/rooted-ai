@@ -1027,7 +1027,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-forest-green">
                 <FileText className="h-5 w-5" />
@@ -1035,7 +1035,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
               </CardTitle>
               <CardDescription>Manage portal content for client companies.</CardDescription>
             </div>
-            <Button onClick={handleRefresh} variant="outline" size="sm">
+            <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full lg:w-auto">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>

@@ -152,12 +152,12 @@ const AdminPermissionDebugger: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <CardTitle className="flex items-center gap-2 text-forest-green">
             <Bug className="h-5 w-5" />
             Permission Debugger
           </CardTitle>
-          <Button onClick={handleRefresh} variant="outline" size="sm">
+          <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full lg:w-auto">
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -205,7 +205,7 @@ const AdminPermissionDebugger: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm">User Info</CardTitle>
+                        <CardTitle className="text-sm text-forest-green">User Info</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2">
                         <p><strong>Email:</strong> {debugData.email}</p>
@@ -216,7 +216,7 @@ const AdminPermissionDebugger: React.FC = () => {
 
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm">Page Access</CardTitle>
+                        <CardTitle className="text-sm text-forest-green">Page Access</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2">
                         {Object.entries(debugData.permissions.pages).map(([page, hasAccess]) => (
@@ -229,7 +229,7 @@ const AdminPermissionDebugger: React.FC = () => {
 
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm">Action Permissions</CardTitle>
+                        <CardTitle className="text-sm text-forest-green">Action Permissions</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2">
                         {Object.entries(debugData.permissions.actions).map(([action, canPerform]) => (
@@ -242,7 +242,7 @@ const AdminPermissionDebugger: React.FC = () => {
 
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm">Capabilities</CardTitle>
+                        <CardTitle className="text-sm text-forest-green">Capabilities</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2">
                         {Object.entries(debugData.permissions.capabilities).map(([capability, hasCapability]) => (
@@ -257,7 +257,7 @@ const AdminPermissionDebugger: React.FC = () => {
                   {debugData.companies.length > 0 && (
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm">Company Memberships</CardTitle>
+                        <CardTitle className="text-sm text-forest-green">Company Memberships</CardTitle>
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-3">
