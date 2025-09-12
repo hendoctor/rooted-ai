@@ -422,7 +422,7 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
           Invite administrators or clients to the platform
         </p>
       </div>
-      <div className="flex flex-col gap-2 w-full lg:w-auto lg:flex-row">
+      <div className="flex flex-col-reverse gap-2 w-full lg:w-auto lg:flex-row">
         <Button
           onClick={handleRefresh}
           variant="outline"
