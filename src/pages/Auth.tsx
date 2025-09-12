@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { validatePasswordStrength } from '@/utils/securityConfig';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthManager } from '@/hooks/useAuthManager';
-import RootedBackground from '@/components/RootedBackground';
 
 const AuthSimplified = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -328,152 +327,145 @@ const AuthSimplified = () => {
   // Show loading state while checking invitation
   if (loadingInvitation) {
     return (
-      <RootedBackground>
-        <div className="flex items-center justify-center h-full">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <div className="text-sm text-muted-foreground">Loading invitation...</div>
-          </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="text-sm text-muted-foreground">Loading invitation...</div>
         </div>
-      </RootedBackground>
+      </div>
     );
   }
 
   if (showNewPassword) {
     return (
-      <RootedBackground>
-        <div className="flex items-center justify-center h-full py-12 px-4 sm:px-6 lg:px-8">
-          <Card className="w-full max-w-md border-sage/30 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-xl text-forest-green text-center">
-                Set New Password
-              </CardTitle>
-              <CardDescription className="text-center text-slate-gray mt-2">
-                Enter your new password below.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleNewPassword} className="space-y-6">
-                  <div>
-                    <label htmlFor="new-password" className="block text-sm font-medium text-slate-gray mb-2">
-                      New Password *
-                    </label>
-                    <Input
-                      id="new-password"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      minLength={8}
-                      className="border-sage/50 focus:border-forest-green"
-                      placeholder="Enter new password"
-                    />
-                  </div>
+      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md border-sage/30 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl text-forest-green text-center">
+              Set New Password
+            </CardTitle>
+            <CardDescription className="text-center text-slate-gray mt-2">
+              Enter your new password below.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleNewPassword} className="space-y-6">
+                <div>
+                  <label htmlFor="new-password" className="block text-sm font-medium text-slate-gray mb-2">
+                    New Password *
+                  </label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    className="border-sage/50 focus:border-forest-green"
+                    placeholder="Enter new password"
+                  />
+                </div>
 
-                  <div>
-                    <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-gray mb-2">
-                      Confirm Password *
-                    </label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      value={confirmNewPassword}
-                      onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      required
-                      minLength={8}
-                      className="border-sage/50 focus:border-forest-green"
-                      placeholder="Confirm new password"
-                    />
-                  </div>
+                <div>
+                  <label htmlFor="confirm-password" className="block text-sm font-medium text-slate-gray mb-2">
+                    Confirm Password *
+                  </label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    className="border-sage/50 focus:border-forest-green"
+                    placeholder="Confirm new password"
+                  />
+                </div>
 
-                  <Button
-                    type="submit"
+                <Button 
+                  type="submit" 
+                  className="w-full bg-forest-green hover:bg-forest-green/90"
+                  disabled={authManager.state.loading}
+                >
+                  {authManager.state.loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Updating Password...
+                    </>
+                  ) : (
+                    'Update Password'
+                  )}
+                </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (showResetPassword) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md border-sage/30 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl text-forest-green text-center">
+              Reset Password
+            </CardTitle>
+            <CardDescription className="text-center text-slate-gray mt-2">
+              Enter your email address and we'll send you a reset link.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordReset} className="space-y-6">
+                <div>
+                  <label htmlFor="reset-email" className="block text-sm font-medium text-slate-gray mb-2">
+                    Email Address *
+                  </label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="border-sage/50 focus:border-forest-green"
+                    placeholder="Enter your email address"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Button 
+                    type="submit" 
                     className="w-full bg-forest-green hover:bg-forest-green/90"
                     disabled={authManager.state.loading}
                   >
                     {authManager.state.loading ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                        Updating Password...
+                        Sending Reset Link...
                       </>
                     ) : (
-                      'Update Password'
+                      'Send Reset Link'
                     )}
                   </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </RootedBackground>
-    );
-  }
-
-  if (showResetPassword) {
-    return (
-      <RootedBackground>
-        <div className="flex items-center justify-center h-full py-12 px-4 sm:px-6 lg:px-8">
-          <Card className="w-full max-w-md border-sage/30 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-xl text-forest-green text-center">
-                Reset Password
-              </CardTitle>
-              <CardDescription className="text-center text-slate-gray mt-2">
-                Enter your email address and we'll send you a reset link.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handlePasswordReset} className="space-y-6">
-                  <div>
-                    <label htmlFor="reset-email" className="block text-sm font-medium text-slate-gray mb-2">
-                      Email Address *
-                    </label>
-                    <Input
-                      id="reset-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="border-sage/50 focus:border-forest-green"
-                      placeholder="Enter your email address"
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Button
-                      type="submit"
-                      className="w-full bg-forest-green hover:bg-forest-green/90"
-                      disabled={authManager.state.loading}
-                    >
-                      {authManager.state.loading ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                          Sending Reset Link...
-                        </>
-                      ) : (
-                        'Send Reset Link'
-                      )}
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full border-sage/50"
-                      onClick={() => setShowResetPassword(false)}
-                    >
-                      Back to Sign In
-                    </Button>
-                  </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </RootedBackground>
+                  
+                  <Button 
+                    type="button"
+                    variant="outline"
+                    className="w-full border-sage/50"
+                    onClick={() => setShowResetPassword(false)}
+                  >
+                    Back to Sign In
+                  </Button>
+                </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <RootedBackground>
-      <div className="flex items-center justify-center h-full py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md border-sage/30 shadow-lg">
         <CardHeader className="flex flex-col items-center">
           <div className="flex items-center gap-2">
@@ -644,7 +636,6 @@ const AuthSimplified = () => {
         </CardContent>
       </Card>
     </div>
-    </RootedBackground>
   );
 };
 
