@@ -1049,7 +1049,7 @@ const AdminDashboard: React.FC = () => {
         {/* Newsletter Subscriptions Section */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2 text-forest-green">
                   <MessageSquare className="h-5 w-5" />
@@ -1059,16 +1059,16 @@ const AdminDashboard: React.FC = () => {
                   Manage newsletter subscriptions and subscriber status.
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2 w-full lg:w-auto lg:flex-row">
                 <Button
                   size="sm"
                   onClick={openNewsletterDialog}
-                  className="bg-forest-green hover:bg-forest-green/90"
+                  className="bg-forest-green hover:bg-forest-green/90 w-full lg:w-auto"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Subscriber
                 </Button>
-                <Button onClick={handleRefreshSubscriptions} variant="outline" size="sm">
+                <Button onClick={handleRefreshSubscriptions} variant="outline" size="sm" className="w-full lg:w-auto">
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Refresh
                 </Button>

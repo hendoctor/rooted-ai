@@ -134,7 +134,7 @@ const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="w-5 h-5" />
@@ -144,12 +144,12 @@ const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({
               Access and manage all registered company portals ({portalStats.length} total)
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={onAddCompany} variant="default" size="sm">
+          <div className="flex flex-col gap-2 w-full lg:w-auto lg:flex-row">
+            <Button onClick={onAddCompany} variant="default" size="sm" className="w-full lg:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Add Company
             </Button>
-            <Button onClick={handleRefresh} variant="outline" size="sm">
+            <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full lg:w-auto">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>

@@ -405,7 +405,7 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
   ];
 
   const headerContent = (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
       <div>
         {embedded ? (
           <h3 className="text-forest-green flex items-center gap-2 text-lg font-semibold">
@@ -422,10 +422,10 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
           Invite administrators or clients to the platform
         </p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2 w-full lg:w-auto lg:flex-row">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-forest-green hover:bg-forest-green/90">
+            <Button className="bg-forest-green hover:bg-forest-green/90 w-full lg:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Invite User
             </Button>
@@ -542,7 +542,7 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
             </form>
           </DialogContent>
         </Dialog>
-        <Button onClick={handleRefresh} variant="outline" size="sm">
+        <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full lg:w-auto">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>

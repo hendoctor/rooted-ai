@@ -359,7 +359,7 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
   return (
     <Card className={className}>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
@@ -370,7 +370,7 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
               Showing {activityLogs.length} of {totalCount} activities.
             </CardDescription>
           </div>
-          <Button onClick={handleRefresh} variant="outline" size="sm">
+          <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full lg:w-auto">
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
