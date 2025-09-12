@@ -151,118 +151,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [updateAuthState]);
 
   const refreshAuth = useCallback(async () => {
-    // Enhanced refresh with session validation
-    try {
-      console.log('🔄 Starting auth refresh...');
-      
-      // First validate current session
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('Session validation error during refresh:', error);
-        updateAuthState({
-          user: null,
-          session: null,
-          userRole: null,
-          companies: [],
-          authReady: true,
-          loading: false,
-          error: 'Session validation failed'
-        });
-        return;
-      }
-
-      if (!session?.user) {
-        console.log('No valid session found during refresh');
-        updateAuthState({
-          user: null,
-          session: null,
-          userRole: null,
-          companies: [],
-          authReady: true,
-          loading: false,
-          error: null
-        });
-        return;
-      }
-
-      // Clear cache and fetch fresh data
-      const cacheKey = `${CACHE_KEY}_${session.user.id}`;
-      CacheManager.invalidate(cacheKey);
-      
-      // Update session state
-      updateAuthState({
-        session,
-        user: session.user,
-        loading: true,
-        error: null
-      });
-      
-      await fetchContext(session.user.id);
-      console.log('✅ Auth refresh completed');
-      
-    } catch (error) {
-      console.error('Auth refresh failed:', error);
-      updateAuthState({
-        authReady: true,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Refresh failed'
-      });
+    if (!authState.user?.id) {
+      updateAuthState({ authReady: true, loading: false });
+      return;
     }
-  }, [fetchContext, updateAuthState]);
+    
+    // Clear cache and fetch fresh data
+    const cacheKey = `${CACHE_KEY}_${authState.user.id}`;
+    CacheManager.invalidate(cacheKey);
+    await fetchContext(authState.user.id);
+  }, [authState.user, fetchContext]);
 
   const handleSession = useCallback(async (sess: Session | null) => {
-    try {
-      if (sess?.user) {
-        console.log('📝 Processing authenticated session');
-        
-        // Validate session before processing
-        const now = Math.floor(Date.now() / 1000);
-        const expiresAt = sess.expires_at || 0;
-        
-        if (expiresAt <= now) {
-          console.warn('⚠️ Session already expired, attempting refresh...');
-          const { data, error } = await supabase.auth.refreshSession();
-          
-          if (error || !data.session) {
-            console.error('Session refresh failed:', error);
-            handleSession(null);
-            return;
-          }
-          
-          // Use refreshed session
-          sess = data.session;
-        }
-
-        // User authenticated - batch update session and trigger context fetch
-        updateAuthState({
-          session: sess,
-          user: sess.user,
-          loading: true,
-          error: null,
-        });
-        
-        // Set user context for cache management
-        CacheManager.setCurrentUser(sess.user.id);
-        
-        // Fetch user context (will check cache first)
-        await fetchContext(sess.user.id);
-      } else {
-        console.log('📝 Processing signed out session');
-        // User signed out - clear everything in one update
-        CacheManager.setCurrentUser(null);
-        updateAuthState({
-          session: null,
-          user: null,
-          userRole: null,
-          companies: [],
-          authReady: true,
-          loading: false,
-          error: null,
-        });
-      }
-    } catch (error) {
-      console.error('Session handling error:', error);
+    if (sess?.user) {
+      // User authenticated - batch update session and trigger context fetch
+      updateAuthState({
+        session: sess,
+        user: sess.user,
+        loading: true, // Only set loading once
+        error: null,
+      });
+      
+      // Set user context for cache management
+      CacheManager.setCurrentUser(sess.user.id);
+      
+      // Fetch user context (will check cache first)
+      await fetchContext(sess.user.id);
+    } else {
+      // User signed out - clear everything in one update
+      CacheManager.setCurrentUser(null);
       updateAuthState({
         session: null,
         user: null,
@@ -270,7 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         companies: [],
         authReady: true,
         loading: false,
-        error: error instanceof Error ? error.message : 'Session error'
+        error: null,
       });
     }
   }, [fetchContext, updateAuthState]);
@@ -294,29 +211,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [handleSession]);
 
   const signOut = useCallback(async () => {
-    console.log('🚪 Signing out user...');
     try {
-      // Clear local state immediately to prevent UI flicker
-      updateAuthState({
-        user: null,
-        session: null,
-        userRole: null,
-        companies: [],
-        authReady: false,
-        loading: false,
-        error: null,
-      });
-      
-      // Clear cache
-      CacheManager.clearUserData();
-      
-      // Sign out from Supabase
       await supabase.auth.signOut();
-      
-      console.log('✅ Sign out completed');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      // Even if sign out fails, ensure local state is cleared
+    } finally {
+      CacheManager.clearUserData();
       updateAuthState({
         user: null,
         session: null,

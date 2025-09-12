@@ -6,13 +6,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { useEnhancedVisibilityRefresh } from "@/hooks/useEnhancedVisibilityRefresh";
+import { useVisibilityRefresh } from "@/hooks/useVisibilityRefresh";
 import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
 import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
-import { useProgressiveSessionRecovery } from "@/hooks/useProgressiveSessionRecovery";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import SessionErrorBoundary from "@/components/SessionErrorBoundary";
 import { LoadingIcon } from "@/components/LoadingSpinner";
 
 import AuthGuard from "@/components/AuthGuard";
@@ -37,11 +35,8 @@ const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
   // Progressive loading states
   const loadingState = useProgressiveLoading(loading, !!user, !!userRole);
   
-  // Enable enhanced mobile-specific auth refresh on visibility changes
-  useEnhancedVisibilityRefresh();
-  
-  // Enable progressive session recovery
-  const recovery = useProgressiveSessionRecovery();
+  // Enable mobile-specific auth refresh on visibility changes
+  useVisibilityRefresh();
 
   // Track performance
   React.useEffect(() => {
@@ -53,27 +48,19 @@ const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
   }, [loading, performance]);
 
   // Show error with enhanced recovery options
-  if (error && !recovery.isRecovering) {
+  if (error) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 p-8">
         <div className="text-center space-y-2">
           <h2 className="text-lg font-semibold text-foreground">Authentication Error</h2>
           <p className="text-sm text-muted-foreground max-w-md">{error}</p>
           <div className="text-xs text-muted-foreground/70 mt-2">
-            {recovery.recoveryAttempts > 0 
-              ? `Recovery attempts: ${recovery.recoveryAttempts}/${recovery.maxAttempts}`
-              : 'Try refreshing or check your connection'
-            }
+            Try refreshing or check your connection
           </div>
         </div>
         <div className="flex gap-2 flex-wrap justify-center">
           <Button onClick={refreshAuth} size="sm">Retry</Button>
           <Button variant="outline" onClick={clearError} size="sm">Continue</Button>
-          {recovery.recoveryAttempts < recovery.maxAttempts && (
-            <Button onClick={() => recovery.attemptRecovery('manual')} size="sm" variant="secondary">
-              Recover Session
-            </Button>
-          )}
           <Button variant="ghost" onClick={() => window.location.reload()} size="sm">
             Refresh Page
           </Button>
@@ -251,17 +238,16 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <AuthProvider>
-              <SessionErrorBoundary>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <AppLoadingWrapper>
-                    <main id="main-content">
-                      <AppContent />
-                    </main>
-                  </AppLoadingWrapper>
-                </BrowserRouter>
-              </SessionErrorBoundary>
+              {/* <SessionSecurity /> */}
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AppLoadingWrapper>
+                  <main id="main-content">
+                    <AppContent />
+                  </main>
+                </AppLoadingWrapper>
+              </BrowserRouter>
             </AuthProvider>
           </TooltipProvider>
         </QueryClientProvider>
