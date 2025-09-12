@@ -11,8 +11,9 @@ interface LoadingSpinnerProps {
 const sizeClasses = {
   sm: 'h-4 w-4',
   md: 'h-6 w-6',
-  lg: 'h-8 w-8',
-  xl: 'h-12 w-12',
+  // Add responsive sizing so the logo scales with screen size
+  lg: 'h-8 w-8 sm:h-10 sm:w-10',
+  xl: 'h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20',
 };
 
 interface LoadingIconProps {
@@ -22,7 +23,7 @@ interface LoadingIconProps {
 
 export const LoadingIcon: React.FC<LoadingIconProps> = ({ size = 'md', className = '' }) => {
   return (
-    <div className={`relative ${sizeClasses[size]} ${className}`}>
+    <div className={`relative mx-auto flex items-center justify-center ${sizeClasses[size]} ${className}`}>
       <img
         src={logoSrc}
         alt="RootedAI logo"
@@ -54,6 +55,39 @@ export const LoadingIcon: React.FC<LoadingIconProps> = ({ size = 'md', className
             <animate
               attributeName="stroke-dashoffset"
               values="22;0;22"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </path>
+          {/* Additional root outlines */}
+          <path d="M50 65 L45 80" strokeDasharray="16" strokeDashoffset="16">
+            <animate
+              attributeName="stroke-dashoffset"
+              values="16;0;16"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </path>
+          <path d="M50 65 L55 80" strokeDasharray="16" strokeDashoffset="16">
+            <animate
+              attributeName="stroke-dashoffset"
+              values="16;0;16"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </path>
+          <path d="M50 80 L43 90" strokeDasharray="12" strokeDashoffset="12">
+            <animate
+              attributeName="stroke-dashoffset"
+              values="12;0;12"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </path>
+          <path d="M50 80 L57 90" strokeDasharray="12" strokeDashoffset="12">
+            <animate
+              attributeName="stroke-dashoffset"
+              values="12;0;12"
               dur="2s"
               repeatCount="indefinite"
             />
