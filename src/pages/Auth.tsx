@@ -482,25 +482,19 @@ const AuthSimplified = () => {
     <AuthBackground>
       <Card className="w-full max-w-md border-sage/30 shadow-lg">
         <CardHeader className="flex flex-col items-center">
-          <div className="flex items-center gap-2">
-            <img
-              src="/Assets/22badab3-8f25-475f-92d7-167cbc732868.png"
-              alt="RootedAI logo"
-              className="h-8 w-8"
-            />
-            <CardTitle className="text-xl text-forest-green">
-              {invitation ? 'Account Setup' : (isLogin ? 'Welcome back to RootedAI!' : 'Create Your RootedAI Account')}
-            </CardTitle>
-          </div>
-          <CardDescription className="text-center mt-2">
-            {invitation
-              ? `Welcome ${invitation.full_name}! Set your password below.`
-              : (isLogin
-                ? 'Please sign in to your account.'
-                : 'Create a new account to get started.'
-              )
-            }
-          </CardDescription>
+          <img
+            src="/Assets/22badab3-8f25-475f-92d7-167cbc732868.png"
+            alt="RootedAI logo"
+            className="h-16 w-16 mx-auto mb-2"
+          />
+          <CardTitle className="text-xl text-forest-green text-center">
+            Welcome to RootedAI
+          </CardTitle>
+          {invitation && (
+            <CardDescription className="text-center mt-2">
+              {`Welcome ${invitation.full_name}! Set your password below.`}
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent>
           {invitationError && (
@@ -607,8 +601,8 @@ const AuthSimplified = () => {
               )}
 
               <div className="space-y-3">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full bg-forest-green hover:bg-forest-green/90"
                   disabled={authManager.state.loading}
                 >
@@ -621,29 +615,16 @@ const AuthSimplified = () => {
                     invitation ? 'Complete Setup' : (isLogin ? 'Sign In' : 'Create Account')
                   )}
                 </Button>
-                
-                {!invitation && (
-                  <>
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      className="w-full border-sage/50"
-                      onClick={() => setIsLogin(!isLogin)}
-                    >
-                      {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-                    </Button>
-                    
-                    {isLogin && (
-                      <Button 
-                        type="button"
-                        variant="ghost"
-                        className="w-full text-slate-gray hover:text-forest-green"
-                        onClick={() => setShowResetPassword(true)}
-                      >
-                        Forgot your password?
-                      </Button>
-                    )}
-                  </>
+
+                {!invitation && isLogin && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full text-slate-gray hover:text-forest-green"
+                    onClick={() => setShowResetPassword(true)}
+                  >
+                    Forgot your password?
+                  </Button>
                 )}
               </div>
           </form>
