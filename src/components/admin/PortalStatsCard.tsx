@@ -44,7 +44,7 @@ const PortalStatsCard: React.FC<PortalStatsCardProps> = ({ stats, onEditCompany,
   ];
 
   return (
-    <Card className="relative overflow-hidden border border-border/50 hover:border-border transition-all duration-200 hover:shadow-lg h-full flex flex-col">
+    <Card className="relative overflow-hidden border border-border/50 hover:border-border transition-all duration-200 hover:shadow-lg">
       <CardHeader className="pb-2">
         <div className="space-y-1">
           <CardTitle className="text-lg font-semibold">{stats.company_name}</CardTitle>
@@ -58,7 +58,7 @@ const PortalStatsCard: React.FC<PortalStatsCardProps> = ({ stats, onEditCompany,
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4 flex flex-col flex-1">
+      <CardContent className="space-y-4">
         {/* Content Summary */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Total Content</span>
@@ -87,71 +87,69 @@ const PortalStatsCard: React.FC<PortalStatsCardProps> = ({ stats, onEditCompany,
           </div>
         )}
 
-        <div className="mt-auto space-y-4">
-          {/* Management Actions */}
-          <div className="pt-4 border-t border-border/50">
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                asChild
-                className="w-full text-xs"
+        {/* Management Actions */}
+        <div className="pt-4 border-t border-border/50">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="w-full text-xs"
+            >
+              <Link
+                to={`/${stats.company_slug}`}
+                className="flex items-center justify-center"
               >
-                <Link
-                  to={`/${stats.company_slug}`}
-                  className="flex items-center justify-center"
-                >
-                  <ExternalLink className="w-3 h-3 mr-1" />
-                  View Portal
-                </Link>
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onManageUsers?.({
-                  id: stats.company_id,
-                  name: stats.company_name,
-                  slug: stats.company_slug
-                })}
-                className="w-full text-xs"
-              >
-                <Users className="w-3 h-3 mr-1" />
-                Users
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onEditCompany?.({
-                  id: stats.company_id,
-                  name: stats.company_name,
-                  slug: stats.company_slug
-                })}
-                className="w-full text-xs"
-              >
-                <Edit2 className="w-3 h-3 mr-1" />
-                Edit
-              </Button>
-
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => onDeleteCompany?.(stats.company_id)}
-                className="w-full text-xs"
-              >
-                <Trash2 className="w-3 h-3 mr-1" />
-                Delete
-              </Button>
-            </div>
+                <ExternalLink className="w-3 h-3 mr-1" />
+                View Portal
+              </Link>
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onManageUsers?.({ 
+                id: stats.company_id, 
+                name: stats.company_name, 
+                slug: stats.company_slug 
+              })}
+              className="w-full text-xs"
+            >
+              <Users className="w-3 h-3 mr-1" />
+              Users
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEditCompany?.({ 
+                id: stats.company_id, 
+                name: stats.company_name, 
+                slug: stats.company_slug 
+              })}
+              className="w-full text-xs"
+            >
+              <Edit2 className="w-3 h-3 mr-1" />
+              Edit
+            </Button>
+            
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onDeleteCompany?.(stats.company_id)}
+              className="w-full text-xs"
+            >
+              <Trash2 className="w-3 h-3 mr-1" />
+              Delete
+            </Button>
           </div>
+        </div>
 
-          {/* Last Updated */}
-          <div className="pt-2 border-t border-border/50">
-            <p className="text-xs text-muted-foreground">
-              Last updated: {lastUpdated}
-            </p>
-          </div>
+        {/* Last Updated */}
+        <div className="pt-2 border-t border-border/50 mt-4">
+          <p className="text-xs text-muted-foreground">
+            Last updated: {lastUpdated}
+          </p>
         </div>
       </CardContent>
     </Card>
