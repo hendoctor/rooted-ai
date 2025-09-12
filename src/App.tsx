@@ -11,6 +11,7 @@ import { useProgressiveLoading } from "@/hooks/useProgressiveLoading";
 import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { LoadingIcon } from "@/components/LoadingSpinner";
 
 import AuthGuard from "@/components/AuthGuard";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -73,7 +74,7 @@ const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <LoadingIcon size="lg" />
           <div className="text-sm text-muted-foreground">{loadingState.message}</div>
           
           {/* Progress bar */}

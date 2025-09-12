@@ -4,16 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { 
-  AlertTriangle, 
-  CheckCircle2, 
-  Clock, 
-  TrendingUp, 
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  TrendingUp,
   TrendingDown,
   BarChart3,
   Download,
   RefreshCw
 } from 'lucide-react';
+import { LoadingIcon } from '@/components/LoadingSpinner';
 
 interface PerformanceBudget {
   metric: string;
@@ -199,7 +200,11 @@ export const ProductionDashboard = () => {
             Export Report
           </Button>
           <Button onClick={runPerformanceAudit} disabled={loading} size="sm">
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? (
+              <LoadingIcon size="sm" className="mr-2" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
             Run Audit
           </Button>
         </div>
