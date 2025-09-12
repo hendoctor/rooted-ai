@@ -423,9 +423,21 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
         </p>
       </div>
       <div className="flex flex-col gap-2 w-full lg:w-auto lg:flex-row">
+        <Button
+          onClick={handleRefresh}
+          variant="outline"
+          size="sm"
+          className="w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-forest-green hover:bg-forest-green/90 w-full lg:w-auto">
+            <Button
+              size="sm"
+              className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full lg:w-auto"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Invite User
             </Button>
@@ -542,10 +554,6 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
             </form>
           </DialogContent>
         </Dialog>
-        <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full lg:w-auto">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
       </div>
     </div>
   );

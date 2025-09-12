@@ -122,7 +122,11 @@ const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-          <Button onClick={handleRefresh} className="mt-4 w-full lg:w-auto" variant="outline">
+          <Button
+            onClick={handleRefresh}
+            className="mt-4 w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
+            variant="outline"
+          >
             <RefreshCw className="w-4 h-4 mr-2" />
             Try Again
           </Button>
@@ -145,13 +149,22 @@ const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({
             </CardDescription>
           </div>
           <div className="flex flex-col gap-2 w-full lg:w-auto lg:flex-row">
-            <Button onClick={onAddCompany} variant="default" size="sm" className="w-full lg:w-auto">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Company
-            </Button>
-            <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full lg:w-auto">
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+              className="w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
+            >
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
+            </Button>
+            <Button
+              onClick={onAddCompany}
+              size="sm"
+              className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full lg:w-auto"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Company
             </Button>
           </div>
         </div>
