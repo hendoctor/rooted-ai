@@ -2,7 +2,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, Download, RefreshCw } from 'lucide-react';
+import { CheckCircle, Download } from 'lucide-react';
+import { LoadingIcon } from '@/components/LoadingSpinner';
 
 interface UpdateStatusDialogProps {
   open: boolean;
@@ -80,7 +81,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
             >
               {isUpdating ? (
                 <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  <LoadingIcon size="sm" className="mr-2" />
                   Updating...
                 </>
               ) : (

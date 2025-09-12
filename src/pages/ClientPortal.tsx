@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { activityLogger } from '@/utils/activityLogger';
 import Header from '@/components/Header';
 import AccessDenied from './AccessDenied';
+import { LoadingIcon } from '@/components/LoadingSpinner';
 
 // Reduced lazy loading - only for heavy components
 const AnnouncementCard = React.lazy(() => import('@/components/client-portal/AnnouncementCard'));
@@ -137,7 +138,7 @@ const ClientPortal: React.FC = () => {
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <LoadingIcon size="lg" />
             <p className="text-muted-foreground">Loading your portal...</p>
           </div>
         </div>
@@ -157,7 +158,7 @@ const ClientPortal: React.FC = () => {
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <LoadingIcon size="lg" />
             <p className="text-muted-foreground">Resolving company access...</p>
           </div>
         </div>

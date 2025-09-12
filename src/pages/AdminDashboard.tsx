@@ -14,7 +14,7 @@ import { Trash2, Edit2, Users, Building2, Crown, UserPlus, X, ExternalLink, Mess
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { LoadingSpinner, InlineLoader } from '@/components/LoadingSpinner';
+import { LoadingSpinner, InlineLoader, LoadingIcon } from '@/components/LoadingSpinner';
 import PortalContentManager from '@/components/admin/PortalContentManager';
 import UserInvitationManager from '@/components/admin/UserInvitationManager';
 import AdminPermissionDebugger from '@/components/admin/AdminPermissionDebugger';
@@ -137,7 +137,7 @@ const AdminDashboard: React.FC = () => {
         <Header />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center space-y-4">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+            <LoadingIcon size="lg" />
             <p className="text-muted-foreground">
               {loading ? 'Authenticating admin access...' : 'Loading dashboard data...'}
             </p>
