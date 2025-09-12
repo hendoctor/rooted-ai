@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -327,7 +327,7 @@ const AuthSimplified = () => {
   // Show loading state while checking invitation
   if (loadingInvitation) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <div className="text-sm text-muted-foreground">Loading invitation...</div>
@@ -338,23 +338,18 @@ const AuthSimplified = () => {
 
   if (showNewPassword) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-forest-green">Set New Password</h2>
-            <p className="mt-2 text-slate-gray">
+      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md border-sage/30 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl text-forest-green text-center">
+              Set New Password
+            </CardTitle>
+            <CardDescription className="text-center text-slate-gray mt-2">
               Enter your new password below.
-            </p>
-          </div>
-
-          <Card className="border-sage/30 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-xl text-forest-green text-center">
-                New Password
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleNewPassword} className="space-y-6">
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleNewPassword} className="space-y-6">
                 <div>
                   <label htmlFor="new-password" className="block text-sm font-medium text-slate-gray mb-2">
                     New Password *
@@ -401,33 +396,27 @@ const AuthSimplified = () => {
                     'Update Password'
                   )}
                 </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (showResetPassword) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-forest-green">Reset Password</h2>
-            <p className="mt-2 text-slate-gray">
+      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <Card className="w-full max-w-md border-sage/30 shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl text-forest-green text-center">
+              Reset Password
+            </CardTitle>
+            <CardDescription className="text-center text-slate-gray mt-2">
               Enter your email address and we'll send you a reset link.
-            </p>
-          </div>
-
-          <Card className="border-sage/30 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-xl text-forest-green text-center">
-                Password Reset
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handlePasswordReset} className="space-y-6">
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordReset} className="space-y-6">
                 <div>
                   <label htmlFor="reset-email" className="block text-sm font-medium text-slate-gray mb-2">
                     Email Address *
@@ -468,46 +457,44 @@ const AuthSimplified = () => {
                     Back to Sign In
                   </Button>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-forest-green">
-            {invitation ? 'Complete Your Registration' : (isLogin ? 'Sign In' : 'Create Account')}
-          </h2>
-          <p className="mt-2 text-slate-gray">
-            {invitation 
+    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md border-sage/30 shadow-lg">
+        <CardHeader className="flex flex-col items-center">
+          <div className="flex items-center gap-2">
+            <img
+              src="/Assets/22badab3-8f25-475f-92d7-167cbc732868.png"
+              alt="RootedAI logo"
+              className="h-8 w-8"
+            />
+            <CardTitle className="text-xl text-forest-green">
+              {invitation ? 'Account Setup' : (isLogin ? 'Welcome back to RootedAI!' : 'Create Your RootedAI Account')}
+            </CardTitle>
+          </div>
+          <CardDescription className="text-center mt-2">
+            {invitation
               ? `Welcome ${invitation.full_name}! Set your password below.`
-              : (isLogin 
-                ? 'Welcome back! Please sign in to your account.'
+              : (isLogin
+                ? 'Please sign in to your account.'
                 : 'Create a new account to get started.'
               )
             }
-          </p>
-        </div>
-
-        {invitationError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-            {invitationError}
-          </div>
-        )}
-
-        <Card className="border-sage/30 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl text-forest-green text-center">
-              {invitation ? 'Account Setup' : (isLogin ? 'Sign In' : 'Sign Up')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {invitationError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
+              {invitationError}
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-6">
               {!isLogin && !invitation && (
                 <div>
                   <label htmlFor="fullName" className="block text-sm font-medium text-slate-gray mb-2">
@@ -645,10 +632,9 @@ const AuthSimplified = () => {
                   </>
                 )}
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
