@@ -23,7 +23,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   signOut: () => Promise<void>;
-  refreshAuth: (background?: boolean) => Promise<void>;
+  refreshAuth: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Check cache first for instant loading
       const cacheKey = `${CACHE_KEY}_${userId}`;
-      const cached = CacheManager.get<unknown>(cacheKey);
+      const cached = CacheManager.get<any>(cacheKey);
       
       if (cached) {
         // Use cached data immediately
@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error: err instanceof Error ? err.message : 'Authentication failed',
       });
     }
-  }, [updateAuthState, fetchContextFromServer]);
+  }, [updateAuthState]);
 
   const fetchContextFromServer = useCallback(async (userId: string, updateLoading = true) => {
     try {
@@ -104,8 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const ctx = contextResult.data?.[0];
       const rawCompanies = ctx?.companies;
-      const companiesData: Company[] = Array.isArray(rawCompanies)
-        ? rawCompanies.map((company: Record<string, unknown>) => ({
+      const companiesData: Company[] = Array.isArray(rawCompanies) 
+        ? rawCompanies.map((company: any) => ({
             id: String(company.company_id || company.id || ''),
             name: String(company.company_name || company.name || ''),
             slug: String(company.company_slug || company.slug || ''),
@@ -150,19 +150,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [updateAuthState]);
 
-  const refreshAuth = useCallback(async (background: boolean = false) => {
+  const refreshAuth = useCallback(async () => {
     if (!authState.user?.id) {
-      if (!background) {
-        updateAuthState({ authReady: true, loading: false });
-      }
+      updateAuthState({ authReady: true, loading: false });
       return;
     }
-
-    // Clear cache and fetch fresh data without disrupting UI when background
+    
+    // Clear cache and fetch fresh data
     const cacheKey = `${CACHE_KEY}_${authState.user.id}`;
     CacheManager.invalidate(cacheKey);
-    await fetchContextFromServer(authState.user.id, !background);
-  }, [authState.user, fetchContextFromServer, updateAuthState]);
+    await fetchContext(authState.user.id);
+  }, [authState.user, fetchContext]);
 
   const handleSession = useCallback(async (sess: Session | null) => {
     if (sess?.user) {
