@@ -14,6 +14,7 @@ import SortableTable, { Column } from '@/components/admin/SortableTable';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { LoadingIcon } from '@/components/LoadingSpinner';
 
 interface ActivityLog {
   id: string;
@@ -471,7 +472,7 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
         {/* Table */}
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <RefreshCw className="h-6 w-6 animate-spin" />
+            <LoadingIcon size="md" />
             <span className="ml-2">Loading activity logs...</span>
           </div>
         ) : activityLogs.length === 0 ? (

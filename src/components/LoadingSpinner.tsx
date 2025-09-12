@@ -1,5 +1,6 @@
 import React from 'react';
-import { Loader2 } from 'lucide-react';
+
+const logoSrc = '/Assets/22badab3-8f25-475f-92d7-167cbc732868.png';
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -14,14 +15,63 @@ const sizeClasses = {
   xl: 'h-12 w-12',
 };
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
-  size = 'md', 
-  text, 
-  className = '' 
+interface LoadingIconProps {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  className?: string;
+}
+
+export const LoadingIcon: React.FC<LoadingIconProps> = ({ size = 'md', className = '' }) => {
+  return (
+    <div className={`relative ${sizeClasses[size]} ${className}`}>
+      <img
+        src={logoSrc}
+        alt="RootedAI logo"
+        className="w-full h-full object-contain"
+      />
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox="0 0 100 100"
+        fill="none"
+      >
+        <g stroke="#16a34a" strokeWidth="4" strokeLinecap="round">
+          <path d="M50 60 L50 90" strokeDasharray="30" strokeDashoffset="30">
+            <animate
+              attributeName="stroke-dashoffset"
+              values="30;0;30"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </path>
+          <path d="M50 75 L40 90" strokeDasharray="22" strokeDashoffset="22">
+            <animate
+              attributeName="stroke-dashoffset"
+              values="22;0;22"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </path>
+          <path d="M50 75 L60 90" strokeDasharray="22" strokeDashoffset="22">
+            <animate
+              attributeName="stroke-dashoffset"
+              values="22;0;22"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </path>
+        </g>
+      </svg>
+    </div>
+  );
+};
+
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  size = 'md',
+  text,
+  className = ''
 }) => {
   return (
     <div className={`flex flex-col items-center justify-center space-y-2 ${className}`}>
-      <Loader2 className={`${sizeClasses[size]} animate-spin text-primary`} />
+      <LoadingIcon size={size} />
       {text && (
         <p className="text-sm text-muted-foreground animate-pulse">{text}</p>
       )}

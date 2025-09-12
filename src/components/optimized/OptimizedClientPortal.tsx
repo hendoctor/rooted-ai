@@ -10,6 +10,7 @@ import AccessDenied from '@/pages/AccessDenied';
 import Header from '@/components/Header';
 import { supabase } from '@/integrations/supabase/client';
 import { CacheManager } from '@/lib/cacheManager';
+import { LoadingIcon } from '@/components/LoadingSpinner';
 
 // Lazy-loaded components for better performance
 const AnnouncementCard = React.lazy(() => import('@/components/client-portal/AnnouncementCard'));
@@ -253,7 +254,7 @@ const OptimizedClientPortal: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <LoadingIcon size="lg" />
           <p className="text-muted-foreground">Initializing your company portal...</p>
         </div>
       </div>

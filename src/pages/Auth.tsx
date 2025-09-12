@@ -9,6 +9,7 @@ import { validatePasswordStrength } from '@/utils/securityConfig';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthManager } from '@/hooks/useAuthManager';
 import heroPlantLight from '@/assets/hero-plants-light.jpg';
+import { LoadingIcon } from '@/components/LoadingSpinner';
 
 const AuthBackground = ({ children }: { children: React.ReactNode }) => (
   <div className="relative isolate min-h-screen overflow-hidden flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -343,7 +344,7 @@ const AuthSimplified = () => {
     return (
       <AuthBackground>
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <LoadingIcon size="lg" />
           <div className="text-sm text-muted-foreground">Loading invitation...</div>
         </div>
       </AuthBackground>
@@ -403,7 +404,7 @@ const AuthSimplified = () => {
                 >
                   {authManager.state.loading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      <LoadingIcon size="sm" className="mr-2" />
                       Updating Password...
                     </>
                   ) : (
@@ -454,7 +455,7 @@ const AuthSimplified = () => {
                   >
                     {authManager.state.loading ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        <LoadingIcon size="sm" className="mr-2" />
                         Sending Reset Link...
                       </>
                     ) : (
@@ -608,7 +609,7 @@ const AuthSimplified = () => {
                 >
                   {authManager.state.loading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      <LoadingIcon size="sm" className="mr-2" />
                       {invitation ? 'Creating Account...' : (isLogin ? 'Signing In...' : 'Creating Account...')}
                     </>
                   ) : (

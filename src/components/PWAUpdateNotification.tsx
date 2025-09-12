@@ -1,7 +1,8 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Download, X } from 'lucide-react';
+import { Download, X } from 'lucide-react';
+import { LoadingIcon } from '@/components/LoadingSpinner';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
 
 const PWAUpdateNotification = () => {
@@ -48,7 +49,7 @@ const PWAUpdateNotification = () => {
             >
               {isUpdating ? (
                 <>
-                  <RefreshCw className="h-3 w-3 mr-2 animate-spin" />
+                  <LoadingIcon size="sm" className="mr-2" />
                   Updating...
                 </>
               ) : (
