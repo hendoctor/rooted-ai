@@ -8,6 +8,20 @@ import { useToast } from '@/hooks/use-toast';
 import { validatePasswordStrength } from '@/utils/securityConfig';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthManager } from '@/hooks/useAuthManager';
+import heroPlantLight from '@/assets/hero-plants-light.jpg';
+
+const AuthBackground = ({ children }: { children: React.ReactNode }) => (
+  <div className="relative isolate min-h-screen overflow-hidden flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div
+      className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-300"
+      style={{ backgroundImage: `url(${heroPlantLight})` }}
+    />
+    <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/80 to-white/85 dark:from-slate-950/95 dark:via-slate-950/80 dark:to-slate-950/50" />
+    <div className="absolute inset-0 [background-image:radial-gradient(1.5px_1.5px_at_12px_12px,rgba(16,185,129,.35)_1px,transparent_1px)] [background-size:24px_24px] dark:[background-image:radial-gradient(1.5px_1.5px_at_12px_12px,rgba(110,231,183,.28)_1px,transparent_1px)]" />
+    <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(16,185,129,.22)_35%,transparent_70%)] dark:bg-[linear-gradient(115deg,transparent_0%,rgba(34,197,94,.28)_35%,transparent_70%)]" />
+    <div className="relative z-10 w-full flex justify-center">{children}</div>
+  </div>
+);
 
 const AuthSimplified = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -327,18 +341,18 @@ const AuthSimplified = () => {
   // Show loading state while checking invitation
   if (loadingInvitation) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <AuthBackground>
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <div className="text-sm text-muted-foreground">Loading invitation...</div>
         </div>
-      </div>
+      </AuthBackground>
     );
   }
 
   if (showNewPassword) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <AuthBackground>
         <Card className="w-full max-w-md border-sage/30 shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl text-forest-green text-center">
@@ -399,13 +413,13 @@ const AuthSimplified = () => {
             </form>
           </CardContent>
         </Card>
-      </div>
+      </AuthBackground>
     );
   }
 
   if (showResetPassword) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <AuthBackground>
         <Card className="w-full max-w-md border-sage/30 shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl text-forest-green text-center">
@@ -460,12 +474,12 @@ const AuthSimplified = () => {
             </form>
           </CardContent>
         </Card>
-      </div>
+      </AuthBackground>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <AuthBackground>
       <Card className="w-full max-w-md border-sage/30 shadow-lg">
         <CardHeader className="flex flex-col items-center">
           <div className="flex items-center gap-2">
@@ -635,7 +649,7 @@ const AuthSimplified = () => {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </AuthBackground>
   );
 };
 
