@@ -186,10 +186,10 @@ const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr">
             {filteredStats.map((stats) => (
-              <PortalStatsCard 
-                key={stats.company_id} 
+              <PortalStatsCard
+                key={stats.company_id}
                 stats={stats}
                 onEditCompany={onEditCompany}
                 onDeleteCompany={onDeleteCompany}
