@@ -486,7 +486,6 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
             columns={columns}
             defaultSortKey="created_at"
             defaultAsc={false}
-            rowClassName={(log) => log.company_id ? 'bg-forest-green/10 dark:bg-forest-green/20' : ''}
             scrollAreaClassName="h-96"
           />
         )}
