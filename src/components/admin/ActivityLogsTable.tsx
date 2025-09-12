@@ -361,7 +361,7 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
       <CardHeader>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-forest-green">
               <Clock className="h-5 w-5" />
               Activity Logs
             </CardTitle>

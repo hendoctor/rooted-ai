@@ -91,7 +91,7 @@ const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-forest-green">
             <Building2 className="w-5 h-5" />
             Company Portals
           </CardTitle>
@@ -112,7 +112,7 @@ const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-forest-green">
             <Building2 className="w-5 h-5" />
             Company Portals
           </CardTitle>
@@ -122,7 +122,7 @@ const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-          <Button onClick={handleRefresh} className="mt-4" variant="outline">
+          <Button onClick={handleRefresh} className="mt-4 w-full lg:w-auto" variant="outline">
             <RefreshCw className="w-4 h-4 mr-2" />
             Try Again
           </Button>
@@ -136,7 +136,7 @@ const AdminPortalPreview: React.FC<AdminPortalPreviewProps> = ({
       <CardHeader>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-forest-green">
               <Building2 className="w-5 h-5" />
               Company Portals
             </CardTitle>
