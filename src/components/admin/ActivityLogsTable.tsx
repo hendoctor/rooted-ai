@@ -370,7 +370,12 @@ const ActivityLogsTable: React.FC<ActivityLogsTableProps> = ({ className }) => {
               Showing {activityLogs.length} of {totalCount} activities.
             </CardDescription>
           </div>
-          <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full lg:w-auto">
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            className="w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
+          >
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>

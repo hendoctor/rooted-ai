@@ -1035,7 +1035,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
               </CardTitle>
               <CardDescription>Manage portal content for client companies.</CardDescription>
             </div>
-            <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full lg:w-auto">
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+              className="w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
+            >
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
@@ -1515,7 +1520,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                       ))}
                       <Button
                         type="button"
-                        variant="outline"
+                        size="sm"
+                        className="bg-forest-green hover:bg-forest-green/90 transition-colors"
                         onClick={() =>
                           setReportForm({
                             ...reportForm,
@@ -1661,7 +1667,10 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                 toolbar={(columnsButton) => (
                   <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
                     <DialogTrigger asChild>
-                      <Button>
+                      <Button
+                        size="sm"
+                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                      >
                         <Plus className="h-4 w-4 mr-2" />
                         Add AI Tool
                       </Button>

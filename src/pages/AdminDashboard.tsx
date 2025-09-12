@@ -941,7 +941,12 @@ const AdminDashboard: React.FC = () => {
                   Manage users and invitations with full administrative capabilities.
                 </CardDescription>
               </div>
-              <Button onClick={handleRefreshUsers} variant="outline" size="sm" className="w-full lg:w-auto">
+              <Button
+                onClick={handleRefreshUsers}
+                variant="outline"
+                size="sm"
+                className="w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
+              >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh
               </Button>
@@ -1061,16 +1066,21 @@ const AdminDashboard: React.FC = () => {
               </div>
               <div className="flex flex-col gap-2 w-full lg:w-auto lg:flex-row">
                 <Button
+                  onClick={handleRefreshSubscriptions}
+                  variant="outline"
+                  size="sm"
+                  className="w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+                <Button
                   size="sm"
                   onClick={openNewsletterDialog}
-                  className="bg-forest-green hover:bg-forest-green/90 w-full lg:w-auto"
+                  className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full lg:w-auto"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   Add Subscriber
-                </Button>
-                <Button onClick={handleRefreshSubscriptions} variant="outline" size="sm" className="w-full lg:w-auto">
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Refresh
                 </Button>
               </div>
             </div>

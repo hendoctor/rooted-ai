@@ -157,7 +157,12 @@ const AdminPermissionDebugger: React.FC = () => {
             <Bug className="h-5 w-5" />
             Permission Debugger
           </CardTitle>
-          <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full lg:w-auto">
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            size="sm"
+            className="w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
+          >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
