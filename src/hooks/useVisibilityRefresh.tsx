@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { useMobileOptimizations } from './useMobileOptimizations';
 
@@ -14,22 +14,25 @@ export const useVisibilityRefresh = () => {
   const inFlightRef = useRef(false);
   const MIN_INTERVAL = 15000; // 15s throttle between refreshes
 
-  const tryRefresh = (reason: string) => {
-    if (!user) return;
-    const now = Date.now();
-    if (inFlightRef.current) return;
-    if (now - lastRefreshRef.current < MIN_INTERVAL) return;
+  const tryRefresh = useCallback(
+    (reason: string) => {
+      if (!user) return;
+      const now = Date.now();
+      if (inFlightRef.current) return;
+      if (now - lastRefreshRef.current < MIN_INTERVAL) return;
 
-    inFlightRef.current = true;
-    console.log(`🔄 Auth refresh triggered (${reason})`);
+      inFlightRef.current = true;
+      console.log(`🔄 Auth refresh triggered (${reason})`);
 
-    Promise.resolve(refreshAuth())
-      .catch((e) => console.warn('Auth refresh error (ignored):', e))
-      .finally(() => {
-        lastRefreshRef.current = Date.now();
-        inFlightRef.current = false;
-      });
-  };
+      Promise.resolve(refreshAuth(true))
+        .catch((e) => console.warn('Auth refresh error (ignored):', e))
+        .finally(() => {
+          lastRefreshRef.current = Date.now();
+          inFlightRef.current = false;
+        });
+    },
+    [user, refreshAuth]
+  );
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -63,12 +66,12 @@ export const useVisibilityRefresh = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [isPWA, isStandalone, isOnline, refreshAuth, user]);
+  }, [isPWA, isStandalone, isOnline, tryRefresh]);
 
   // Handle pull-to-refresh specifically (also throttled)
   useEffect(() => {
     if (isPullToRefresh) {
       tryRefresh('pull-to-refresh');
     }
-  }, [isPullToRefresh]);
+  }, [isPullToRefresh, tryRefresh]);
 };
