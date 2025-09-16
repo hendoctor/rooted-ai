@@ -391,6 +391,33 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_form_rate_limits: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown
+          submission_count: number
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address: unknown
+          submission_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          submission_count?: number
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           created_at: string
