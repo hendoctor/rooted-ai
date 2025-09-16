@@ -89,49 +89,49 @@ Deno.serve(async (req) => {
     const targetAuthUser = authUsers.users.find(u => u.email === userEmail);
     
     if (!targetAuthUser) {
-      console.error(`User not found in auth.users: ${userEmail}`);
-      return new Response(
-        JSON.stringify({ error: 'User not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.warn(`User not found in auth.users: ${userEmail} — continuing with database cleanup only`);
     }
 
     console.log(`Found target user: ${targetAuthUser.id}`);
 
-    // Step 2: Revoke all sessions for the user using Admin API
-    try {
-      console.log(`Revoking all sessions for user: ${userEmail}`);
-      
-      // Sign out all sessions for the user
-      const { error: signOutError } = await supabase.auth.admin.signOut(targetAuthUser.id, 'global');
-      
-      if (signOutError) {
-        console.warn('Failed to revoke sessions:', signOutError);
-        // Continue with deletion even if session revocation fails
-      } else {
-        console.log('Successfully revoked all sessions');
+    if (targetAuthUser) {
+      // Step 2: Revoke all sessions for the user using Admin API
+      try {
+        console.log(`Revoking all sessions for user: ${userEmail}`);
+        
+        // Sign out all sessions for the user
+        const { error: signOutError } = await supabase.auth.admin.signOut(targetAuthUser.id, 'global');
+        
+        if (signOutError) {
+          console.warn('Failed to revoke sessions:', signOutError);
+          // Continue with deletion even if session revocation fails
+        } else {
+          console.log('Successfully revoked all sessions');
+        }
+      } catch (sessionError) {
+        console.warn('Session revocation failed:', sessionError);
+        // Continue with deletion
       }
-    } catch (sessionError) {
-      console.warn('Session revocation failed:', sessionError);
-      // Continue with deletion
-    }
 
-    // Step 3: Delete user from auth.users using Admin API
-    console.log(`Deleting user from auth.users: ${userEmail}`);
-    const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(targetAuthUser.id);
-    
-    if (deleteAuthError) {
-      console.error('Failed to delete from auth.users:', deleteAuthError);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to delete user from authentication system',
-          details: deleteAuthError.message 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+      // Step 3: Delete user from auth.users using Admin API
+      console.log(`Deleting user from auth.users: ${userEmail}`);
+      const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(targetAuthUser.id);
+      
+      if (deleteAuthError) {
+        console.error('Failed to delete from auth.users:', deleteAuthError);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Failed to delete user from authentication system',
+            details: deleteAuthError.message 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    console.log('Successfully deleted user from auth.users');
+      console.log('Successfully deleted user from auth.users');
+    } else {
+      console.log('Skipping auth session revocation and deletion as user does not exist in auth.users');
+    }
 
     // Step 4: Clean up all related data using our enhanced database function
     console.log(`Cleaning up related data for: ${userEmail}`);
@@ -157,9 +157,9 @@ Deno.serve(async (req) => {
       success: true,
       message: `User ${userEmail} has been completely deleted`,
       userEmail,
-      authUserId: targetAuthUser.id,
-      sessionsRevoked: true,
-      authDeleted: true,
+      authUserId: targetAuthUser ? targetAuthUser.id : null,
+      sessionsRevoked: !!targetAuthUser,
+      authDeleted: !!targetAuthUser,
       databaseCleanup: cleanupResult
     };
 
