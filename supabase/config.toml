@@ -98,6 +98,9 @@ verify_jwt = false
 [functions.accept-invitation]
 verify_jwt = false
 
+[functions.admin-delete-user]
+verify_jwt = true
+
 [functions.log-security-event]
 verify_jwt = true
 

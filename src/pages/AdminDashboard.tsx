@@ -65,7 +65,7 @@ const AdminDashboard: React.FC = () => {
   const [usersWithRoles, setUsersWithRoles] = useState<UserWithRole[]>([]);
   const [allCompanies, setAllCompanies] = useState<CompanyWithCount[]>([]);
   const [newsletterSubscriptions, setNewsletterSubscriptions] = useState<NewsletterSubscription[]>([]);
-  const [loadingData, setLoadingData] = useState(false); // Start as false, only set true when actually fetching
+  const [loadingData, setLoadingData] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [editForm, setEditForm] = useState({
     display_name: '',
@@ -110,7 +110,7 @@ const AdminDashboard: React.FC = () => {
 
     // Admin authenticated - fetch data
     console.log('✅ Admin authenticated, fetching data...');
-    setLoadingData(true); // Set loading only when we start fetching
+    setLoadingData(true);
     fetchAllData();
     let cleanup: (() => void) | undefined;
     try {
@@ -252,7 +252,6 @@ const AdminDashboard: React.FC = () => {
       console.error('Error in fetchUsersWithRoles:', error);
     }
   };
-  // Role permissions are now managed directly in users table - no separate fetch needed
 
   const fetchAllCompanies = async () => {
     try {
@@ -485,33 +484,62 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // Permission management is now handled directly through users.role field
-
   const deleteUser = async (userEmail: string) => {
-    const { error } = await supabase.rpc('delete_user_completely', {
-      user_email: userEmail
-    });
+    // Show comprehensive confirmation dialog
+    const confirmed = window.confirm(
+      `⚠️ PERMANENT ACTION ⚠️\n\nThis will completely delete user "${userEmail}" and:\n\n• Revoke all active sessions immediately\n• Delete all user data and company memberships\n• Cancel any pending invitations\n• Remove activity logs and anonymize audit trails\n• This action CANNOT be undone\n\nAre you absolutely sure you want to proceed?`
+    );
     
-    if (!error) {
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      toast({
+        title: "Deleting user...",
+        description: "Revoking sessions and cleaning up data",
+      });
+
+      // Call the enhanced edge function that handles session revocation and complete cleanup
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userEmail }
+      });
+      
+      if (error) {
+        console.error('User deletion failed:', error);
+        toast({
+          title: "Deletion Failed", 
+          description: error.message || "Failed to delete user completely",
+          variant: "destructive"
+        });
+        return;
+      }
+
       // Log admin action
       if (user?.id && user?.email) {
         await activityLogger.logAdminAction(
           user.id,
           user.email,
-          'delete_user',
-          { deletedUserEmail: userEmail }
+          'delete_user_complete',
+          { 
+            deletedUserEmail: userEmail,
+            sessionsRevoked: data?.sessionsRevoked,
+            authDeleted: data?.authDeleted,
+            cleanupSummary: data?.databaseCleanup?.cleanup_summary
+          }
         );
       }
       
       toast({
         title: "Success",
-        description: "User deleted successfully",
+        description: `User ${userEmail} has been completely deleted and all sessions revoked`,
       });
       fetchUsersWithRoles();
-    } else {
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
       toast({
         title: "Error",
-        description: "Failed to delete user",
+        description: error.message || "Failed to delete user",
         variant: "destructive"
       });
     }
@@ -519,81 +547,52 @@ const AdminDashboard: React.FC = () => {
 
   const openEditUser = (user: UserWithRole) => {
     setEditingUser(user);
-    const primaryCompany = user.companies?.[0];
     setEditForm({
       display_name: user.display_name || '',
       client_name: user.client_name || '',
       role: user.role,
-      companyId: primaryCompany?.id || 'none',
-      companyRole: primaryCompany?.userRole as 'Member' | 'Admin' || 'Member'
+      companyId: user.companies?.[0]?.id || 'none',
+      companyRole: (user.companies?.[0]?.userRole as 'Member' | 'Admin') || 'Member'
     });
   };
 
-  const createMissingProfile = async (user: UserWithRole) => {
-    if (!user.display_name) {
-      const defaultDisplayName = user.email.split('@')[0];
-      
-      const { error } = await supabase
-        .from('users')
-        .update({ display_name: defaultDisplayName })
-        .eq('id', user.id);
-
-      if (!error) {
-        fetchUsersWithRoles();
-        toast({
-          title: "Profile Created",
-          description: `Created profile for ${user.email} with display name: ${defaultDisplayName}`,
-        });
-      }
-    }
-  };
-
-  const saveUserEdit = async () => {
+  const saveUserChanges = async () => {
     if (!editingUser) return;
 
     try {
-      // Update user info
-      const { error: userError } = await supabase
+      const { error } = await supabase
         .from('users')
         .update({
           display_name: editForm.display_name,
           client_name: editForm.client_name,
           role: editForm.role
         })
-        .eq('id', editingUser.id);
+        .eq('auth_user_id', editingUser.auth_user_id);
 
-      if (userError) throw userError;
+      if (error) throw error;
 
-      // Update company membership if selected
-      if (editForm.companyId && editForm.companyId !== 'none') {
-        const { error: membershipError } = await supabase
-          .from('company_memberships')
-          .upsert(
-            {
-              user_id: editingUser.auth_user_id,
-              company_id: editForm.companyId,
-              role: editForm.companyRole
-            },
-            { onConflict: 'user_id,company_id' }
-          );
-
-        if (membershipError) throw membershipError;
-      }
-
-      toast({
-        title: "Success",
-        description: "User updated successfully"
-      });
-      
+      toast({ title: 'Success', description: 'User updated successfully' });
       setEditingUser(null);
       fetchUsersWithRoles();
     } catch (error) {
       console.error('Error updating user:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update user",
-        variant: "destructive"
-      });
+      toast({ title: 'Error', description: 'Failed to update user', variant: 'destructive' });
+    }
+  };
+
+  const createMissingProfile = async (user: UserWithRole) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ display_name: user.email.split('@')[0] })
+        .eq('auth_user_id', user.auth_user_id);
+
+      if (error) throw error;
+      toast({ title: 'Success', description: 'Profile created' });
+      fetchUsersWithRoles();
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      toast({ title: 'Error', description: 'Failed to create profile', variant: 'destructive' });
     }
   };
 
@@ -606,64 +605,18 @@ const AdminDashboard: React.FC = () => {
         .eq('company_id', companyId);
 
       if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "User removed from company"
-      });
-
-      setSelectedCompanyUsers((prev) =>
-        prev.filter((u) => u.auth_user_id !== userId)
-      );
+      toast({ title: 'Success', description: 'User removed from company' });
       fetchUsersWithRoles();
     } catch (error) {
       console.error('Error removing user from company:', error);
-      toast({
-        title: "Error",
-        description: "Failed to remove user from company",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const addUserToCompany = async (userId: string, companyId: string) => {
-    try {
-      const { error } = await supabase.from('company_memberships').insert({
-        user_id: userId,
-        company_id: companyId,
-        role: 'Member'
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "User added to company"
-      });
-
-      const addedUser = usersWithRoles.find((u) => u.auth_user_id === userId);
-      if (addedUser) {
-        setSelectedCompanyUsers((prev) => [...prev, addedUser]);
-      }
-      setUserToAdd('');
-      fetchUsersWithRoles();
-    } catch (error) {
-      console.error('Error adding user to company:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add user to company",
-        variant: "destructive"
-      });
+      toast({ title: 'Error', description: 'Failed to remove user', variant: 'destructive' });
     }
   };
 
   const toggleNewsletterSubscription = async (subscription: NewsletterSubscription) => {
     try {
       const newStatus = subscription.status === 'active' ? 'unsubscribed' : 'active';
-      const updateData: Record<string, unknown> = {
-        status: newStatus,
-        updated_at: new Date().toISOString()
-      };
+      const updateData: any = { status: newStatus };
       
       if (newStatus === 'unsubscribed') {
         updateData.unsubscribed_at = new Date().toISOString();
@@ -676,15 +629,9 @@ const AdminDashboard: React.FC = () => {
         .update(updateData)
         .eq('id', subscription.id);
 
-      if (!error) {
-        toast({
-          title: "Success",
-          description: `Subscription ${newStatus === 'active' ? 'activated' : 'deactivated'}`,
-        });
-        fetchNewsletterSubscriptions();
-      } else {
-        throw error;
-      }
+      if (error) throw error;
+      toast({ title: 'Success', description: `Subscription ${newStatus}` });
+      fetchNewsletterSubscriptions();
     } catch (error) {
       console.error('Error updating newsletter subscription:', error);
       toast({
@@ -822,7 +769,7 @@ const AdminDashboard: React.FC = () => {
           </p>
         </div>
 
-        {/* Company Portals Section - Now handled by AdminPortalPreview */}
+        {/* Company Portals Section */}
         <AdminPortalPreview 
           onAddCompany={() => openCompanyDialog()}
           onEditCompany={(company) => openCompanyDialog({ id: company.id, name: company.name, slug: company.slug, userCount: 0 })}
@@ -830,6 +777,118 @@ const AdminDashboard: React.FC = () => {
           onManageUsers={openCompanyUsersDialog}
         />
 
+        {/* User Management Section */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Management
+              </CardTitle>
+              <CardDescription>
+                Manage user accounts, roles, and permissions. Click delete to completely remove a user and revoke all sessions.
+              </CardDescription>
+            </div>
+            <Button variant="outline" onClick={handleRefreshUsers}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <SortableTable
+              data={usersWithRoles}
+              columns={userColumns}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Newsletter Management */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Newsletter Subscriptions
+              </CardTitle>
+              <CardDescription>
+                Manage email subscriptions and communication preferences
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleRefreshSubscriptions}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+              <Button onClick={openNewsletterDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Subscriber
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <SortableTable
+              data={newsletterSubscriptions}
+              columns={newsletterColumns}
+            />
+          </CardContent>
+        </Card>
+
+        {/* User Invitation Management */}
+        <UserInvitationManager companies={allCompanies.map(c => ({ id: c.id, name: c.name, slug: c.slug }))} />
+
+        {/* Portal Content Management */}
+        <PortalContentManager companies={allCompanies.map(c => ({ id: c.id, name: c.name, slug: c.slug }))} />
+
+        {/* Activity Logs */}
+        <ActivityLogsTable />
+
+        {/* Permission Debugger */}
+        <AdminPermissionDebugger />
+
+        {/* Edit User Dialog */}
+        <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="display-name">Display Name</Label>
+                <Input
+                  id="display-name"
+                  value={editForm.display_name}
+                  onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="client-name">Client Name</Label>
+                <Input
+                  id="client-name"
+                  value={editForm.client_name}
+                  onChange={(e) => setEditForm({ ...editForm, client_name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="role">Role</Label>
+                <Select value={editForm.role} onValueChange={(value) => setEditForm({ ...editForm, role: value as 'Client' | 'Admin' })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Client">Client</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingUser(null)}>Cancel</Button>
+              <Button onClick={saveUserChanges}>Save Changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Company Dialog */}
         <Dialog open={isCompanyDialogOpen} onOpenChange={setIsCompanyDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -860,262 +919,11 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        <Dialog
-          open={isCompanyUsersDialogOpen}
-          onOpenChange={(open) => {
-            setIsCompanyUsersDialogOpen(open);
-            if (!open) {
-              setSelectedCompanyId(null);
-              setSelectedCompanyUsers([]);
-              setUserToAdd('');
-            }
-          }}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Users in {selectedCompanyName}</DialogTitle>
-            </DialogHeader>
-            {selectedCompanyUsers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No users associated with this company.</p>
-            ) : (
-              <ul className="space-y-2">
-                {selectedCompanyUsers.map((u) => (
-                  <li key={u.id} className="flex items-center gap-2">
-                    <Badge variant="secondary">{u.role}</Badge>
-                    <span>{u.display_name || u.email}</span>
-                    {selectedCompanyId && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeUserFromCompany(u.auth_user_id, selectedCompanyId)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="mt-4 space-y-2">
-              <Label htmlFor="add-user">Add User</Label>
-              <div className="flex items-center gap-2">
-                <Select value={userToAdd} onValueChange={setUserToAdd}>
-                  <SelectTrigger id="add-user" className="w-[200px]">
-                    <SelectValue placeholder="Select user" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {usersWithRoles
-                      .filter((u) =>
-                        !selectedCompanyUsers.some((sc) => sc.id === u.id)
-                      )
-                      .map((u) => (
-                        <SelectItem key={u.id} value={u.auth_user_id}>
-                          {u.display_name || u.email}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={() =>
-                    selectedCompanyId && userToAdd && addUserToCompany(userToAdd, selectedCompanyId)
-                  }
-                  disabled={!userToAdd}
-                >
-                  Add
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* User Management Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-forest-green">
-                  <Users className="h-5 w-5" />
-                  User Management
-                </CardTitle>
-                <CardDescription>
-                  Manage users and invitations with full administrative capabilities.
-                </CardDescription>
-              </div>
-              <Button
-                onClick={handleRefreshUsers}
-                variant="outline"
-                size="sm"
-                className="w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-8">
-            {loadingData ? (
-              <InlineLoader text="Loading users..." />
-            ) : usersWithRoles.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">No users found.</p>
-            ) : (
-              <SortableTable data={usersWithRoles} columns={userColumns} />
-            )}
-            <UserInvitationManager embedded companies={allCompanies} />
-          </CardContent>
-        </Card>
-
-        {/* User Edit Dialog */}
-        <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
-              <DialogDescription>
-                Update user information and company assignments.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="display_name" className="text-right">
-                  Display Name
-                </Label>
-                <Input
-                  id="display_name"
-                  value={editForm.display_name}
-                  onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="client_name" className="text-right">
-                  Client Name
-                </Label>
-                <Input
-                  id="client_name"
-                  value={editForm.client_name}
-                  onChange={(e) => setEditForm({ ...editForm, client_name: e.target.value })}
-                  className="col-span-3"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="role" className="text-right">
-                  Role
-                </Label>
-                <Select value={editForm.role} onValueChange={(value: 'Client' | 'Admin') => setEditForm({ ...editForm, role: value })}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Client">Client</SelectItem>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="company">Company</Label>
-                  <Select value={editForm.companyId} onValueChange={(value) => setEditForm({ ...editForm, companyId: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select company" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">No company</SelectItem>
-                      {allCompanies.map((company) => (
-                        <SelectItem key={company.id} value={company.id}>
-                          {company.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="companyRole">Company Role</Label>
-                  <Select value={editForm.companyRole} onValueChange={(value: 'Member' | 'Admin') => setEditForm({ ...editForm, companyRole: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Member">Member</SelectItem>
-                      <SelectItem value="Admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingUser(null)}>Cancel</Button>
-              <Button onClick={saveUserEdit}>Save Changes</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Activity Logs Section */}
-        <ActivityLogsTable />
-
-        {/* Newsletter Subscriptions Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-forest-green">
-                  <MessageSquare className="h-5 w-5" />
-                  Newsletter Subscriptions
-                </CardTitle>
-                <CardDescription>
-                  Manage newsletter subscriptions and subscriber status.
-                </CardDescription>
-              </div>
-              <div className="flex flex-col-reverse gap-2 w-full lg:w-auto lg:flex-row">
-                <Button
-                  onClick={handleRefreshSubscriptions}
-                  variant="outline"
-                  size="sm"
-                  className="w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Refresh
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={openNewsletterDialog}
-                  className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full lg:w-auto"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Subscriber
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loadingData ? (
-              <InlineLoader text="Loading subscriptions..." />
-            ) : newsletterSubscriptions.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                No newsletter subscriptions found.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-muted-foreground">
-                    Total subscriptions: {newsletterSubscriptions.length} 
-                    (Active: {newsletterSubscriptions.filter(s => s.status === 'active').length})
-                  </p>
-                </div>
-                <SortableTable
-                  data={newsletterSubscriptions}
-                  columns={newsletterColumns}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+        {/* Newsletter Dialog */}
         <Dialog open={isNewsletterDialogOpen} onOpenChange={setIsNewsletterDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Subscriber</DialogTitle>
-              <DialogDescription>
-                Manually add a new newsletter subscription.
-              </DialogDescription>
+              <DialogTitle>Add Newsletter Subscriber</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -1124,20 +932,16 @@ const AdminDashboard: React.FC = () => {
                   id="newsletter-email"
                   type="email"
                   value={newsletterForm.email}
-                  onChange={(e) => setNewsletterForm({ email: e.target.value })}
+                  onChange={(e) => setNewsletterForm({ ...newsletterForm, email: e.target.value })}
                 />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsNewsletterDialogOpen(false)}>Cancel</Button>
-              <Button onClick={addNewsletterSubscription}>Add</Button>
+              <Button onClick={addNewsletterSubscription}>Add Subscriber</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        <PortalContentManager companies={allCompanies} currentAdmin={user?.email || ""} />
-        
-        <AdminPermissionDebugger />
       </div>
       <Footer />
     </div>

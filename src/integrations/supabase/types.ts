@@ -970,6 +970,10 @@ export type Database = {
         Args: { user_email: string }
         Returns: undefined
       }
+      delete_user_completely_enhanced: {
+        Args: { user_email: string }
+        Returns: Json
+      }
       ensure_membership_for_current_user: {
         Args: Record<PropertyKey, never>
         Returns: Json
