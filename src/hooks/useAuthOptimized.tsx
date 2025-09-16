@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthState(prev => ({ ...prev, ...updates }));
   }, []);
 
-  const fetchContext = useCallback(async (userId: string) => {
+  const fetchContext = useCallback(async (userId: string, background = false) => {
     try {
       // Check cache first for instant loading
       const cacheKey = `${CACHE_KEY}_${userId}`;
@@ -74,8 +74,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // No cache - fetch from server
-      await fetchContextFromServer(userId, true);
+      // No cache - fetch from server (don't show loading for background refreshes)
+      await fetchContextFromServer(userId, !background);
     } catch (err) {
       console.error('Failed to fetch user context:', err);
       updateAuthState({
@@ -156,27 +156,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    // Clear cache and fetch fresh data
+    console.debug('🔄 Refreshing auth context (background)');
+    
+    // Clear cache and fetch fresh data in background mode
     const cacheKey = `${CACHE_KEY}_${authState.user.id}`;
     CacheManager.invalidate(cacheKey);
-    await fetchContext(authState.user.id);
+    await fetchContext(authState.user.id, true);
   }, [authState.user, fetchContext]);
 
-  const handleSession = useCallback(async (sess: Session | null) => {
+  const handleSession = useCallback((sess: Session | null) => {
     if (sess?.user) {
-      // User authenticated - batch update session and trigger context fetch
+      // User authenticated - immediately update session/user (synchronous)
       updateAuthState({
         session: sess,
         user: sess.user,
-        loading: true, // Only set loading once
         error: null,
       });
       
       // Set user context for cache management
       CacheManager.setCurrentUser(sess.user.id);
       
-      // Fetch user context (will check cache first)
-      await fetchContext(sess.user.id);
+      // Defer context fetch to avoid blocking auth state change
+      setTimeout(() => {
+        fetchContext(sess.user.id).catch(err => {
+          console.error('Deferred context fetch failed:', err);
+        });
+      }, 0);
     } else {
       // User signed out - clear everything in one update
       CacheManager.setCurrentUser(null);
@@ -196,14 +201,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let subscription: { unsubscribe: () => void } | null = null;
     
     const initAuth = async () => {
-      // Get initial session
-      const { data: { session } } = await supabase.auth.getSession();
-      await handleSession(session);
-      
-      // Set up auth state listener
+      // Set up auth state listener FIRST to avoid missing events
       subscription = supabase.auth.onAuthStateChange((_event, newSession) => {
         handleSession(newSession);
       }).data.subscription;
+      
+      // Then get initial session
+      const { data: { session } } = await supabase.auth.getSession();
+      handleSession(session);
     };
 
     initAuth();

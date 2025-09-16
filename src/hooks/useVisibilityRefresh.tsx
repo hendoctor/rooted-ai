@@ -7,27 +7,31 @@ import { useMobileOptimizations } from './useMobileOptimizations';
  * Throttled to prevent rapid re-auth loops and UI flicker
  */
 export const useVisibilityRefresh = () => {
-  const { refreshAuth, user } = useAuth();
+  const { refreshAuth, user, loading } = useAuth();
   const { isPWA, isStandalone, isPullToRefresh, isOnline } = useMobileOptimizations();
 
   const lastRefreshRef = useRef(0);
   const inFlightRef = useRef(false);
-  const MIN_INTERVAL = 15000; // 15s throttle between refreshes
+  const MIN_INTERVAL = 30000; // 30s throttle between refreshes (increased from 15s)
 
   const tryRefresh = (reason: string) => {
     if (!user) return;
+    if (loading) return; // Skip refresh if already loading
+    if (!navigator.onLine) return; // Skip if offline
+    
     const now = Date.now();
     if (inFlightRef.current) return;
     if (now - lastRefreshRef.current < MIN_INTERVAL) return;
 
     inFlightRef.current = true;
-    console.log(`🔄 Auth refresh triggered (${reason})`);
+    console.debug(`🔄 Auth refresh triggered (${reason})`);
 
     Promise.resolve(refreshAuth())
       .catch((e) => console.warn('Auth refresh error (ignored):', e))
       .finally(() => {
         lastRefreshRef.current = Date.now();
         inFlightRef.current = false;
+        console.debug(`✅ Auth refresh completed (${reason})`);
       });
   };
 
@@ -63,7 +67,7 @@ export const useVisibilityRefresh = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [isPWA, isStandalone, isOnline, refreshAuth, user]);
+  }, [isPWA, isStandalone, isOnline, refreshAuth, user, loading]);
 
   // Handle pull-to-refresh specifically (also throttled)
   useEffect(() => {

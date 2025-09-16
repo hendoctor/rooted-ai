@@ -5,43 +5,46 @@ import { SecurityMiddleware } from './securityMiddleware';
 export class SecurityEnhancer {
   // Monitor authentication events
   static async monitorAuthEvents() {
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      switch (event) {
-        case 'SIGNED_IN':
-          await SecurityMiddleware.logSecurityEvent({
-            event_type: 'user_login',
-            event_details: {
-              user_id: session?.user?.id,
-              login_method: 'password',
-              timestamp: new Date().toISOString()
-            }
-          });
-          break;
-        
-        case 'SIGNED_OUT':
-          await SecurityMiddleware.logSecurityEvent({
-            event_type: 'user_logout',
-            event_details: {
-              user_id: session?.user?.id,
-              timestamp: new Date().toISOString()
-            }
-          });
-          break;
-        
-        case 'TOKEN_REFRESHED':
-          // Log successful token refresh
-          break;
-        
-        case 'PASSWORD_RECOVERY':
-          await SecurityMiddleware.logSecurityEvent({
-            event_type: 'password_recovery_initiated',
-            event_details: {
-              user_id: session?.user?.id,
-              timestamp: new Date().toISOString()
-            }
-          });
-          break;
-      }
+    supabase.auth.onAuthStateChange((event, session) => {
+      // Use setTimeout to defer logging and avoid blocking auth state changes
+      setTimeout(() => {
+        switch (event) {
+          case 'SIGNED_IN':
+            SecurityMiddleware.logSecurityEvent({
+              event_type: 'user_login',
+              event_details: {
+                user_id: session?.user?.id,
+                login_method: 'password',
+                timestamp: new Date().toISOString()
+              }
+            }).catch(err => console.error('Failed to log login event:', err));
+            break;
+          
+          case 'SIGNED_OUT':
+            SecurityMiddleware.logSecurityEvent({
+              event_type: 'user_logout',
+              event_details: {
+                user_id: session?.user?.id,
+                timestamp: new Date().toISOString()
+              }
+            }).catch(err => console.error('Failed to log logout event:', err));
+            break;
+          
+          case 'TOKEN_REFRESHED':
+            // Log successful token refresh
+            break;
+          
+          case 'PASSWORD_RECOVERY':
+            SecurityMiddleware.logSecurityEvent({
+              event_type: 'password_recovery_initiated',
+              event_details: {
+                user_id: session?.user?.id,
+                timestamp: new Date().toISOString()
+              }
+            }).catch(err => console.error('Failed to log recovery event:', err));
+            break;
+        }
+      }, 0);
     });
   }
 
