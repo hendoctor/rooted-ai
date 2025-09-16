@@ -555,33 +555,6 @@ export type Database = {
           },
         ]
       }
-      policy_access_log: {
-        Row: {
-          access_timestamp: string | null
-          company_id: string
-          id: number
-          resource_type: string
-          user_id: string
-          was_allowed: boolean
-        }
-        Insert: {
-          access_timestamp?: string | null
-          company_id: string
-          id?: never
-          resource_type: string
-          user_id: string
-          was_allowed: boolean
-        }
-        Update: {
-          access_timestamp?: string | null
-          company_id?: string
-          id?: never
-          resource_type?: string
-          user_id?: string
-          was_allowed?: boolean
-        }
-        Relationships: []
-      }
       portal_resource_companies: {
         Row: {
           company_id: string
@@ -905,41 +878,7 @@ export type Database = {
       }
     }
     Views: {
-      policy_access_metrics: {
-        Row: {
-          accessible_rows: number | null
-          resource_type: string | null
-          total_rows: number | null
-        }
-        Relationships: []
-      }
-      users_safe: {
-        Row: {
-          auth_user_id: string | null
-          created_at: string | null
-          display_name: string | null
-          email_domain: string | null
-          id: string | null
-          role: string | null
-        }
-        Insert: {
-          auth_user_id?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          email_domain?: never
-          id?: string | null
-          role?: string | null
-        }
-        Update: {
-          auth_user_id?: string | null
-          created_at?: string | null
-          display_name?: string | null
-          email_domain?: never
-          id?: string | null
-          role?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       accept_invitation_finalize: {
