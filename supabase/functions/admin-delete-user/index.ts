@@ -90,28 +90,10 @@ Deno.serve(async (req) => {
     
     if (!targetAuthUser) {
       console.warn(`User not found in auth.users: ${userEmail} — continuing with database cleanup only`);
+    } else {
+      console.log(`Found target user: ${targetAuthUser.id}`);
     }
 
-    console.log(`Found target user: ${targetAuthUser.id}`);
-
-    if (targetAuthUser) {
-      // Step 2: Revoke all sessions for the user using Admin API
-      try {
-        console.log(`Revoking all sessions for user: ${userEmail}`);
-        
-        // Sign out all sessions for the user
-        const { error: signOutError } = await supabase.auth.admin.signOut(targetAuthUser.id, 'global');
-        
-        if (signOutError) {
-          console.warn('Failed to revoke sessions:', signOutError);
-          // Continue with deletion even if session revocation fails
-        } else {
-          console.log('Successfully revoked all sessions');
-        }
-      } catch (sessionError) {
-        console.warn('Session revocation failed:', sessionError);
-        // Continue with deletion
-      }
 
       // Step 3: Delete user from auth.users using Admin API
       console.log(`Deleting user from auth.users: ${userEmail}`);
