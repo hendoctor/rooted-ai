@@ -18,7 +18,8 @@ import {
   Plus,
   FileText,
   Bot,
-  RefreshCw
+  RefreshCw,
+  ChevronRight
 } from 'lucide-react';
 import SortableTable, { Column } from './SortableTable';
 import { supabase } from '@/integrations/supabase/client';
@@ -100,6 +101,15 @@ interface AiTool {
   companies: string[];
 }
 
+type SectionKey =
+  | 'announcements'
+  | 'resources'
+  | 'links'
+  | 'coaching'
+  | 'reports'
+  | 'faqs'
+  | 'aiTools';
+
 const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?: string }> = ({ companies, currentAdmin }) => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
@@ -109,6 +119,22 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [aiTools, setAiTools] = useState<AiTool[]>([]);
   const [loading, setLoading] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
+    announcements: false,
+    resources: false,
+    links: false,
+    coaching: false,
+    reports: false,
+    faqs: false,
+    aiTools: false
+  });
+
+  const toggleSection = (key: SectionKey) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
 
   // Fetch all data on component mount
   useEffect(() => {
@@ -1048,528 +1074,629 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         </CardHeader>
         <CardContent className="space-y-8">
           {/* Announcements */}
-          <section>
-            <h3 className="text-forest-green font-semibold flex items-center gap-2">
-              <Megaphone className="h-5 w-5" />
-              Announcements
-            </h3>
-            <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
-              <SortableTable
-                data={announcements}
-                columns={announcementColumns}
-                toolbar={(columnsButton) => (
-                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Announcement
-                      </Button>
-                    </DialogTrigger>
-                    {columnsButton}
-                  </div>
-                )}
+          <section className="space-y-4">
+            <button
+              type="button"
+              onClick={() => toggleSection('announcements')}
+              className="flex w-full items-center justify-between rounded-md border border-forest-green/20 px-4 py-3 text-left transition-colors hover:bg-forest-green/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-green focus-visible:ring-offset-2"
+              aria-expanded={expandedSections.announcements}
+              aria-controls="announcements-content"
+            >
+              <span className="flex items-center gap-2 text-forest-green font-semibold">
+                <Megaphone className="h-5 w-5" />
+                Announcements
+              </span>
+              <ChevronRight
+                className={`h-5 w-5 text-forest-green transition-transform ${
+                  expandedSections.announcements ? 'rotate-90' : ''
+                }`}
               />
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{editingAnnouncement ? 'Edit Announcement' : 'Add Announcement'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="title">Title</Label>
-                      <Input
-                        id="title"
-                        value={announcementForm.title}
-                        onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
-                      />
+            </button>
+            <div
+              id="announcements-content"
+              className={`space-y-4 ${expandedSections.announcements ? 'block' : 'hidden'}`}
+            >
+              <Dialog open={announcementOpen} onOpenChange={setAnnouncementOpen}>
+                <SortableTable
+                  data={announcements}
+                  columns={announcementColumns}
+                  toolbar={(columnsButton) => (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Announcement
+                        </Button>
+                      </DialogTrigger>
+                      {columnsButton}
                     </div>
-                    <div>
-                      <Label htmlFor="author">Author</Label>
-                      <Input
-                        id="author"
-                        value={announcementForm.author}
-                        onChange={(e) => setAnnouncementForm({ ...announcementForm, author: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="summary">Summary</Label>
-                      <Textarea
-                        id="summary"
-                        value={announcementForm.summary}
-                        onChange={(e) => setAnnouncementForm({ ...announcementForm, summary: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="content">Content</Label>
-                      <Textarea
-                        id="content"
-                        value={announcementForm.content}
-                        onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="url">URL (optional)</Label>
-                      <Input
-                        id="url"
-                        value={announcementForm.url || ''}
-                        onChange={(e) => setAnnouncementForm({ ...announcementForm, url: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Assign to Companies</Label>
-                      <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
-                        {companies.map((company) => (
-                          <div key={company.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`ann-company-${company.id}`}
-                              checked={announcementForm.companies.includes(company.id)}
-                              onCheckedChange={() =>
-                                setAnnouncementForm({
-                                  ...announcementForm,
-                                  companies: toggleSelection(announcementForm.companies, company.id)
-                                })
-                              }
-                            />
-                            <Label htmlFor={`ann-company-${company.id}`}>{company.name}</Label>
-                          </div>
-                        ))}
+                  )}
+                />
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{editingAnnouncement ? 'Edit Announcement' : 'Add Announcement'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="title">Title</Label>
+                        <Input
+                          id="title"
+                          value={announcementForm.title}
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="author">Author</Label>
+                        <Input
+                          id="author"
+                          value={announcementForm.author}
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, author: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="summary">Summary</Label>
+                        <Textarea
+                          id="summary"
+                          value={announcementForm.summary}
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, summary: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="content">Content</Label>
+                        <Textarea
+                          id="content"
+                          value={announcementForm.content}
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="url">URL (optional)</Label>
+                        <Input
+                          id="url"
+                          value={announcementForm.url || ''}
+                          onChange={(e) => setAnnouncementForm({ ...announcementForm, url: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Assign to Companies</Label>
+                        <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                          {companies.map((company) => (
+                            <div key={company.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`ann-company-${company.id}`}
+                                checked={announcementForm.companies.includes(company.id)}
+                                onCheckedChange={() =>
+                                  setAnnouncementForm({
+                                    ...announcementForm,
+                                    companies: toggleSelection(announcementForm.companies, company.id)
+                                  })
+                                }
+                              />
+                              <Label htmlFor={`ann-company-${company.id}`}>{company.name}</Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={saveAnnouncement} disabled={loading}>
-                      {loading ? 'Saving...' : 'Save'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter>
+                      <Button onClick={saveAnnouncement} disabled={loading}>
+                        {loading ? 'Saving...' : 'Save'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+            </div>
           </section>
 
           {/* Training & Resources */}
-          <section>
-            <h3 className="text-forest-green font-semibold flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Training & Resources
-            </h3>
-            <Dialog open={resourceOpen} onOpenChange={setResourceOpen}>
-              <SortableTable
-                data={resources}
-                columns={resourceColumns}
-                toolbar={(columnsButton) => (
-                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Resource
-                      </Button>
-                    </DialogTrigger>
-                    {columnsButton}
-                  </div>
-                )}
+          <section className="space-y-4">
+            <button
+              type="button"
+              onClick={() => toggleSection('resources')}
+              className="flex w-full items-center justify-between rounded-md border border-forest-green/20 px-4 py-3 text-left transition-colors hover:bg-forest-green/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-green focus-visible:ring-offset-2"
+              aria-expanded={expandedSections.resources}
+              aria-controls="resources-content"
+            >
+              <span className="flex items-center gap-2 text-forest-green font-semibold">
+                <BookOpen className="h-5 w-5" />
+                Training & Resources
+              </span>
+              <ChevronRight
+                className={`h-5 w-5 text-forest-green transition-transform ${
+                  expandedSections.resources ? 'rotate-90' : ''
+                }`}
               />
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingResource ? 'Edit Resource' : 'Add Training & Resource'}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="res-title">Title</Label>
-                      <Input
-                        id="res-title"
-                        value={resourceForm.title}
-                        onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
-                      />
+            </button>
+            <div
+              id="resources-content"
+              className={`space-y-4 ${expandedSections.resources ? 'block' : 'hidden'}`}
+            >
+              <Dialog open={resourceOpen} onOpenChange={setResourceOpen}>
+                <SortableTable
+                  data={resources}
+                  columns={resourceColumns}
+                  toolbar={(columnsButton) => (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Resource
+                        </Button>
+                      </DialogTrigger>
+                      {columnsButton}
                     </div>
-                    <div>
-                      <Label htmlFor="res-description">Description</Label>
-                      <Textarea
-                        id="res-description"
-                        value={resourceForm.description}
-                        onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="res-link">Link (optional)</Label>
-                      <Input
-                        id="res-link"
-                        value={resourceForm.link || ''}
-                        onChange={(e) => setResourceForm({ ...resourceForm, link: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="res-category">Category</Label>
-                      <Input
-                        id="res-category"
-                        value={resourceForm.category}
-                        onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Assign to Companies</Label>
-                      <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
-                        {companies.map((company) => (
-                          <div key={company.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`res-company-${company.id}`}
-                              checked={resourceForm.companies.includes(company.id)}
-                              onCheckedChange={() =>
-                                setResourceForm({
-                                  ...resourceForm,
-                                  companies: toggleSelection(resourceForm.companies, company.id)
-                                })
-                              }
-                            />
-                            <Label htmlFor={`res-company-${company.id}`}>{company.name}</Label>
-                          </div>
-                        ))}
+                  )}
+                />
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{editingResource ? 'Edit Resource' : 'Add Training & Resource'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="res-title">Title</Label>
+                        <Input
+                          id="res-title"
+                          value={resourceForm.title}
+                          onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="res-description">Description</Label>
+                        <Textarea
+                          id="res-description"
+                          value={resourceForm.description}
+                          onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="res-link">Link (optional)</Label>
+                        <Input
+                          id="res-link"
+                          value={resourceForm.link || ''}
+                          onChange={(e) => setResourceForm({ ...resourceForm, link: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="res-category">Category</Label>
+                        <Input
+                          id="res-category"
+                          value={resourceForm.category}
+                          onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Assign to Companies</Label>
+                        <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                          {companies.map((company) => (
+                            <div key={company.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`res-company-${company.id}`}
+                                checked={resourceForm.companies.includes(company.id)}
+                                onCheckedChange={() =>
+                                  setResourceForm({
+                                    ...resourceForm,
+                                    companies: toggleSelection(resourceForm.companies, company.id)
+                                  })
+                                }
+                              />
+                              <Label htmlFor={`res-company-${company.id}`}>{company.name}</Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={saveResource} disabled={loading}>
-                      {loading ? 'Saving...' : 'Save'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter>
+                      <Button onClick={saveResource} disabled={loading}>
+                        {loading ? 'Saving...' : 'Save'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+            </div>
           </section>
 
           {/* Useful Links */}
-          <section>
-            <h3 className="text-forest-green font-semibold flex items-center gap-2">
-              <LinkIcon className="h-5 w-5" />
-              Useful Links
-            </h3>
-            <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
-              <SortableTable
-                data={links}
-                columns={linkColumns}
-                toolbar={(columnsButton) => (
-                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Link
-                      </Button>
-                    </DialogTrigger>
-                    {columnsButton}
-                  </div>
-                )}
+          <section className="space-y-4">
+            <button
+              type="button"
+              onClick={() => toggleSection('links')}
+              className="flex w-full items-center justify-between rounded-md border border-forest-green/20 px-4 py-3 text-left transition-colors hover:bg-forest-green/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-green focus-visible:ring-offset-2"
+              aria-expanded={expandedSections.links}
+              aria-controls="links-content"
+            >
+              <span className="flex items-center gap-2 text-forest-green font-semibold">
+                <LinkIcon className="h-5 w-5" />
+                Useful Links
+              </span>
+              <ChevronRight
+                className={`h-5 w-5 text-forest-green transition-transform ${
+                  expandedSections.links ? 'rotate-90' : ''
+                }`}
               />
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingLink ? 'Edit Useful Link' : 'Add Useful Link'}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="link-title">Title</Label>
-                      <Input
-                        id="link-title"
-                        value={linkForm.title}
-                        onChange={(e) => setLinkForm({ ...linkForm, title: e.target.value })}
-                      />
+            </button>
+            <div id="links-content" className={`space-y-4 ${expandedSections.links ? 'block' : 'hidden'}`}>
+              <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
+                <SortableTable
+                  data={links}
+                  columns={linkColumns}
+                  toolbar={(columnsButton) => (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Link
+                        </Button>
+                      </DialogTrigger>
+                      {columnsButton}
                     </div>
-                    <div>
-                      <Label htmlFor="link-url">URL</Label>
-                      <Input
-                        id="link-url"
-                        value={linkForm.url}
-                        onChange={(e) => setLinkForm({ ...linkForm, url: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="link-description">Description</Label>
-                      <Textarea
-                        id="link-description"
-                        value={linkForm.description}
-                        onChange={(e) => setLinkForm({ ...linkForm, description: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Assign to Companies</Label>
-                      <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
-                        {companies.map((company) => (
-                          <div key={company.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`link-company-${company.id}`}
-                              checked={linkForm.companies.includes(company.id)}
-                              onCheckedChange={() =>
-                                setLinkForm({
-                                  ...linkForm,
-                                  companies: toggleSelection(linkForm.companies, company.id)
-                                })
-                              }
-                            />
-                            <Label htmlFor={`link-company-${company.id}`}>{company.name}</Label>
-                          </div>
-                        ))}
+                  )}
+                />
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{editingLink ? 'Edit Useful Link' : 'Add Useful Link'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="link-title">Title</Label>
+                        <Input
+                          id="link-title"
+                          value={linkForm.title}
+                          onChange={(e) => setLinkForm({ ...linkForm, title: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="link-url">URL</Label>
+                        <Input
+                          id="link-url"
+                          value={linkForm.url}
+                          onChange={(e) => setLinkForm({ ...linkForm, url: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="link-description">Description</Label>
+                        <Textarea
+                          id="link-description"
+                          value={linkForm.description}
+                          onChange={(e) => setLinkForm({ ...linkForm, description: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Assign to Companies</Label>
+                        <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                          {companies.map((company) => (
+                            <div key={company.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`link-company-${company.id}`}
+                                checked={linkForm.companies.includes(company.id)}
+                                onCheckedChange={() =>
+                                  setLinkForm({
+                                    ...linkForm,
+                                    companies: toggleSelection(linkForm.companies, company.id)
+                                  })
+                                }
+                              />
+                              <Label htmlFor={`link-company-${company.id}`}>{company.name}</Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={saveLink} disabled={loading}>
-                      {loading ? 'Saving...' : 'Save'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter>
+                      <Button onClick={saveLink} disabled={loading}>
+                        {loading ? 'Saving...' : 'Save'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+            </div>
           </section>
 
           {/* Adoption Coaching */}
-          <section>
-            <h3 className="text-forest-green font-semibold flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Adoption Coaching
-            </h3>
-            <Dialog open={coachingOpen} onOpenChange={setCoachingOpen}>
-              <SortableTable
-                data={coachings}
-                columns={coachingColumns}
-                toolbar={(columnsButton) => (
-                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Coaching
-                      </Button>
-                    </DialogTrigger>
-                    {columnsButton}
-                  </div>
-                )}
+          <section className="space-y-4">
+            <button
+              type="button"
+              onClick={() => toggleSection('coaching')}
+              className="flex w-full items-center justify-between rounded-md border border-forest-green/20 px-4 py-3 text-left transition-colors hover:bg-forest-green/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-green focus-visible:ring-offset-2"
+              aria-expanded={expandedSections.coaching}
+              aria-controls="coaching-content"
+            >
+              <span className="flex items-center gap-2 text-forest-green font-semibold">
+                <Users className="h-5 w-5" />
+                Adoption Coaching
+              </span>
+              <ChevronRight
+                className={`h-5 w-5 text-forest-green transition-transform ${
+                  expandedSections.coaching ? 'rotate-90' : ''
+                }`}
               />
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingCoaching ? 'Edit Coaching' : 'Add Adoption Coaching'}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="coaching-topic">Topic</Label>
-                      <Input
-                        id="coaching-topic"
-                        value={coachingForm.topic}
-                        onChange={(e) => setCoachingForm({ ...coachingForm, topic: e.target.value })}
-                      />
+            </button>
+            <div
+              id="coaching-content"
+              className={`space-y-4 ${expandedSections.coaching ? 'block' : 'hidden'}`}
+            >
+              <Dialog open={coachingOpen} onOpenChange={setCoachingOpen}>
+                <SortableTable
+                  data={coachings}
+                  columns={coachingColumns}
+                  toolbar={(columnsButton) => (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Coaching
+                        </Button>
+                      </DialogTrigger>
+                      {columnsButton}
                     </div>
-                    <div>
-                      <Label htmlFor="coaching-description">Description</Label>
-                      <Textarea
-                        id="coaching-description"
-                        value={coachingForm.description}
-                        onChange={(e) => setCoachingForm({ ...coachingForm, description: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="coaching-media">Media (optional)</Label>
-                      <Input
-                        id="coaching-media"
-                        value={coachingForm.media || ''}
-                        onChange={(e) => setCoachingForm({ ...coachingForm, media: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="coaching-contact">Contact</Label>
-                      <Input
-                        id="coaching-contact"
-                        value={coachingForm.contact}
-                        onChange={(e) => setCoachingForm({ ...coachingForm, contact: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="coaching-steps">Steps (optional)</Label>
-                      <Textarea
-                        id="coaching-steps"
-                        value={coachingForm.steps || ''}
-                        onChange={(e) => setCoachingForm({ ...coachingForm, steps: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>Assign to Companies</Label>
-                      <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
-                        {companies.map((company) => (
-                          <div key={company.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`coaching-company-${company.id}`}
-                              checked={coachingForm.companies.includes(company.id)}
-                              onCheckedChange={() =>
-                                setCoachingForm({
-                                  ...coachingForm,
-                                  companies: toggleSelection(coachingForm.companies, company.id)
-                                })
-                              }
-                            />
-                            <Label htmlFor={`coaching-company-${company.id}`}>{company.name}</Label>
-                          </div>
-                        ))}
+                  )}
+                />
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{editingCoaching ? 'Edit Coaching' : 'Add Adoption Coaching'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="coaching-topic">Topic</Label>
+                        <Input
+                          id="coaching-topic"
+                          value={coachingForm.topic}
+                          onChange={(e) => setCoachingForm({ ...coachingForm, topic: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="coaching-description">Description</Label>
+                        <Textarea
+                          id="coaching-description"
+                          value={coachingForm.description}
+                          onChange={(e) => setCoachingForm({ ...coachingForm, description: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="coaching-media">Media (optional)</Label>
+                        <Input
+                          id="coaching-media"
+                          value={coachingForm.media || ''}
+                          onChange={(e) => setCoachingForm({ ...coachingForm, media: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="coaching-contact">Contact</Label>
+                        <Input
+                          id="coaching-contact"
+                          value={coachingForm.contact}
+                          onChange={(e) => setCoachingForm({ ...coachingForm, contact: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="coaching-steps">Steps (optional)</Label>
+                        <Textarea
+                          id="coaching-steps"
+                          value={coachingForm.steps || ''}
+                          onChange={(e) => setCoachingForm({ ...coachingForm, steps: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Assign to Companies</Label>
+                        <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                          {companies.map((company) => (
+                            <div key={company.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`coaching-company-${company.id}`}
+                                checked={coachingForm.companies.includes(company.id)}
+                                onCheckedChange={() =>
+                                  setCoachingForm({
+                                    ...coachingForm,
+                                    companies: toggleSelection(coachingForm.companies, company.id)
+                                  })
+                                }
+                              />
+                              <Label htmlFor={`coaching-company-${company.id}`}>{company.name}</Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={saveCoaching} disabled={loading}>
-                      {loading ? 'Saving...' : 'Save'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter>
+                      <Button onClick={saveCoaching} disabled={loading}>
+                        {loading ? 'Saving...' : 'Save'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+            </div>
           </section>
 
           {/* Reports & KPIs */}
-          <section>
-            <h3 className="text-forest-green font-semibold flex items-center gap-2">
-              <BarChart2 className="h-5 w-5" />
-              Reports & KPIs
-            </h3>
-            <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-              <SortableTable
-                data={reports}
-                columns={reportColumns}
-                toolbar={(columnsButton) => (
-                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                    <DialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Report
-                      </Button>
-                    </DialogTrigger>
-                    {columnsButton}
-                  </div>
-                )}
+          <section className="space-y-4">
+            <button
+              type="button"
+              onClick={() => toggleSection('reports')}
+              className="flex w-full items-center justify-between rounded-md border border-forest-green/20 px-4 py-3 text-left transition-colors hover:bg-forest-green/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-green focus-visible:ring-offset-2"
+              aria-expanded={expandedSections.reports}
+              aria-controls="reports-content"
+            >
+              <span className="flex items-center gap-2 text-forest-green font-semibold">
+                <BarChart2 className="h-5 w-5" />
+                Reports & KPIs
+              </span>
+              <ChevronRight
+                className={`h-5 w-5 text-forest-green transition-transform ${
+                  expandedSections.reports ? 'rotate-90' : ''
+                }`}
               />
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>{editingReport ? 'Edit Report' : 'Add Report & KPIs'}</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="report-name">Report Name</Label>
-                      <Input
-                        id="report-name"
-                        value={reportForm.name}
-                        onChange={(e) => setReportForm({ ...reportForm, name: e.target.value })}
-                      />
+            </button>
+            <div
+              id="reports-content"
+              className={`space-y-4 ${expandedSections.reports ? 'block' : 'hidden'}`}
+            >
+              <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+                <SortableTable
+                  data={reports}
+                  columns={reportColumns}
+                  toolbar={(columnsButton) => (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Report
+                        </Button>
+                      </DialogTrigger>
+                      {columnsButton}
                     </div>
-                    <div>
-                      <Label htmlFor="report-period">Period</Label>
-                      <Input
-                        id="report-period"
-                        value={reportForm.period}
-                        onChange={(e) => setReportForm({ ...reportForm, period: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="report-link">Link (optional)</Label>
-                      <Input
-                        id="report-link"
-                        value={reportForm.link || ''}
-                        onChange={(e) => setReportForm({ ...reportForm, link: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="report-notes">Notes (optional)</Label>
-                      <Textarea
-                        id="report-notes"
-                        value={reportForm.notes || ''}
-                        onChange={(e) => setReportForm({ ...reportForm, notes: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <Label>KPIs</Label>
-                      {reportForm.kpis.map((kpi, index) => (
-                        <div key={index} className="grid grid-cols-3 gap-2 mt-2">
-                          <Input
-                            placeholder="KPI Name"
-                            value={kpi.name}
-                            onChange={(e) => {
-                              const newKpis = [...reportForm.kpis];
-                              newKpis[index] = { ...kpi, name: e.target.value };
-                              setReportForm({ ...reportForm, kpis: newKpis });
-                            }}
-                          />
-                          <Input
-                            placeholder="Value"
-                            value={kpi.value}
-                            onChange={(e) => {
-                              const newKpis = [...reportForm.kpis];
-                              newKpis[index] = { ...kpi, value: e.target.value };
-                              setReportForm({ ...reportForm, kpis: newKpis });
-                            }}
-                          />
-                          <Input
-                            placeholder="Target"
-                            value={kpi.target}
-                            onChange={(e) => {
-                              const newKpis = [...reportForm.kpis];
-                              newKpis[index] = { ...kpi, target: e.target.value };
-                              setReportForm({ ...reportForm, kpis: newKpis });
-                            }}
-                          />
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="bg-forest-green hover:bg-forest-green/90 transition-colors"
-                        onClick={() =>
-                          setReportForm({
-                            ...reportForm,
-                            kpis: [...reportForm.kpis, { name: '', value: '', target: '' }]
-                          })
-                        }
-                      >
-                        Add KPI
-                      </Button>
-                    </div>
-                    <div>
-                      <Label>Assign to Companies</Label>
-                      <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
-                        {companies.map((company) => (
-                          <div key={company.id} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`report-company-${company.id}`}
-                              checked={reportForm.companies.includes(company.id)}
-                              onCheckedChange={() =>
-                                setReportForm({
-                                  ...reportForm,
-                                  companies: toggleSelection(reportForm.companies, company.id)
-                                })
-                              }
+                  )}
+                />
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>{editingReport ? 'Edit Report' : 'Add Report & KPIs'}</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="report-name">Report Name</Label>
+                        <Input
+                          id="report-name"
+                          value={reportForm.name}
+                          onChange={(e) => setReportForm({ ...reportForm, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="report-period">Period</Label>
+                        <Input
+                          id="report-period"
+                          value={reportForm.period}
+                          onChange={(e) => setReportForm({ ...reportForm, period: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="report-link">Link (optional)</Label>
+                        <Input
+                          id="report-link"
+                          value={reportForm.link || ''}
+                          onChange={(e) => setReportForm({ ...reportForm, link: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="report-notes">Notes (optional)</Label>
+                        <Textarea
+                          id="report-notes"
+                          value={reportForm.notes || ''}
+                          onChange={(e) => setReportForm({ ...reportForm, notes: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>KPIs</Label>
+                        {reportForm.kpis.map((kpi, index) => (
+                          <div key={index} className="grid grid-cols-3 gap-2 mt-2">
+                            <Input
+                              placeholder="KPI Name"
+                              value={kpi.name}
+                              onChange={(e) => {
+                                const newKpis = [...reportForm.kpis];
+                                newKpis[index] = { ...kpi, name: e.target.value };
+                                setReportForm({ ...reportForm, kpis: newKpis });
+                              }}
                             />
-                            <Label htmlFor={`report-company-${company.id}`}>{company.name}</Label>
+                            <Input
+                              placeholder="Value"
+                              value={kpi.value}
+                              onChange={(e) => {
+                                const newKpis = [...reportForm.kpis];
+                                newKpis[index] = { ...kpi, value: e.target.value };
+                                setReportForm({ ...reportForm, kpis: newKpis });
+                              }}
+                            />
+                            <Input
+                              placeholder="Target"
+                              value={kpi.target}
+                              onChange={(e) => {
+                                const newKpis = [...reportForm.kpis];
+                                newKpis[index] = { ...kpi, target: e.target.value };
+                                setReportForm({ ...reportForm, kpis: newKpis });
+                              }}
+                            />
                           </div>
                         ))}
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-forest-green hover:bg-forest-green/90 transition-colors"
+                          onClick={() =>
+                            setReportForm({
+                              ...reportForm,
+                              kpis: [...reportForm.kpis, { name: '', value: '', target: '' }]
+                            })
+                          }
+                        >
+                          Add KPI
+                        </Button>
+                      </div>
+                      <div>
+                        <Label>Assign to Companies</Label>
+                        <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">
+                          {companies.map((company) => (
+                            <div key={company.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`report-company-${company.id}`}
+                                checked={reportForm.companies.includes(company.id)}
+                                onCheckedChange={() =>
+                                  setReportForm({
+                                    ...reportForm,
+                                    companies: toggleSelection(reportForm.companies, company.id)
+                                  })
+                                }
+                              />
+                              <Label htmlFor={`report-company-${company.id}`}>{company.name}</Label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={saveReport} disabled={loading}>
-                      {loading ? 'Saving...' : 'Save'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    <DialogFooter>
+                      <Button onClick={saveReport} disabled={loading}>
+                        {loading ? 'Saving...' : 'Save'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+            </div>
           </section>
 
           {/* FAQs */}
-          <section>
-            <h3 className="text-forest-green font-semibold flex items-center gap-2">
-              <HelpCircle className="h-5 w-5" />
-              FAQs
-            </h3>
-            <Dialog open={faqOpen} onOpenChange={setFaqOpen}>
-              <SortableTable
+          <section className="space-y-4">
+            <button
+              type="button"
+              onClick={() => toggleSection('faqs')}
+              className="flex w-full items-center justify-between rounded-md border border-forest-green/20 px-4 py-3 text-left transition-colors hover:bg-forest-green/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-green focus-visible:ring-offset-2"
+              aria-expanded={expandedSections.faqs}
+              aria-controls="faqs-content"
+            >
+              <span className="flex items-center gap-2 text-forest-green font-semibold">
+                <HelpCircle className="h-5 w-5" />
+                FAQs
+              </span>
+              <ChevronRight
+                className={`h-5 w-5 text-forest-green transition-transform ${
+                  expandedSections.faqs ? 'rotate-90' : ''
+                }`}
+              />
+            </button>
+            <div id="faqs-content" className={`space-y-4 ${expandedSections.faqs ? 'block' : 'hidden'}`}>
+              <Dialog open={faqOpen} onOpenChange={setFaqOpen}>
+                <SortableTable
                 data={faqs}
                 columns={faqColumns}
                 toolbar={(columnsButton) => (
@@ -1652,16 +1779,31 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+            </div>
           </section>
 
           {/* AI Tools */}
-          <section>
-            <h3 className="text-forest-green font-semibold flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              AI Tools
-            </h3>
-            <Dialog open={aiToolOpen} onOpenChange={setAiToolOpen}>
-              <SortableTable
+          <section className="space-y-4">
+            <button
+              type="button"
+              onClick={() => toggleSection('aiTools')}
+              className="flex w-full items-center justify-between rounded-md border border-forest-green/20 px-4 py-3 text-left transition-colors hover:bg-forest-green/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-green focus-visible:ring-offset-2"
+              aria-expanded={expandedSections.aiTools}
+              aria-controls="ai-tools-content"
+            >
+              <span className="flex items-center gap-2 text-forest-green font-semibold">
+                <Bot className="h-5 w-5" />
+                AI Tools
+              </span>
+              <ChevronRight
+                className={`h-5 w-5 text-forest-green transition-transform ${
+                  expandedSections.aiTools ? 'rotate-90' : ''
+                }`}
+              />
+            </button>
+            <div id="ai-tools-content" className={`space-y-4 ${expandedSections.aiTools ? 'block' : 'hidden'}`}>
+              <Dialog open={aiToolOpen} onOpenChange={setAiToolOpen}>
+                <SortableTable
                 data={aiTools}
                 columns={aiToolColumns}
                 toolbar={(columnsButton) => (
@@ -1738,8 +1880,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                     {loading ? 'Saving...' : 'Save'}
                   </Button>
                 </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </section>
         </CardContent>
       </Card>
