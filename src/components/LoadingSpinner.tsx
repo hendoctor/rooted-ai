@@ -1,7 +1,5 @@
 import React from 'react';
 
-const logoSrc = '/Assets/22badab3-8f25-475f-92d7-167cbc732868.png';
-
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   text?: string;
@@ -23,77 +21,23 @@ interface LoadingIconProps {
 
 export const LoadingIcon: React.FC<LoadingIconProps> = ({ size = 'md', className = '' }) => {
   return (
-    <div className={`relative mx-auto flex items-center justify-center ${sizeClasses[size]} ${className}`}>
-      <img
-        src={logoSrc}
-        alt="RootedAI logo"
-        className="w-full h-full object-contain"
-      />
-      <svg
-        className="absolute inset-0 w-full h-full"
-        viewBox="0 0 100 100"
-        fill="none"
-      >
-        <g stroke="#16a34a" strokeWidth="4" strokeLinecap="round">
-          <path d="M50 60 L50 90" strokeDasharray="30" strokeDashoffset="30">
-            <animate
-              attributeName="stroke-dashoffset"
-              values="30;0;30"
-              dur="2s"
-              repeatCount="indefinite"
-            />
-          </path>
-          <path d="M50 75 L40 90" strokeDasharray="22" strokeDashoffset="22">
-            <animate
-              attributeName="stroke-dashoffset"
-              values="22;0;22"
-              dur="2s"
-              repeatCount="indefinite"
-            />
-          </path>
-          <path d="M50 75 L60 90" strokeDasharray="22" strokeDashoffset="22">
-            <animate
-              attributeName="stroke-dashoffset"
-              values="22;0;22"
-              dur="2s"
-              repeatCount="indefinite"
-            />
-          </path>
-          {/* Additional root outlines */}
-          <path d="M50 65 L45 80" strokeDasharray="16" strokeDashoffset="16">
-            <animate
-              attributeName="stroke-dashoffset"
-              values="16;0;16"
-              dur="2s"
-              repeatCount="indefinite"
-            />
-          </path>
-          <path d="M50 65 L55 80" strokeDasharray="16" strokeDashoffset="16">
-            <animate
-              attributeName="stroke-dashoffset"
-              values="16;0;16"
-              dur="2s"
-              repeatCount="indefinite"
-            />
-          </path>
-          <path d="M50 80 L43 90" strokeDasharray="12" strokeDashoffset="12">
-            <animate
-              attributeName="stroke-dashoffset"
-              values="12;0;12"
-              dur="2s"
-              repeatCount="indefinite"
-            />
-          </path>
-          <path d="M50 80 L57 90" strokeDasharray="12" strokeDashoffset="12">
-            <animate
-              attributeName="stroke-dashoffset"
-              values="12;0;12"
-              dur="2s"
-              repeatCount="indefinite"
-            />
-          </path>
-        </g>
-      </svg>
+    <div
+      className={`plant-loader mx-auto ${sizeClasses[size]} ${className}`}
+      aria-hidden="true"
+    >
+      <div className="plant-loader__cycle" />
+      <div className="plant-loader__soil" />
+      <div className="plant-loader__seed" />
+      <div className="plant-loader__sprout">
+        <span className="plant-loader__stem" />
+        <span className="plant-loader__leaf plant-loader__leaf--left" />
+        <span className="plant-loader__leaf plant-loader__leaf--right" />
+      </div>
+      <div className="plant-loader__roots">
+        <span className="plant-loader__root plant-loader__root--left" />
+        <span className="plant-loader__root plant-loader__root--center" />
+        <span className="plant-loader__root plant-loader__root--right" />
+      </div>
     </div>
   );
 };
@@ -103,8 +47,15 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   text,
   className = ''
 }) => {
+  const accessibleLabel = text ?? 'Loading';
+
   return (
-    <div className={`flex flex-col items-center justify-center space-y-2 ${className}`}>
+    <div
+      className={`flex flex-col items-center justify-center space-y-2 ${className}`}
+      role="status"
+      aria-label={accessibleLabel}
+      aria-live="polite"
+    >
       <LoadingIcon size={size} />
       {text && (
         <p className="text-sm text-muted-foreground animate-pulse">{text}</p>
