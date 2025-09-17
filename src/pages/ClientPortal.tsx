@@ -24,9 +24,8 @@ const KPITile = React.lazy(() => import('@/components/client-portal/KPITile'));
 const EmptyState = React.lazy(() => import('@/components/client-portal/EmptyState'));
 const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCard'));
 
-// Newsletter components
-import { NewsletterSubscriptionCard } from '@/components/client-portal/NewsletterSubscriptionCard';
-import { AdminNewsletterStats } from '@/components/client-portal/AdminNewsletterStats';
+// User Analytics component
+import { UserAnalyticsCard } from '@/components/client-portal/UserAnalyticsCard';
 
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -480,10 +479,10 @@ const ClientPortal: React.FC = () => {
                   </div>
                 )}
 
-                {/* Admin Newsletter Analytics */}
-                {(isAdmin || currentCompany?.isAdmin) && currentCompany?.id && (
+                {/* User Analytics - Newsletter & Member Management */}
+                {currentCompany?.id && (
                   <div className="animate-slide-up-delayed">
-                    <AdminNewsletterStats companyId={currentCompany.id} />
+                    <UserAnalyticsCard companyId={currentCompany.id} />
                   </div>
                 )}
               </div>
@@ -579,10 +578,6 @@ const ClientPortal: React.FC = () => {
                    </div>
                  )}
 
-                {/* Newsletter Subscription Management */}
-                <div className="animate-slide-left-delayed">
-                  <NewsletterSubscriptionCard companyId={currentCompany?.id} />
-                </div>
               </div>
             </div>
 
