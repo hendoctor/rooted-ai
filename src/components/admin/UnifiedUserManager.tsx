@@ -374,15 +374,31 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
         
         if (userError) throw userError;
 
-        // Update company membership role if user has companies and companyId is selected
+        // Handle company membership assignment/update
         if (editForm.companyId && editingUser.user_id) {
-          const { error: membershipError } = await supabase
-            .from('company_memberships')
-            .update({ role: editForm.companyRole })
-            .eq('company_id', editForm.companyId)
-            .eq('user_id', editingUser.user_id);
+          const existingMembership = editingUser.companies?.find(c => c.id === editForm.companyId);
           
-          if (membershipError) throw membershipError;
+          if (existingMembership) {
+            // Update existing membership
+            const { error: membershipError } = await supabase
+              .from('company_memberships')
+              .update({ role: editForm.companyRole })
+              .eq('company_id', editForm.companyId)
+              .eq('user_id', editingUser.user_id);
+            
+            if (membershipError) throw membershipError;
+          } else {
+            // Create new membership
+            const { error: membershipError } = await supabase
+              .from('company_memberships')
+              .insert({
+                company_id: editForm.companyId,
+                user_id: editingUser.user_id,
+                role: editForm.companyRole
+              });
+            
+            if (membershipError) throw membershipError;
+          }
         }
       } else if (editingUser.source_table === 'user_invitations') {
         // Update pending invitation
@@ -893,36 +909,42 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                     )}
                   </div>
 
-                  {editingUser?.source_table !== 'newsletter_subscriptions' && editingUser?.companies && editingUser.companies.length > 0 && (
+                  {editingUser?.source_table !== 'newsletter_subscriptions' && (
                     <>
                       <div className="space-y-2">
                         <Label htmlFor="edit_company" className="flex items-center gap-2">
                           <Building className="h-4 w-4" />
-                          Company
+                          Company Assignment
                         </Label>
                         <Select
                           value={editForm.companyId}
                           onValueChange={(value) => {
-                            const selectedCompany = editingUser.companies.find(c => c.id === value);
+                            const existingCompany = editingUser?.companies?.find(c => c.id === value);
                             setEditForm({ 
                               ...editForm, 
                               companyId: value,
-                              companyRole: (selectedCompany?.userRole as 'Admin' | 'Member') || 'Member'
+                              companyRole: (existingCompany?.userRole as 'Admin' | 'Member') || 'Member'
                             });
                           }}
                           disabled={isLoading}
                         >
                           <SelectTrigger id="edit_company">
-                            <SelectValue placeholder="Select company to edit" />
+                            <SelectValue placeholder="Select company to assign/edit" />
                           </SelectTrigger>
                           <SelectContent>
-                            {editingUser.companies.map((company) => (
-                              <SelectItem key={company.id} value={company.id}>
-                                {company.name} (Current: {company.userRole})
-                              </SelectItem>
-                            ))}
+                            {companies.map((company) => {
+                              const userCompany = editingUser?.companies?.find(c => c.id === company.id);
+                              return (
+                                <SelectItem key={company.id} value={company.id}>
+                                  {company.name} {userCompany ? `(Current: ${userCompany.userRole})` : '(Not a member)'}
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
+                        <p className="text-xs text-muted-foreground">
+                          Select a company to assign the user to or edit their existing membership
+                        </p>
                       </div>
 
                       {editForm.companyId && (
