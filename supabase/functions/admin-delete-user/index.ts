@@ -92,10 +92,8 @@ Deno.serve(async (req) => {
       console.warn(`User not found in auth.users: ${userEmail} — continuing with database cleanup only`);
     } else {
       console.log(`Found target user: ${targetAuthUser.id}`);
-    }
-
-
-      // Step 3: Delete user from auth.users using Admin API
+      
+      // Step 2: Delete user from auth.users using Admin API
       console.log(`Deleting user from auth.users: ${userEmail}`);
       const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(targetAuthUser.id);
       
@@ -111,8 +109,6 @@ Deno.serve(async (req) => {
       }
 
       console.log('Successfully deleted user from auth.users');
-    } else {
-      console.log('Skipping auth session revocation and deletion as user does not exist in auth.users');
     }
 
     // Step 4: Clean up all related data using our enhanced database function
