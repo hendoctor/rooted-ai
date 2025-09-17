@@ -7,6 +7,12 @@ const corsHeaders = {
 
 interface DeleteUserRequest {
   userEmail: string;
+  options?: {
+    deleteNewsletter?: boolean;
+    deleteUserRecord?: boolean;
+    deleteAuth?: boolean;
+    deleteAll?: boolean;
+  };
 }
 
 Deno.serve(async (req) => {
@@ -64,7 +70,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { userEmail }: DeleteUserRequest = await req.json();
+    const { userEmail, options }: DeleteUserRequest = await req.json();
 
     if (!userEmail) {
       return new Response(
@@ -73,72 +79,128 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Admin ${user.email} initiated deletion of user: ${userEmail}`);
+    const opts = {
+      deleteNewsletter: options?.deleteNewsletter ?? true,
+      deleteUserRecord: options?.deleteUserRecord ?? true,
+      deleteAuth: options?.deleteAuth ?? true,
+      deleteAll: options?.deleteAll ?? (options ? false : true),
+    };
 
-    // Step 1: Get the target user from auth.users to get their ID
-    const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
-    
-    if (listError) {
-      console.error('Failed to list auth users:', listError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to access user data' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    console.log(`Admin ${user.email} initiated deletion of user: ${userEmail}`, opts);
+
+    let targetAuthUserId: string | null = null;
+    let authDeleted = false;
+
+    if (opts.deleteAll || opts.deleteAuth) {
+      // Find target auth user
+      const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
+      if (listError) {
+        console.error('Failed to list auth users:', listError);
+      } else {
+        const match = authUsers.users.find((u) => u.email === userEmail);
+        targetAuthUserId = match?.id ?? null;
+      }
+
+      if (!targetAuthUserId) {
+        console.warn(`User not found in auth.users: ${userEmail}${opts.deleteAuth ? ' — skipping auth deletion' : ''}`);
+      } else if (opts.deleteAuth || opts.deleteAll) {
+        console.log(`Deleting user from auth.users: ${userEmail}`);
+        const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(targetAuthUserId);
+        if (deleteAuthError) {
+          console.error('Failed to delete from auth.users:', deleteAuthError);
+          return new Response(
+            JSON.stringify({ 
+              error: 'Failed to delete user from authentication system',
+              details: deleteAuthError.message 
+            }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        authDeleted = true;
+        console.log('Successfully deleted user from auth.users');
+      }
     }
 
-    const targetAuthUser = authUsers.users.find(u => u.email === userEmail);
-    
-    if (!targetAuthUser) {
-      console.warn(`User not found in auth.users: ${userEmail} — continuing with database cleanup only`);
-    } else {
-      console.log(`Found target user: ${targetAuthUser.id}`);
-      
-      // Step 2: Delete user from auth.users using Admin API
-      console.log(`Deleting user from auth.users: ${userEmail}`);
-      const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(targetAuthUser.id);
-      
-      if (deleteAuthError) {
-        console.error('Failed to delete from auth.users:', deleteAuthError);
+    let databaseCleanup: any = null;
+
+    if (opts.deleteAll) {
+      console.log(`Cleaning up all related data for: ${userEmail}`);
+      const { data: cleanupResult, error: cleanupError } = await supabase
+        .rpc('delete_user_completely_enhanced', { user_email: userEmail });
+      if (cleanupError) {
+        console.error('Database cleanup failed:', cleanupError);
         return new Response(
           JSON.stringify({ 
-            error: 'Failed to delete user from authentication system',
-            details: deleteAuthError.message 
+            error: 'User deleted from auth but database cleanup failed',
+            details: cleanupError.message,
+            authDeleted: authDeleted
           }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+      databaseCleanup = cleanupResult;
+    } else {
+      // Partial operations
+      const partialSummary: Record<string, number | boolean | null> = {
+        newsletter_deleted: 0,
+        users_deleted: 0,
+        memberships_deleted: 0,
+        invitations_cancelled: 0,
+      };
 
-      console.log('Successfully deleted user from auth.users');
+      if (opts.deleteUserRecord) {
+        // Look up auth_user_id for membership cleanup
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('auth_user_id')
+          .eq('email', userEmail)
+          .maybeSingle();
+
+        if (userRow?.auth_user_id) {
+          const { error: delMemErr, count } = await supabase
+            .from('company_memberships')
+            .delete({ count: 'exact' })
+            .eq('user_id', userRow.auth_user_id);
+          if (delMemErr) console.warn('Membership deletion warning:', delMemErr.message);
+          else partialSummary.memberships_deleted = (count ?? 0);
+        }
+
+        const { error: cancelInvErr, count: cancelCount } = await supabase
+          .from('user_invitations')
+          .update({ status: 'cancelled' })
+          .eq('email', userEmail)
+          .eq('status', 'pending');
+        if (cancelInvErr) console.warn('Invitation cancel warning:', cancelInvErr.message);
+        else partialSummary.invitations_cancelled = (cancelCount as any)?.length ? (cancelCount as any).length : 0;
+
+        const { error: delUserErr, count: usersCount } = await supabase
+          .from('users')
+          .delete({ count: 'exact' })
+          .eq('email', userEmail);
+        if (delUserErr) console.warn('Users delete warning:', delUserErr.message);
+        else partialSummary.users_deleted = (usersCount ?? 0);
+      }
+
+      if (opts.deleteNewsletter) {
+        const { error: delNewsErr, count: newsCount } = await supabase
+          .from('newsletter_subscriptions')
+          .delete({ count: 'exact' })
+          .eq('email', userEmail);
+        if (delNewsErr) console.warn('Newsletter delete warning:', delNewsErr.message);
+        else partialSummary.newsletter_deleted = (newsCount ?? 0);
+      }
+
+      databaseCleanup = { success: true, cleanup_summary: partialSummary };
     }
 
-    // Step 4: Clean up all related data using our enhanced database function
-    console.log(`Cleaning up related data for: ${userEmail}`);
-    const { data: cleanupResult, error: cleanupError } = await supabase
-      .rpc('delete_user_completely_enhanced', { user_email: userEmail });
-
-    if (cleanupError) {
-      console.error('Database cleanup failed:', cleanupError);
-      return new Response(
-        JSON.stringify({ 
-          error: 'User deleted from auth but database cleanup failed',
-          details: cleanupError.message,
-          authDeleted: true
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('Database cleanup completed:', cleanupResult);
-
-    // Step 5: Final verification and response
     const result = {
       success: true,
-      message: `User ${userEmail} has been completely deleted`,
+      message: opts.deleteAll ? `User ${userEmail} has been completely deleted` : `Delete operation completed for ${userEmail}`,
       userEmail,
-      authUserId: targetAuthUser ? targetAuthUser.id : null,
-      sessionsRevoked: !!targetAuthUser,
-      authDeleted: !!targetAuthUser,
-      databaseCleanup: cleanupResult
+      authUserId: targetAuthUserId,
+      authDeleted,
+      options: opts,
+      databaseCleanup,
     };
 
     console.log('User deletion completed successfully:', result);

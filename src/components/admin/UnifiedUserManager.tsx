@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -86,6 +87,15 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
     display_name: '',
     role: 'Client' as 'Client' | 'Admin',
     companyId: ''
+  });
+
+  // Deletion dialog state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UnifiedUserRecord | null>(null);
+  const [deleteOptions, setDeleteOptions] = useState({
+    newsletter: true,
+    userRecord: true,
+    authRecord: true,
   });
 
   const { toast } = useToast();
@@ -234,44 +244,47 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
     }
   };
 
-  const deleteUser = async (user: UnifiedUserRecord) => {
-    const confirmed = window.confirm(
-      `⚠️ PERMANENT ACTION ⚠️\n\nThis will completely delete user "${user.email}" and:\n\n• Revoke all user sessions globally\n• Remove user from authentication system\n• Remove all user data and company memberships\n• Cancel any pending invitations\n• Unsubscribe from newsletter\n• This action CANNOT be undone\n\nAre you absolutely sure you want to proceed?`
-    );
-    
-    if (!confirmed) return;
+  const deleteUser = (user: UnifiedUserRecord) => {
+    setUserToDelete(user);
+    setDeleteOptions({ newsletter: true, userRecord: true, authRecord: true });
+    setIsDeleteDialogOpen(true);
+  };
 
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
     try {
-      // Get session for authorization
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
+      if (!session) throw new Error('Not authenticated');
 
-      // Use the admin-delete-user edge function for proper session revocation
+      const deleteAll = deleteOptions.newsletter && deleteOptions.userRecord && deleteOptions.authRecord;
+
       const { data, error } = await supabase.functions.invoke('admin-delete-user', {
-        body: { userEmail: user.email },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
+        body: {
+          userEmail: userToDelete.email,
+          options: {
+            deleteNewsletter: deleteOptions.newsletter,
+            deleteUserRecord: deleteOptions.userRecord,
+            deleteAuth: deleteOptions.authRecord,
+            deleteAll,
+          },
         },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
       toast({
-        title: 'User Deleted',
-        description: `Successfully deleted user ${user.email} and revoked all sessions`,
+        title: 'Delete completed',
+        description: `${userToDelete.email} removed${deleteAll ? ' (all records)' : ''}`,
       });
 
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
       fetchUnifiedUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete user',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to delete user', variant: 'destructive' });
     }
   };
 
@@ -890,6 +903,65 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                     </Button>
                   </div>
                 </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Delete User Dialog */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Delete User</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Select what to delete for <span className="font-medium text-foreground">{userToDelete?.email}</span>.
+                  </p>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3">
+                      <Checkbox
+                        checked={deleteOptions.newsletter}
+                        onCheckedChange={(c) => setDeleteOptions((o) => ({ ...o, newsletter: Boolean(c) }))}
+                      />
+                      <span className="text-sm">Newsletter subscription record</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <Checkbox
+                        checked={deleteOptions.userRecord}
+                        onCheckedChange={(c) => setDeleteOptions((o) => ({ ...o, userRecord: Boolean(c) }))}
+                      />
+                      <span className="text-sm">User record (profile, memberships, invitations)</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <Checkbox
+                        checked={deleteOptions.authRecord}
+                        onCheckedChange={(c) => setDeleteOptions((o) => ({ ...o, authRecord: Boolean(c) }))}
+                      />
+                      <span className="text-sm">Authentication account (auth.users)</span>
+                    </label>
+                    <div className="pt-1 text-xs text-muted-foreground">
+                      Tip: Select all to perform a complete deletion.
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsDeleteDialogOpen(false)}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={confirmDeleteUser}
+                      disabled={!deleteOptions.newsletter && !deleteOptions.userRecord && !deleteOptions.authRecord}
+                    >
+                      Delete Selected
+                    </Button>
+                  </div>
+                </div>
               </DialogContent>
             </Dialog>
           </div>
