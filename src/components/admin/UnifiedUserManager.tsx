@@ -87,7 +87,8 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
   const [editForm, setEditForm] = useState({
     display_name: '',
     role: 'Client' as 'Client' | 'Admin',
-    companyId: ''
+    companyId: '',
+    companyRole: 'Member' as 'Admin' | 'Member'
   });
 
   // Deletion dialog state
@@ -347,7 +348,8 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
     setEditForm({
       display_name: user.name,
       role: user.role === 'Newsletter' ? 'Client' : user.role as 'Client' | 'Admin',
-      companyId: user.companies[0]?.id || ''
+      companyId: user.companies[0]?.id || '',
+      companyRole: (user.companies[0]?.userRole as 'Admin' | 'Member') || 'Member'
     });
     setIsEditDialogOpen(true);
   };
@@ -361,8 +363,8 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
 
       // Handle different user types
       if (editingUser.source_table === 'users') {
-        // Update active user
-        const { error } = await supabase
+        // Update active user's global role
+        const { error: userError } = await supabase
           .from('users')
           .update({ 
             display_name: editForm.display_name,
@@ -370,7 +372,18 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
           })
           .eq('email', editingUser.email);
         
-        if (error) throw error;
+        if (userError) throw userError;
+
+        // Update company membership role if user has companies and companyId is selected
+        if (editForm.companyId && editingUser.user_id) {
+          const { error: membershipError } = await supabase
+            .from('company_memberships')
+            .update({ role: editForm.companyRole })
+            .eq('company_id', editForm.companyId)
+            .eq('user_id', editingUser.user_id);
+          
+          if (membershipError) throw membershipError;
+        }
       } else if (editingUser.source_table === 'user_invitations') {
         // Update pending invitation
         const { error } = await supabase
@@ -858,7 +871,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                   <div className="space-y-2">
                     <Label htmlFor="edit_role" className="flex items-center gap-2">
                       <Shield className="h-4 w-4" />
-                      Role
+                      Global Role
                     </Label>
                     <Select
                       value={editForm.role}
@@ -866,7 +879,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                       disabled={isLoading || editingUser?.source_table === 'newsletter_subscriptions'}
                     >
                       <SelectTrigger id="edit_role">
-                        <SelectValue placeholder="Select role" />
+                        <SelectValue placeholder="Select global role" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Admin">Admin</SelectItem>
@@ -880,29 +893,63 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                     )}
                   </div>
 
-                  {editForm.role === 'Client' && editingUser?.source_table !== 'newsletter_subscriptions' && (
-                    <div className="space-y-2">
-                      <Label htmlFor="edit_company" className="flex items-center gap-2">
-                        <Building className="h-4 w-4" />
-                        Primary Company
-                      </Label>
-                      <Select
-                        value={editForm.companyId}
-                        onValueChange={(value) => setEditForm({ ...editForm, companyId: value })}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger id="edit_company">
-                          <SelectValue placeholder="Select company" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {companies.map((company) => (
-                            <SelectItem key={company.id} value={company.id}>
-                              {company.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  {editingUser?.source_table !== 'newsletter_subscriptions' && editingUser?.companies && editingUser.companies.length > 0 && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_company" className="flex items-center gap-2">
+                          <Building className="h-4 w-4" />
+                          Company
+                        </Label>
+                        <Select
+                          value={editForm.companyId}
+                          onValueChange={(value) => {
+                            const selectedCompany = editingUser.companies.find(c => c.id === value);
+                            setEditForm({ 
+                              ...editForm, 
+                              companyId: value,
+                              companyRole: (selectedCompany?.userRole as 'Admin' | 'Member') || 'Member'
+                            });
+                          }}
+                          disabled={isLoading}
+                        >
+                          <SelectTrigger id="edit_company">
+                            <SelectValue placeholder="Select company to edit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {editingUser.companies.map((company) => (
+                              <SelectItem key={company.id} value={company.id}>
+                                {company.name} (Current: {company.userRole})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {editForm.companyId && (
+                        <div className="space-y-2">
+                          <Label htmlFor="edit_company_role" className="flex items-center gap-2">
+                            <Shield className="h-4 w-4" />
+                            Company Role
+                          </Label>
+                          <Select
+                            value={editForm.companyRole}
+                            onValueChange={(value) => setEditForm({ ...editForm, companyRole: value as 'Admin' | 'Member' })}
+                            disabled={isLoading}
+                          >
+                            <SelectTrigger id="edit_company_role">
+                              <SelectValue placeholder="Select company role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Admin">Company Admin</SelectItem>
+                              <SelectItem value="Member">Company Member</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">
+                            This sets the user's role within the selected company
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <div className="flex gap-2 pt-4">
