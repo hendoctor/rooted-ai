@@ -264,7 +264,7 @@ const AdminDashboard: React.FC = () => {
           onManageUsers={openCompanyUsersDialog}
         />
 
-        {/* Unified User Management */}
+        {/* Manage Users */}
         <UnifiedUserManager companies={allCompanies.map(c => ({ id: c.id, name: c.name, slug: c.slug }))} />
 
         {/* Portal Content Management */}
@@ -315,7 +315,7 @@ const AdminDashboard: React.FC = () => {
         </Dialog>
 
       </div>
-      <Footer />
+      <Footer hideBrandSection />
     </div>
   );
 };

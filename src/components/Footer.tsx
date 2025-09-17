@@ -6,7 +6,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { RefreshCw, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const Footer = () => {
+interface FooterProps {
+  hideBrandSection?: boolean;
+}
+
+const Footer: React.FC<FooterProps> = ({ hideBrandSection = false }) => {
   const currentYear = new Date().getFullYear();
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const { user } = useAuth();
@@ -27,28 +31,30 @@ const Footer = () => {
   return (
     <footer className="bg-slate-gray dark:bg-slate-900 text-cream py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8">
-          {/* Brand Section */}
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <img 
-                src="/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png"
-                alt="RootedAI Logo" 
-                className="w-8 h-8" 
-              />
-              <span className="text-2xl font-bold text-cream dark:text-white">RootedAI</span>
+        {!hideBrandSection && (
+          <div className="grid grid-cols-1 gap-8">
+            {/* Brand Section */}
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <img
+                  src="/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png"
+                  alt="RootedAI Logo"
+                  className="w-8 h-8"
+                />
+                <span className="text-2xl font-bold text-cream dark:text-white">RootedAI</span>
+              </div>
+              <p className="text-sage dark:text-white mb-4 max-w-md">
+                Helping Kansas City small businesses grow smarter with AI solutions built on Microsoft tools.
+                Local expertise, trusted partnerships, sustainable growth.
+              </p>
+              <p className="text-lg font-semibold text-sage dark:text-white">
+                Grow Smarter. Stay Rooted.
+              </p>
             </div>
-            <p className="text-sage dark:text-white mb-4 max-w-md">
-              Helping Kansas City small businesses grow smarter with AI solutions built on Microsoft tools. 
-              Local expertise, trusted partnerships, sustainable growth.
-            </p>
-            <p className="text-lg font-semibold text-sage dark:text-white">
-              Grow Smarter. Stay Rooted.
-            </p>
-          </div>
 
-          {/* Removed AI Joke section */}
-        </div>
+            {/* Removed AI Joke section */}
+          </div>
+        )}
 
         {/* Bottom Section */}
         <div className="border-t border-sage/20 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
