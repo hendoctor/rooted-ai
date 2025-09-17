@@ -51,6 +51,15 @@ const AuthSimplified = () => {
     if (authReady && user && userRole) {
       console.log('✅ User authenticated, navigating based on role:', userRole);
       
+      // Clear invitation token from URL to prevent re-validation errors
+      const inviteToken = searchParams.get('invite');
+      if (inviteToken) {
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('invite');
+        const newUrl = `${window.location.pathname}${newSearchParams.toString() ? '?' + newSearchParams.toString() : ''}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+      
       // Navigate based on user role
       if (userRole === 'Admin') {
         navigate('/admin', { replace: true });
@@ -69,7 +78,7 @@ const AuthSimplified = () => {
       // Default fallback
       navigate('/', { replace: true });
     }
-  }, [user, authReady, userRole, companies, navigate]);
+  }, [user, authReady, userRole, companies, navigate, searchParams]);
 
   useEffect(() => {
     // Check if this is a password recovery flow
