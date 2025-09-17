@@ -18,11 +18,14 @@ const InviteUserForm = ({ onInvitationSent, companyId, companyName }: InviteUser
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    role: 'Client',
+    role: 'Client', // Default to Client which will create a company Member
     client_name: companyName || ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Determine if this is being used in company context
+  const isCompanyContext = Boolean(companyId && companyName);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +60,7 @@ const InviteUserForm = ({ onInvitationSent, companyId, companyName }: InviteUser
 
       toast({
         title: "Invitation Sent!",
-        description: `Successfully sent invitation to ${formData.email}`,
+        description: `Successfully sent invitation to ${formData.email}${isCompanyContext ? ` for ${companyName}` : ''}`,
       });
 
       // Reset form
@@ -104,10 +107,13 @@ const InviteUserForm = ({ onInvitationSent, companyId, companyName }: InviteUser
       <CardHeader>
         <CardTitle className="text-forest-green flex items-center gap-2">
           <Mail className="h-5 w-5" />
-          Invite New User
+          {isCompanyContext ? `Invite User to ${companyName}` : 'Invite New User'}
         </CardTitle>
         <p className="text-slate-gray text-sm">
-          Send an invitation email to a new user with their assigned role.
+          {isCompanyContext 
+            ? `Send an invitation to join ${companyName} as either a Company Admin or Company Member.`
+            : 'Send an invitation email to a new user with their assigned role.'
+          }
         </p>
       </CardHeader>
       <CardContent>
@@ -144,28 +150,31 @@ const InviteUserForm = ({ onInvitationSent, companyId, companyName }: InviteUser
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="client_name" className="flex items-center gap-2">
-              <Building className="h-4 w-4" />
-              Client Company Name
-            </Label>
-            <Input
-              id="client_name"
-              type="text"
-              value={formData.client_name}
-              onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-              placeholder="ACME Corporation"
-              disabled={isLoading}
-            />
-            <p className="text-xs text-slate-gray">
-              Users with the same company name will share access to a dedicated portal
-            </p>
-          </div>
+          {/* Only show client_name field if not in company context */}
+          {!isCompanyContext && (
+            <div className="space-y-2">
+              <Label htmlFor="client_name" className="flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Client Company Name
+              </Label>
+              <Input
+                id="client_name"
+                type="text"
+                value={formData.client_name}
+                onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
+                placeholder="ACME Corporation"
+                disabled={isLoading}
+              />
+              <p className="text-xs text-slate-gray">
+                Users with the same company name will share access to a dedicated portal
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="role" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
-              User Role
+              {isCompanyContext ? 'Company Role' : 'User Role'}
             </Label>
             <Select
               value={formData.role}
@@ -175,13 +184,25 @@ const InviteUserForm = ({ onInvitationSent, companyId, companyName }: InviteUser
               <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
-                <SelectContent>
-                <SelectItem value="Client">Client</SelectItem>
-                <SelectItem value="Admin">Admin</SelectItem>
+              <SelectContent>
+                {isCompanyContext ? (
+                  <>
+                    <SelectItem value="Client">Company Member</SelectItem>
+                    <SelectItem value="Admin">Company Admin</SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="Client">Client</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
             <p className="text-xs text-slate-gray">
-              Use "Client Invitations" section above for client portal access
+              {isCompanyContext 
+                ? 'Company Admins can manage users and settings. Company Members have read-only access.'
+                : 'Use "Client Invitations" section above for client portal access'
+              }
             </p>
           </div>
 
