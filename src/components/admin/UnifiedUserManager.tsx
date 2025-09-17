@@ -236,25 +236,32 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
 
   const deleteUser = async (user: UnifiedUserRecord) => {
     const confirmed = window.confirm(
-      `⚠️ PERMANENT ACTION ⚠️\n\nThis will completely delete user "${user.email}" and:\n\n• Remove all user data and company memberships\n• Cancel any pending invitations\n• Unsubscribe from newsletter\n• This action CANNOT be undone\n\nAre you absolutely sure you want to proceed?`
+      `⚠️ PERMANENT ACTION ⚠️\n\nThis will completely delete user "${user.email}" and:\n\n• Revoke all user sessions globally\n• Remove user from authentication system\n• Remove all user data and company memberships\n• Cancel any pending invitations\n• Unsubscribe from newsletter\n• This action CANNOT be undone\n\nAre you absolutely sure you want to proceed?`
     );
     
     if (!confirmed) return;
 
     try {
-      // Use the enhanced deletion function
-      const { data, error } = await supabase.rpc('delete_user_completely_enhanced', {
-        user_email: user.email
+      // Get session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      // Use the admin-delete-user edge function for proper session revocation
+      const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+        body: { userEmail: user.email },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
-      
-      const result = data as any;
-      if (!result?.success) throw new Error(result?.error || 'Unknown error');
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: 'User Deleted',
-        description: `Successfully deleted user ${user.email}`,
+        description: `Successfully deleted user ${user.email} and revoked all sessions`,
       });
 
       fetchUnifiedUsers();
@@ -309,6 +316,68 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
         description: 'Failed to update newsletter status',
         variant: 'destructive',
       });
+    }
+  };
+
+  const openEditDialog = (user: UnifiedUserRecord) => {
+    setEditingUser(user);
+    setEditForm({
+      display_name: user.name,
+      role: user.role === 'Newsletter' ? 'Client' : user.role as 'Client' | 'Admin',
+      companyId: user.companies[0]?.id || ''
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const updateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    try {
+      setIsLoading(true);
+
+      // Handle different user types
+      if (editingUser.source_table === 'users') {
+        // Update active user
+        const { error } = await supabase
+          .from('users')
+          .update({ 
+            display_name: editForm.display_name,
+            role: editForm.role 
+          })
+          .eq('email', editingUser.email);
+        
+        if (error) throw error;
+      } else if (editingUser.source_table === 'user_invitations') {
+        // Update pending invitation
+        const { error } = await supabase
+          .from('user_invitations')
+          .update({ 
+            full_name: editForm.display_name,
+            role: editForm.role 
+          })
+          .eq('id', editingUser.invitation_id);
+        
+        if (error) throw error;
+      }
+
+      toast({
+        title: 'Success',
+        description: 'User updated successfully',
+      });
+      
+      setIsEditDialogOpen(false);
+      setEditingUser(null);
+      fetchUnifiedUsers();
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update user',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -454,13 +523,19 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
       key: 'newsletter_status',
       label: 'Newsletter',
       render: (user) => (
-        <div className="flex items-center gap-2">
+        <div 
+          className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded transition-colors"
+          onClick={() => toggleNewsletterStatus(user)}
+          title="Toggle newsletter subscription"
+        >
           {user.newsletter_status === 'active' ? (
             <ToggleRight className="h-4 w-4 text-green-600" />
           ) : (
             <ToggleLeft className="h-4 w-4 text-slate-gray" />
           )}
-          <span className="text-sm capitalize">{user.newsletter_status.replace('_', ' ')}</span>
+          <span className="text-sm capitalize select-none">
+            {user.newsletter_status.replace('_', ' ')}
+          </span>
         </div>
       ),
       initialWidth: 130,
@@ -482,18 +557,14 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
       sortable: false,
       render: (user) => (
         <div className="flex gap-1 justify-end">
-          {/* Newsletter Toggle */}
+          {/* Edit Action - Always Present */}
           <Button
             size="sm"
             variant="outline"
-            onClick={() => toggleNewsletterStatus(user)}
-            title="Toggle newsletter subscription"
+            onClick={() => openEditDialog(user)}
+            title="Edit user details"
           >
-            {user.newsletter_status === 'active' ? (
-              <ToggleLeft className="h-3 w-3" />
-            ) : (
-              <ToggleRight className="h-3 w-3" />
-            )}
+            <Pencil className="h-3 w-3" />
           </Button>
 
           {/* Role-specific actions */}
@@ -706,6 +777,116 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                       disabled={isLoading}
                     >
                       {isLoading ? 'Sending...' : 'Send Invitation'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Edit User Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit User</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={updateUser} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_email" className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      Email Address
+                    </Label>
+                    <Input
+                      id="edit_email"
+                      type="email"
+                      value={editingUser?.email || ''}
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_display_name" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Display Name
+                    </Label>
+                    <Input
+                      id="edit_display_name"
+                      type="text"
+                      value={editForm.display_name}
+                      onChange={(e) => setEditForm({ ...editForm, display_name: e.target.value })}
+                      placeholder="John Doe"
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_role" className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Role
+                    </Label>
+                    <Select
+                      value={editForm.role}
+                      onValueChange={(value) => setEditForm({ ...editForm, role: value as 'Client' | 'Admin' })}
+                      disabled={isLoading || editingUser?.source_table === 'newsletter_subscriptions'}
+                    >
+                      <SelectTrigger id="edit_role">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Admin">Admin</SelectItem>
+                        <SelectItem value="Client">Client</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {editingUser?.source_table === 'newsletter_subscriptions' && (
+                      <p className="text-xs text-muted-foreground">
+                        Newsletter-only users cannot have their role changed
+                      </p>
+                    )}
+                  </div>
+
+                  {editForm.role === 'Client' && editingUser?.source_table !== 'newsletter_subscriptions' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit_company" className="flex items-center gap-2">
+                        <Building className="h-4 w-4" />
+                        Primary Company
+                      </Label>
+                      <Select
+                        value={editForm.companyId}
+                        onValueChange={(value) => setEditForm({ ...editForm, companyId: value })}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger id="edit_company">
+                          <SelectValue placeholder="Select company" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {companies.map((company) => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditDialogOpen(false)}
+                      className="flex-1"
+                      disabled={isLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-forest-green hover:bg-forest-green/90"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Updating...' : 'Update User'}
                     </Button>
                   </div>
                 </form>
