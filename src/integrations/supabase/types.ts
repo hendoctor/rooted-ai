@@ -981,6 +981,25 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_unified_user_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          companies: Json
+          email: string
+          expires_at: string
+          invitation_id: string
+          invitation_token: string
+          last_activity: string
+          name: string
+          newsletter_id: string
+          newsletter_status: string
+          registration_date: string
+          role: string
+          source_table: string
+          status: string
+          user_id: string
+        }[]
+      }
       get_user_companies: {
         Args: Record<PropertyKey, never>
         Returns: {

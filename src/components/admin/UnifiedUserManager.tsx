@@ -1,0 +1,775 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import SortableTable, { Column } from './SortableTable';
+import { 
+  Users, 
+  UserPlus, 
+  Mail, 
+  User, 
+  Shield, 
+  Building, 
+  Plus, 
+  RefreshCw, 
+  Pencil, 
+  Trash2, 
+  ExternalLink, 
+  X, 
+  Clock,
+  Send,
+  ToggleLeft,
+  ToggleRight
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { activityLogger } from '@/utils/activityLogger';
+
+export interface UnifiedUserRecord {
+  id: string; // Required for SortableTable
+  email: string;
+  name: string;
+  status: 'active' | 'pending' | 'expired' | 'newsletter_only' | 'unsubscribed' | 'cancelled' | 'accepted';
+  role: 'Admin' | 'Client' | 'Newsletter';
+  companies: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    userRole: string;
+  }>;
+  newsletter_status: 'active' | 'unsubscribed' | 'not_subscribed';
+  registration_date: string;
+  last_activity: string;
+  source_table: 'users' | 'user_invitations' | 'newsletter_subscriptions';
+  user_id?: string;
+  invitation_id?: string;
+  newsletter_id?: string;
+  invitation_token?: string;
+  expires_at?: string;
+}
+
+interface CompanyOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface UnifiedUserManagerProps {
+  companies: CompanyOption[];
+}
+
+const ROOT_COMPANY_NAME = 'RootedAI';
+
+const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) => {
+  const [users, setUsers] = useState<UnifiedUserRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UnifiedUserRecord | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  
+  const [inviteForm, setInviteForm] = useState({
+    email: '',
+    full_name: '',
+    role: 'Client',
+    companyId: ''
+  });
+
+  const [editForm, setEditForm] = useState({
+    display_name: '',
+    role: 'Client' as 'Client' | 'Admin',
+    companyId: ''
+  });
+
+  const { toast } = useToast();
+
+  const fetchUnifiedUsers = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase.rpc('get_unified_user_data');
+      
+      if (error) throw error;
+      
+      const typedUsers: UnifiedUserRecord[] = (data || []).map((user: any) => ({
+        ...user,
+        id: user.user_id || user.invitation_id || user.newsletter_id || user.email, // Use appropriate ID
+        companies: user.companies || []
+      }));
+      
+      setUsers(typedUsers);
+    } catch (error) {
+      console.error('Error fetching unified users:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load user data',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchUnifiedUsers();
+  }, [fetchUnifiedUsers]);
+
+  const handleRefresh = () => {
+    fetchUnifiedUsers();
+    toast({
+      title: 'Data refreshed',
+      description: 'Latest user data loaded',
+    });
+  };
+
+  const getStatusBadge = (status: string, expiresAt?: string) => {
+    const isExpired = expiresAt && new Date(expiresAt) < new Date();
+    
+    if (status === 'pending' && isExpired) {
+      return <Badge variant="destructive">Expired</Badge>;
+    }
+
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Active User</Badge>;
+      case 'pending':
+        return <Badge variant="outline" className="border-yellow-300 text-yellow-700">Pending Invitation</Badge>;
+      case 'expired':
+        return <Badge variant="destructive">Expired Invitation</Badge>;
+      case 'newsletter_only':
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">Newsletter Only</Badge>;
+      case 'unsubscribed':
+        return <Badge variant="secondary">Unsubscribed</Badge>;
+      case 'cancelled':
+        return <Badge variant="secondary">Cancelled</Badge>;
+      case 'accepted':
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Accepted</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'Admin':
+        return <Shield className="h-4 w-4 text-forest-green" />;
+      case 'Client':
+        return <User className="h-4 w-4 text-blue-600" />;
+      case 'Newsletter':
+        return <Mail className="h-4 w-4 text-slate-gray" />;
+      default:
+        return <User className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const sendInvitation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      let clientName = '';
+      if (inviteForm.role === 'Admin') {
+        clientName = ROOT_COMPANY_NAME;
+      } else {
+        const selectedCompany = companies.find(c => c.id === inviteForm.companyId);
+        if (!selectedCompany) {
+          throw new Error('Please select a company');
+        }
+        clientName = selectedCompany.name;
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-invitation', {
+        body: {
+          email: inviteForm.email,
+          full_name: inviteForm.full_name,
+          role: inviteForm.role,
+          client_name: clientName
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      toast({
+        title: 'Invitation Sent!',
+        description: `Successfully sent invitation to ${inviteForm.email}`,
+      });
+
+      setInviteForm({ email: '', full_name: '', role: 'Client', companyId: '' });
+      setIsInviteDialogOpen(false);
+      fetchUnifiedUsers();
+
+    } catch (error) {
+      console.error('Failed to send invitation:', error);
+      let description = 'Failed to send invitation';
+
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('rate limit')) {
+        description = 'Rate limit exceeded. Please wait before sending more invitations.';
+      } else if (message) {
+        description = message;
+      }
+
+      toast({
+        title: 'Error',
+        description,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteUser = async (user: UnifiedUserRecord) => {
+    const confirmed = window.confirm(
+      `⚠️ PERMANENT ACTION ⚠️\n\nThis will completely delete user "${user.email}" and:\n\n• Remove all user data and company memberships\n• Cancel any pending invitations\n• Unsubscribe from newsletter\n• This action CANNOT be undone\n\nAre you absolutely sure you want to proceed?`
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      // Use the enhanced deletion function
+      const { data, error } = await supabase.rpc('delete_user_completely_enhanced', {
+        user_email: user.email
+      });
+
+      if (error) throw error;
+      
+      const result = data as any;
+      if (!result?.success) throw new Error(result?.error || 'Unknown error');
+
+      toast({
+        title: 'User Deleted',
+        description: `Successfully deleted user ${user.email}`,
+      });
+
+      fetchUnifiedUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const toggleNewsletterStatus = async (user: UnifiedUserRecord) => {
+    try {
+      if (!user.newsletter_id) {
+        // Create newsletter subscription
+        const { error } = await supabase
+          .from('newsletter_subscriptions')
+          .insert({ 
+            email: user.email, 
+            status: 'active', 
+            source: 'admin' 
+          });
+        if (error) throw error;
+        toast({
+          title: 'Success',
+          description: 'User subscribed to newsletter',
+        });
+      } else {
+        // Toggle existing subscription
+        const newStatus = user.newsletter_status === 'active' ? 'unsubscribed' : 'active';
+        const { error } = await supabase
+          .from('newsletter_subscriptions')
+          .update({ 
+            status: newStatus,
+            unsubscribed_at: newStatus === 'unsubscribed' ? new Date().toISOString() : null
+          })
+          .eq('id', user.newsletter_id);
+        if (error) throw error;
+        toast({
+          title: 'Success',
+          description: `Newsletter ${newStatus}`,
+        });
+      }
+      
+      fetchUnifiedUsers();
+    } catch (error) {
+      console.error('Error toggling newsletter status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update newsletter status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const updateUserRole = async (user: UnifiedUserRecord, newRole: 'Client' | 'Admin') => {
+    if (user.source_table !== 'users') {
+      toast({
+        title: 'Error',
+        description: 'Can only update roles for active users',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ role: newRole })
+        .eq('email', user.email);
+      
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `User role updated to ${newRole}`,
+      });
+      
+      fetchUnifiedUsers();
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update user role',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const copyInvitationLink = (token: string) => {
+    const invitationUrl = `${window.location.origin}/auth?invite=${token}`;
+    navigator.clipboard.writeText(invitationUrl);
+    toast({
+      title: 'Copied!',
+      description: 'Invitation link copied to clipboard',
+    });
+  };
+
+  const resendInvitation = async (user: UnifiedUserRecord) => {
+    if (!user.invitation_id) return;
+    
+    try {
+      // Cancel old invitation and create new one
+      await supabase
+        .from('user_invitations')
+        .update({ status: 'cancelled' })
+        .eq('id', user.invitation_id);
+
+      // Send new invitation
+      setInviteForm({
+        email: user.email,
+        full_name: user.name,
+        role: user.role === 'Newsletter' ? 'Client' : user.role,
+        companyId: user.companies[0]?.id || ''
+      });
+      
+      await sendInvitation(new Event('submit') as any);
+    } catch (error) {
+      console.error('Error resending invitation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to resend invitation',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Filter users based on search and filters
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.companies.some(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    
+    return matchesSearch && matchesStatus && matchesRole;
+  });
+
+  const columns: Column<UnifiedUserRecord>[] = [
+    {
+      key: 'name',
+      label: 'User',
+      render: (user) => (
+        <div>
+          <div className="font-medium flex items-center gap-2">
+            {getRoleIcon(user.role)}
+            {user.name}
+          </div>
+          <div className="text-sm text-muted-foreground">{user.email}</div>
+        </div>
+      ),
+      initialWidth: 250,
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (user) => getStatusBadge(user.status, user.expires_at),
+      initialWidth: 150,
+    },
+    {
+      key: 'role',
+      label: 'Role',
+      render: (user) => (
+        <div className="flex items-center gap-2">
+          {getRoleIcon(user.role)}
+          {user.role}
+        </div>
+      ),
+      initialWidth: 120,
+    },
+    {
+      key: 'companies',
+      label: 'Companies',
+      render: (user) => (
+        <div className="space-y-1">
+          {user.companies.length > 0 ? (
+            user.companies.map((company, index) => (
+              <div key={index} className="flex items-center gap-1 text-sm">
+                <Building className="h-3 w-3" />
+                {company.name}
+                <Badge variant="secondary" className="text-xs">
+                  {company.userRole}
+                </Badge>
+              </div>
+            ))
+          ) : (
+            <span className="text-muted-foreground text-sm">No companies</span>
+          )}
+        </div>
+      ),
+      initialWidth: 200,
+    },
+    {
+      key: 'newsletter_status',
+      label: 'Newsletter',
+      render: (user) => (
+        <div className="flex items-center gap-2">
+          {user.newsletter_status === 'active' ? (
+            <ToggleRight className="h-4 w-4 text-green-600" />
+          ) : (
+            <ToggleLeft className="h-4 w-4 text-slate-gray" />
+          )}
+          <span className="text-sm capitalize">{user.newsletter_status.replace('_', ' ')}</span>
+        </div>
+      ),
+      initialWidth: 130,
+    },
+    {
+      key: 'registration_date',
+      label: 'Registered',
+      render: (user) => (
+        <div className="flex items-center gap-1 text-sm">
+          <Clock className="h-3 w-3" />
+          {format(new Date(user.registration_date), 'MMM dd, yyyy')}
+        </div>
+      ),
+      initialWidth: 140,
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      render: (user) => (
+        <div className="flex gap-1 justify-end">
+          {/* Newsletter Toggle */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => toggleNewsletterStatus(user)}
+            title="Toggle newsletter subscription"
+          >
+            {user.newsletter_status === 'active' ? (
+              <ToggleLeft className="h-3 w-3" />
+            ) : (
+              <ToggleRight className="h-3 w-3" />
+            )}
+          </Button>
+
+          {/* Role-specific actions */}
+          {user.status === 'pending' && user.invitation_token && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => copyInvitationLink(user.invitation_token!)}
+                title="Copy invitation link"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => resendInvitation(user)}
+                title="Resend invitation"
+              >
+                <Send className="h-3 w-3" />
+              </Button>
+            </>
+          )}
+
+          {user.status === 'expired' && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => resendInvitation(user)}
+              title="Resend invitation"
+            >
+              <Send className="h-3 w-3" />
+            </Button>
+          )}
+
+          {user.status === 'newsletter_only' && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setInviteForm({
+                  email: user.email,
+                  full_name: user.name,
+                  role: 'Client',
+                  companyId: ''
+                });
+                setIsInviteDialogOpen(true);
+              }}
+              title="Invite to platform"
+            >
+              <UserPlus className="h-3 w-3" />
+            </Button>
+          )}
+
+          {user.source_table === 'users' && user.role !== 'Admin' && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => updateUserRole(user, 'Admin')}
+              title="Promote to Admin"
+            >
+              <Shield className="h-3 w-3" />
+            </Button>
+          )}
+
+          {/* Delete Action */}
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={() => deleteUser(user)}
+            title="Delete user"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      ),
+      initialWidth: 200,
+    },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <CardTitle className="text-forest-green flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Unified User Management
+            </CardTitle>
+            <p className="text-slate-gray text-sm">
+              Manage all users, invitations, and newsletter subscriptions in one place
+            </p>
+          </div>
+          <div className="flex flex-col-reverse gap-2 w-full lg:w-auto lg:flex-row">
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+              className="w-full lg:w-auto text-forest-green border-forest-green hover:bg-forest-green/10"
+              disabled={isLoading}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  size="sm"
+                  className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full lg:w-auto"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Invite User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Invite New User</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={sendInvitation} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      Email Address
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={inviteForm.email}
+                      onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                      placeholder="user@company.com"
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Full Name
+                    </Label>
+                    <Input
+                      id="full_name"
+                      type="text"
+                      value={inviteForm.full_name}
+                      onChange={(e) => setInviteForm({ ...inviteForm, full_name: e.target.value })}
+                      placeholder="John Doe"
+                      required
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="role" className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      Role
+                    </Label>
+                    <Select
+                      value={inviteForm.role}
+                      onValueChange={(value) => setInviteForm({ ...inviteForm, role: value, companyId: value === 'Client' ? inviteForm.companyId : '' })}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger id="role">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Admin">Admin</SelectItem>
+                        <SelectItem value="Client">Client</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {inviteForm.role === 'Client' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="company" className="flex items-center gap-2">
+                        <Building className="h-4 w-4" />
+                        Company
+                      </Label>
+                      <Select
+                        value={inviteForm.companyId}
+                        onValueChange={(value) => setInviteForm({ ...inviteForm, companyId: value })}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger id="company">
+                          <SelectValue placeholder="Select company" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {companies.map((company) => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsInviteDialogOpen(false)}
+                      className="flex-1"
+                      disabled={isLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-forest-green hover:bg-forest-green/90"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Sending...' : 'Send Invitation'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1">
+            <Input
+              placeholder="Search by email, name, or company..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active Users</SelectItem>
+                <SelectItem value="pending">Pending Invitations</SelectItem>
+                <SelectItem value="expired">Expired Invitations</SelectItem>
+                <SelectItem value="newsletter_only">Newsletter Only</SelectItem>
+                <SelectItem value="unsubscribed">Unsubscribed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="Admin">Admin</SelectItem>
+                <SelectItem value="Client">Client</SelectItem>
+                <SelectItem value="Newsletter">Newsletter</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        {filteredUsers.length === 0 ? (
+          <div className="text-center py-8">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              {users.length === 0 ? 'No users found' : 'No users match your search criteria'}
+            </p>
+          </div>
+        ) : (
+          <SortableTable
+            data={filteredUsers}
+            columns={columns}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default UnifiedUserManager;
