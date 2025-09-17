@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
     if (opts.deleteAll) {
       console.log(`Cleaning up all related data for: ${userEmail}`);
       
-      // First: Clean up database records (including newsletter)
+      // Call the comprehensive cleanup function FIRST (before auth deletion)
       const { data: cleanupResult, error: cleanupError } = await supabase
         .rpc('delete_user_completely_enhanced', { user_email: userEmail });
       if (cleanupError) {
@@ -144,23 +144,17 @@ Deno.serve(async (req) => {
       databaseCleanup = cleanupResult;
       console.log('Database cleanup completed:', cleanupResult);
 
-      // Second: Delete auth user if needed and not already done
+      // Then: Delete auth user if needed and not already done
       if (opts.deleteAuth && !authDeleted && targetAuthUserId) {
         console.log(`Deleting user from auth.users: ${userEmail}`);
         const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(targetAuthUserId);
         if (deleteAuthError) {
-          console.error('Failed to delete from auth.users:', deleteAuthError);
-          return new Response(
-            JSON.stringify({ 
-              error: 'Database cleaned but auth deletion failed',
-              details: deleteAuthError.message,
-              databaseCleanup
-            }),
-            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+          console.warn(`Auth user deletion failed for ${userEmail}:`, deleteAuthError.message);
+          // Don't fail the whole operation - database cleanup succeeded
+        } else {
+          authDeleted = true;
+          console.log('Successfully deleted user from auth.users');
         }
-        authDeleted = true;
-        console.log('Successfully deleted user from auth.users');
       }
     } else {
       // Partial operations - ensure proper deletion order
@@ -226,19 +220,18 @@ Deno.serve(async (req) => {
         }
       }
 
-      // 3. Invitations last
+      // 3. Hard delete ALL invitations (not just cancel)
       if (opts.deleteInvitations) {
-        console.log('Cancelling invitations...');
-        const { error: cancelInvErr, count: cancelCount } = await supabase
+        console.log('Deleting invitations...');
+        const { error: deleteInvErr, count: deleteCount } = await supabase
           .from('user_invitations')
-          .update({ status: 'cancelled' })
-          .ilike('email', normalizedEmail)
-          .eq('status', 'pending');
-        if (cancelInvErr) {
-          console.error('Invitation cancel error:', cancelInvErr.message);
+          .delete({ count: 'exact' })
+          .ilike('email', normalizedEmail);
+        if (deleteInvErr) {
+          console.error('Invitation delete error:', deleteInvErr.message);
         } else {
-          partialSummary.invitations_cancelled = (cancelCount ?? 0);
-          console.log(`Invitations cancelled: ${cancelCount} records`);
+          partialSummary.invitations_cancelled = (deleteCount ?? 0);
+          console.log(`Invitations deleted: ${deleteCount} records`);
         }
       }
 
