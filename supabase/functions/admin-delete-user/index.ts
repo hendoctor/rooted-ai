@@ -10,6 +10,7 @@ interface DeleteUserRequest {
   options?: {
     deleteNewsletter?: boolean;
     deleteUserRecord?: boolean;
+    deleteInvitations?: boolean;
     deleteAuth?: boolean;
     deleteAll?: boolean;
   };
@@ -82,6 +83,7 @@ Deno.serve(async (req) => {
     const opts = {
       deleteNewsletter: options?.deleteNewsletter ?? true,
       deleteUserRecord: options?.deleteUserRecord ?? true,
+      deleteInvitations: options?.deleteInvitations ?? true,
       deleteAuth: options?.deleteAuth ?? true,
       deleteAll: options?.deleteAll ?? (options ? false : true),
     };
@@ -165,6 +167,15 @@ Deno.serve(async (req) => {
           else partialSummary.memberships_deleted = (count ?? 0);
         }
 
+        const { error: delUserErr, count: usersCount } = await supabase
+          .from('users')
+          .delete({ count: 'exact' })
+          .eq('email', userEmail);
+        if (delUserErr) console.warn('Users delete warning:', delUserErr.message);
+        else partialSummary.users_deleted = (usersCount ?? 0);
+      }
+
+      if (opts.deleteInvitations) {
         const { error: cancelInvErr, count: cancelCount } = await supabase
           .from('user_invitations')
           .update({ status: 'cancelled' })
@@ -172,13 +183,6 @@ Deno.serve(async (req) => {
           .eq('status', 'pending');
         if (cancelInvErr) console.warn('Invitation cancel warning:', cancelInvErr.message);
         else partialSummary.invitations_cancelled = (cancelCount as any)?.length ? (cancelCount as any).length : 0;
-
-        const { error: delUserErr, count: usersCount } = await supabase
-          .from('users')
-          .delete({ count: 'exact' })
-          .eq('email', userEmail);
-        if (delUserErr) console.warn('Users delete warning:', delUserErr.message);
-        else partialSummary.users_deleted = (usersCount ?? 0);
       }
 
       if (opts.deleteNewsletter) {

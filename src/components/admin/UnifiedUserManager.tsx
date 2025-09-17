@@ -95,6 +95,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
   const [deleteOptions, setDeleteOptions] = useState({
     newsletter: true,
     userRecord: true,
+    invitations: true,
     authRecord: true,
   });
 
@@ -246,7 +247,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
 
   const deleteUser = (user: UnifiedUserRecord) => {
     setUserToDelete(user);
-    setDeleteOptions({ newsletter: true, userRecord: true, authRecord: true });
+    setDeleteOptions({ newsletter: true, userRecord: true, invitations: true, authRecord: true });
     setIsDeleteDialogOpen(true);
   };
 
@@ -256,7 +257,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
 
-      const deleteAll = deleteOptions.newsletter && deleteOptions.userRecord && deleteOptions.authRecord;
+      const deleteAll = deleteOptions.newsletter && deleteOptions.userRecord && deleteOptions.invitations && deleteOptions.authRecord;
 
       const { data, error } = await supabase.functions.invoke('admin-delete-user', {
         body: {
@@ -264,6 +265,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
           options: {
             deleteNewsletter: deleteOptions.newsletter,
             deleteUserRecord: deleteOptions.userRecord,
+            deleteInvitations: deleteOptions.invitations,
             deleteAuth: deleteOptions.authRecord,
             deleteAll,
           },
@@ -929,7 +931,14 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                         checked={deleteOptions.userRecord}
                         onCheckedChange={(c) => setDeleteOptions((o) => ({ ...o, userRecord: Boolean(c) }))}
                       />
-                      <span className="text-sm">User record (profile, memberships, invitations)</span>
+                      <span className="text-sm">User record (profile, memberships)</span>
+                    </label>
+                    <label className="flex items-center gap-3">
+                      <Checkbox
+                        checked={deleteOptions.invitations}
+                        onCheckedChange={(c) => setDeleteOptions((o) => ({ ...o, invitations: Boolean(c) }))}
+                      />
+                      <span className="text-sm">User invitations</span>
                     </label>
                     <label className="flex items-center gap-3">
                       <Checkbox
@@ -956,7 +965,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                       variant="destructive"
                       className="flex-1"
                       onClick={confirmDeleteUser}
-                      disabled={!deleteOptions.newsletter && !deleteOptions.userRecord && !deleteOptions.authRecord}
+                      disabled={!deleteOptions.newsletter && !deleteOptions.userRecord && !deleteOptions.invitations && !deleteOptions.authRecord}
                     >
                       Delete Selected
                     </Button>
