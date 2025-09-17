@@ -1004,6 +1004,27 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: Json
       }
+      get_company_users_for_admin: {
+        Args: { p_company_id: string }
+        Returns: {
+          companies: Json
+          company_role: string
+          email: string
+          expires_at: string
+          invitation_id: string
+          invitation_token: string
+          last_activity: string
+          name: string
+          newsletter_frequency: string
+          newsletter_id: string
+          newsletter_status: string
+          registration_date: string
+          role: string
+          source_table: string
+          status: string
+          user_id: string
+        }[]
+      }
       get_current_user_client_name: {
         Args: Record<PropertyKey, never>
         Returns: string

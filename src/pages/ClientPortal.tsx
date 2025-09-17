@@ -28,9 +28,14 @@ const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCar
 import { NewsletterSubscriptionCard } from '@/components/client-portal/NewsletterSubscriptionCard';
 import { AdminNewsletterStats } from '@/components/client-portal/AdminNewsletterStats';
 
+// User management components
+import { CompanyUserManager } from '@/components/admin/CompanyUserManager';
+import { usePermissions } from '@/hooks/usePermissions';
+
 const ClientPortal: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const { user, userRole, companies, loading: authLoading, authReady } = useAuth();
+  const { isAdminOfCompany } = usePermissions();
   const navigate = useNavigate();
   
   const [currentCompany, setCurrentCompany] = useState<any>(null);
@@ -570,6 +575,16 @@ const ClientPortal: React.FC = () => {
                 {(isAdmin || currentCompany?.isAdmin) && currentCompany?.id && (
                   <div className="animate-slide-left-delayed">
                     <AdminNewsletterStats companyId={currentCompany.id} />
+                  </div>
+                )}
+
+                {/* Company User Management - Only for Company Admins */}
+                {isAdminOfCompany(currentCompany?.id) && currentCompany?.id && (
+                  <div className="animate-slide-left-delayed">
+                    <CompanyUserManager 
+                      companyId={currentCompany.id} 
+                      companyName={currentCompany.name}
+                    />
                   </div>
                 )}
               </div>
