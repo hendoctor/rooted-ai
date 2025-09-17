@@ -546,33 +546,49 @@ export type Database = {
       }
       newsletter_subscriptions: {
         Row: {
+          company_id: string | null
           created_at: string
           email: string
+          frequency: string | null
           id: string
           source: string | null
           status: string
           unsubscribed_at: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           email: string
+          frequency?: string | null
           id?: string
           source?: string | null
           status?: string
           unsubscribed_at?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           email?: string
+          frequency?: string | null
           id?: string
           source?: string | null
           status?: string
           unsubscribed_at?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "newsletter_subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "newsletter_subscriptions_email_fkey"
             columns: ["email"]
@@ -973,6 +989,17 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_company_newsletter_stats: {
+        Args: { p_company_id: string }
+        Returns: {
+          daily_subscribers: number
+          monthly_subscribers: number
+          subscribed_members: number
+          total_members: number
+          unsubscribed_members: number
+          weekly_subscribers: number
+        }[]
+      }
       get_company_portal_content: {
         Args: { p_company_id: string }
         Returns: Json
@@ -1020,6 +1047,18 @@ export type Database = {
           companies: Json
           permissions: Json
           role: string
+        }[]
+      }
+      get_user_newsletter_preferences: {
+        Args: { p_user_id: string }
+        Returns: {
+          company_id: string
+          created_at: string
+          email: string
+          frequency: string
+          id: string
+          status: string
+          updated_at: string
         }[]
       }
       get_user_profile: {
@@ -1086,6 +1125,16 @@ export type Database = {
       shares_company_with_user: {
         Args: { target_auth_id: string }
         Returns: boolean
+      }
+      update_newsletter_preferences: {
+        Args: {
+          p_company_id?: string
+          p_email: string
+          p_frequency?: string
+          p_status?: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       user_is_company_member: {
         Args: { check_company_id: string }
