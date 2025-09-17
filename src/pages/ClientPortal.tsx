@@ -456,7 +456,7 @@ const ClientPortal: React.FC = () => {
                         <div key={resource.id} className="animate-elastic-in" style={{ animationDelay: `${index * 0.1}s` }}>
                           <Suspense fallback={<Skeleton className="h-32 w-full" />}>
                             <div className="card-energy">
-                              <ResourceCard 
+                              <ResourceCard
                                 title={resource.title}
                                 type={resource.category || 'Guide'}
                                 href={resource.link}
@@ -477,6 +477,13 @@ const ClientPortal: React.FC = () => {
                         </Card>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Admin Newsletter Analytics */}
+                {(isAdmin || currentCompany?.isAdmin) && currentCompany?.id && (
+                  <div className="animate-slide-up-delayed">
+                    <AdminNewsletterStats companyId={currentCompany.id} />
                   </div>
                 )}
               </div>
@@ -576,13 +583,6 @@ const ClientPortal: React.FC = () => {
                 <div className="animate-slide-left-delayed">
                   <NewsletterSubscriptionCard companyId={currentCompany?.id} />
                 </div>
-
-                {/* Admin Newsletter Analytics */}
-                {(isAdmin || currentCompany?.isAdmin) && currentCompany?.id && (
-                  <div className="animate-slide-left-delayed">
-                    <AdminNewsletterStats companyId={currentCompany.id} />
-                  </div>
-                )}
               </div>
             </div>
 
