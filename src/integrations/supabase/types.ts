@@ -1022,6 +1022,7 @@ export type Database = {
           invitation_token: string
           last_activity: string
           name: string
+          newsletter_frequency: string
           newsletter_id: string
           newsletter_status: string
           registration_date: string

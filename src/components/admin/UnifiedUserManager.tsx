@@ -25,8 +25,8 @@ import {
   X, 
   Clock,
   Send,
-  ToggleLeft,
-  ToggleRight
+  Bell,
+  BellOff
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { activityLogger } from '@/utils/activityLogger';
@@ -44,6 +44,7 @@ export interface UnifiedUserRecord {
     userRole: string;
   }>;
   newsletter_status: 'active' | 'unsubscribed' | 'not_subscribed';
+  newsletter_frequency?: string;
   registration_date: string;
   last_activity: string;
   source_table: 'users' | 'user_invitations' | 'newsletter_subscriptions';
@@ -542,22 +543,19 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
       initialWidth: 200,
     },
     {
-      key: 'newsletter_status',
+      key: 'newsletter_frequency',
       label: 'Newsletter',
       render: (user) => (
-        <div 
-          className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded transition-colors"
-          onClick={() => toggleNewsletterStatus(user)}
-          title="Toggle newsletter subscription"
-        >
-          {user.newsletter_status === 'active' ? (
-            <ToggleRight className="h-4 w-4 text-green-600" />
+        <div className="text-sm">
+          {user.newsletter_status === 'active' && user.newsletter_frequency ? (
+            <span className="capitalize text-green-600">
+              {user.newsletter_frequency}
+            </span>
+          ) : user.newsletter_status === 'not_subscribed' ? (
+            <span className="text-muted-foreground">Not subscribed</span>
           ) : (
-            <ToggleLeft className="h-4 w-4 text-slate-gray" />
+            <span className="text-red-600">Unsubscribed</span>
           )}
-          <span className="text-sm capitalize select-none">
-            {user.newsletter_status.replace('_', ' ')}
-          </span>
         </div>
       ),
       initialWidth: 130,
@@ -579,6 +577,20 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
       sortable: false,
       render: (user) => (
         <div className="flex gap-1 justify-end">
+          {/* Newsletter Toggle */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => toggleNewsletterStatus(user)}
+            title={user.newsletter_status === 'active' ? 'Unsubscribe from newsletter' : 'Subscribe to newsletter'}
+          >
+            {user.newsletter_status === 'active' ? (
+              <Bell className="h-3 w-3 text-green-600" />
+            ) : (
+              <BellOff className="h-3 w-3 text-muted-foreground" />
+            )}
+          </Button>
+
           {/* Edit Action - Always Present */}
           <Button
             size="sm"
