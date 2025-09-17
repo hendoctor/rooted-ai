@@ -982,14 +982,14 @@ export type Database = {
         }[]
       }
       get_company_members_detailed: {
-        Args: { p_company_id: string }
+        Args: { company_id_param: string }
         Returns: {
           display_name: string
           email: string
-          joined_date: string
-          member_role: string
+          joined_at: string
           newsletter_frequency: string
           newsletter_status: string
+          role: string
           user_id: string
         }[]
       }
@@ -1089,10 +1089,6 @@ export type Database = {
           is_admin: boolean
           user_role: string
         }[]
-      }
-      get_user_company_ids: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
       }
       get_user_context_optimized: {
         Args: { p_user_id: string }
@@ -1198,7 +1194,7 @@ export type Database = {
         Returns: Json
       }
       user_is_company_member: {
-        Args: { check_company_id: string }
+        Args: { company_id_param: string }
         Returns: boolean
       }
       validate_admin_reset_request: {
