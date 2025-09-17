@@ -16,11 +16,13 @@ import {
   BellOff, 
   RefreshCw,
   Users,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import InviteUserForm from '@/components/InviteUserForm';
 import { SortableTable } from './SortableTable';
@@ -66,6 +68,8 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<CompanyUserRecord | null>(null);
   const [editForm, setEditForm] = useState<{
     email: string;
     company_role: string;
@@ -168,6 +172,38 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
     }
   };
 
+  const deleteUser = async () => {
+    if (!userToDelete) return;
+    
+    try {
+      const { data, error } = await supabase.rpc('remove_user_from_company', {
+        p_user_email: userToDelete.email,
+        p_company_id: companyId
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; user_email?: string; company_name?: string; };
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to remove user');
+      }
+
+      toast.success(`Successfully removed ${userToDelete.email} from ${companyName}`);
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error removing user:', error);
+      toast.error('Failed to remove user: ' + error.message);
+    }
+  };
+
+  const openDeleteDialog = (user: CompanyUserRecord) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: any; icon: any }> = {
       active: { variant: 'default', icon: UserCheck },
@@ -262,6 +298,15 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
           >
             <Edit className="h-4 w-4" />
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openDeleteDialog(user)}
+            disabled={user.status === 'expired'}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         </div>
       )
     }
@@ -304,6 +349,8 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
                   </DialogDescription>
                 </DialogHeader>
                 <InviteUserForm 
+                  companyId={companyId}
+                  companyName={companyName}
                   onInvitationSent={() => {
                     setInviteDialogOpen(false);
                     fetchUsers();
@@ -424,6 +471,36 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Delete User Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove User from Company</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to remove <strong>{userToDelete?.email}</strong> from <strong>{companyName}</strong>?
+                <br /><br />
+                This will:
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Remove their access to the company portal</li>
+                  <li>Cancel their newsletter subscription for this company</li>
+                  <li>Remove them from the company's user list</li>
+                </ul>
+                <br />
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={deleteUser}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Remove User
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );

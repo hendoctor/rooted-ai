@@ -985,7 +985,11 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: {
           display_name: string
+          email: string
+          joined_date: string
           member_role: string
+          newsletter_frequency: string
+          newsletter_status: string
           user_id: string
         }[]
       }
@@ -1135,6 +1139,14 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
+      }
+      remove_user_from_company: {
+        Args: {
+          p_admin_user_id?: string
+          p_company_id: string
+          p_user_email: string
+        }
+        Returns: Json
       }
       require_role: {
         Args: { company_id_param?: string; required_roles: string[] }

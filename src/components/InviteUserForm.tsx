@@ -10,14 +10,16 @@ import { Mail, User, Shield, Building } from 'lucide-react';
 
 interface InviteUserFormProps {
   onInvitationSent?: () => void;
+  companyId?: string;
+  companyName?: string;
 }
 
-const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
+const InviteUserForm = ({ onInvitationSent, companyId, companyName }: InviteUserFormProps) => {
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
     role: 'Client',
-    client_name: ''
+    client_name: companyName || ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -33,9 +35,13 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
         throw new Error('Not authenticated');
       }
 
-      // Call the edge function to send invitation
+      // Call the edge function to send invitation with company context
       const { data, error } = await supabase.functions.invoke('send-invitation', {
-        body: formData,
+        body: {
+          ...formData,
+          company_id: companyId,
+          client_name: companyName || formData.client_name
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -59,7 +65,7 @@ const InviteUserForm = ({ onInvitationSent }: InviteUserFormProps) => {
         email: '',
         full_name: '',
         role: 'Client',
-        client_name: ''
+        client_name: companyName || ''
       });
 
       onInvitationSent?.();

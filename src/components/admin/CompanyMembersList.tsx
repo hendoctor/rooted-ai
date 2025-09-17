@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Calendar, RefreshCw, Eye, Mail } from 'lucide-react';
+import { Users, Calendar, RefreshCw, Eye, Mail, Bell, BellOff } from 'lucide-react';
 import { LoadingIcon } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
 
@@ -13,6 +13,8 @@ interface CompanyMember {
   member_role: string;
   email?: string;
   joined_date?: string;
+  newsletter_status: string;
+  newsletter_frequency: string;
 }
 
 interface CompanyMembersListProps {
@@ -133,6 +135,19 @@ export const CompanyMembersList: React.FC<CompanyMembersListProps> = ({
                 </div>
                 <div className="flex items-center gap-3">
                   {getRoleBadge(member.member_role)}
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    {member.newsletter_status === 'active' ? (
+                      <>
+                        <Bell className="h-3 w-3 text-forest-green" />
+                        <span>{member.newsletter_frequency}</span>
+                      </>
+                    ) : (
+                      <>
+                        <BellOff className="h-3 w-3" />
+                        <span>No newsletter</span>
+                      </>
+                    )}
+                  </div>
                   {member.joined_date && (
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
