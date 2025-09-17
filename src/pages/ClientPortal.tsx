@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, AlertCircle, Settings, Phone, Calendar, Shield, Eye, ArrowLeft } from 'lucide-react';
+import { RefreshCw, AlertCircle, Settings, Phone, Calendar, Shield, Eye, ArrowLeft, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { activityLogger } from '@/utils/activityLogger';
 import Header from '@/components/Header';
@@ -28,8 +28,6 @@ const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCar
 import { NewsletterSubscriptionCard } from '@/components/client-portal/NewsletterSubscriptionCard';
 import { AdminNewsletterStats } from '@/components/client-portal/AdminNewsletterStats';
 
-// User management components
-import { CompanyUserManager } from '@/components/admin/CompanyUserManager';
 import { usePermissions } from '@/hooks/usePermissions';
 
 const ClientPortal: React.FC = () => {
@@ -300,6 +298,14 @@ const ClientPortal: React.FC = () => {
                 <a href="/admin">
                   <Settings className="h-4 w-4 mr-2" />
                   Manage Content
+                </a>
+              </Button>
+            )}
+            {!isAdminSimulating && isAdminOfCompany(currentCompany?.id) && currentCompany?.slug && (
+              <Button asChild variant="outline">
+                <a href={`/${currentCompany.slug}/settings`}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Company Settings
                 </a>
               </Button>
             )}
@@ -575,16 +581,6 @@ const ClientPortal: React.FC = () => {
                 {(isAdmin || currentCompany?.isAdmin) && currentCompany?.id && (
                   <div className="animate-slide-left-delayed">
                     <AdminNewsletterStats companyId={currentCompany.id} />
-                  </div>
-                )}
-
-                {/* Company User Management - Only for Company Admins */}
-                {isAdminOfCompany(currentCompany?.id) && currentCompany?.id && (
-                  <div className="animate-slide-left-delayed">
-                    <CompanyUserManager 
-                      companyId={currentCompany.id} 
-                      companyName={currentCompany.name}
-                    />
                   </div>
                 )}
               </div>

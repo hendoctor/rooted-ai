@@ -10,9 +10,12 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
-import { Lock, AlertCircle, Shield } from 'lucide-react';
+import { Lock, AlertCircle, Shield, Users, Settings } from 'lucide-react';
+import { CompanyUserManager } from '@/components/admin/CompanyUserManager';
+import { CompanyMembersList } from '@/components/admin/CompanyMembersList';
 import Header from '@/components/Header';
 import AccessDenied from './AccessDenied';
 import { generateSlug } from '@/lib/utils';
@@ -251,120 +254,160 @@ export default function CompanyPage() {
             </Alert>
           )}
 
-          {/* Company Information Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Company Information</CardTitle>
-              <CardDescription>
-                Basic information about your company
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Company Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    disabled={!editing}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="industry">Industry</Label>
-                  <Input
-                    id="industry"
-                    value={formData.industry}
-                    onChange={(e) => handleInputChange('industry', e.target.value)}
-                    disabled={!editing}
-                    placeholder="e.g., Technology, Healthcare"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  disabled={!editing}
-                  placeholder="Brief description of your company"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    type="url"
-                    value={formData.website}
-                    onChange={(e) => handleInputChange('website', e.target.value)}
-                    disabled={!editing}
-                    placeholder="https://www.example.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange('phone', e.target.value)}
-                    disabled={!editing}
-                    placeholder="+1 (555) 123-4567"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Textarea
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange('address', e.target.value)}
-                  disabled={!editing}
-                  placeholder="Company address"
-                  rows={2}
-                />
-              </div>
-
-              {/* Action Buttons - Only show if user can edit */}
+          {/* Company Settings Tabs */}
+          <Tabs defaultValue="information" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="information" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Company Information
+              </TabsTrigger>
               {canEdit && (
-                <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                  {!editing ? (
-                    <Button onClick={() => setEditing(true)}>
-                      Edit Information
-                    </Button>
-                  ) : (
-                    <>
-                      <Button onClick={handleSave} disabled={saving}>
-                        {saving ? 'Saving...' : 'Save Changes'}
-                      </Button>
-                      <Button variant="outline" onClick={handleCancel} disabled={saving}>
-                        Cancel
-                      </Button>
-                    </>
-                  )}
-                </div>
+                <TabsTrigger value="user-management" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  User Management
+                </TabsTrigger>
               )}
-              
-              {/* Read-only message for non-admin clients */}
-              {isCompanyMember && (
-                <Alert className="mt-4 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
-                  <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  <AlertDescription className="text-blue-800 dark:text-blue-200">
-                    <strong>Company Member Access:</strong> You can view all company information but editing is restricted to company administrators. 
-                    If you need to make changes, please contact a company admin.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
+              <TabsTrigger value="team-members" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Team Members
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Company Metadata */}
+            {/* Company Information Tab */}
+            <TabsContent value="information" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Company Information</CardTitle>
+                  <CardDescription>
+                    Basic information about your company
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Company Name</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        disabled={!editing}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="industry">Industry</Label>
+                      <Input
+                        id="industry"
+                        value={formData.industry}
+                        onChange={(e) => handleInputChange('industry', e.target.value)}
+                        disabled={!editing}
+                        placeholder="e.g., Technology, Healthcare"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      disabled={!editing}
+                      placeholder="Brief description of your company"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        type="url"
+                        value={formData.website}
+                        onChange={(e) => handleInputChange('website', e.target.value)}
+                        disabled={!editing}
+                        placeholder="https://www.example.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        disabled={!editing}
+                        placeholder="+1 (555) 123-4567"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Textarea
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      disabled={!editing}
+                      placeholder="Company address"
+                      rows={2}
+                    />
+                  </div>
+
+                  {/* Action Buttons - Only show if user can edit */}
+                  {canEdit && (
+                    <div className="flex flex-col sm:flex-row gap-2 pt-4">
+                      {!editing ? (
+                        <Button onClick={() => setEditing(true)}>
+                          Edit Information
+                        </Button>
+                      ) : (
+                        <>
+                          <Button onClick={handleSave} disabled={saving}>
+                            {saving ? 'Saving...' : 'Save Changes'}
+                          </Button>
+                          <Button variant="outline" onClick={handleCancel} disabled={saving}>
+                            Cancel
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Read-only message for non-admin clients */}
+                  {isCompanyMember && (
+                    <Alert className="mt-4 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+                      <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <AlertDescription className="text-blue-800 dark:text-blue-200">
+                        <strong>Company Member Access:</strong> You can view all company information but editing is restricted to company administrators. 
+                        If you need to make changes, please contact a company admin.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* User Management Tab - Only for Company Admins */}
+            {canEdit && (
+              <TabsContent value="user-management">
+                <CompanyUserManager 
+                  companyId={company.id} 
+                  companyName={company.name} 
+                />
+              </TabsContent>
+            )}
+
+            {/* Team Members Tab - For all company members */}
+            <TabsContent value="team-members">
+              <CompanyMembersList 
+                companyId={company.id} 
+                companyName={company.name} 
+              />
+            </TabsContent>
+          </Tabs>
+
+          {/* System Information Card */}
           <Card>
             <CardHeader>
               <CardTitle>System Information</CardTitle>
