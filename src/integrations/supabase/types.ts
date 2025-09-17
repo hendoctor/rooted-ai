@@ -981,18 +981,6 @@ export type Database = {
           user_count: number
         }[]
       }
-      get_company_members_detailed: {
-        Args: { p_company_id: string }
-        Returns: {
-          display_name: string
-          email: string
-          joined_date: string
-          member_role: string
-          newsletter_frequency: string
-          newsletter_status: string
-          user_id: string
-        }[]
-      }
       get_company_members_minimal: {
         Args: { p_company_id: string }
         Returns: {
@@ -1089,10 +1077,6 @@ export type Database = {
           is_admin: boolean
           user_role: string
         }[]
-      }
-      get_user_company_ids: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
       }
       get_user_context_optimized: {
         Args: { p_user_id: string }
@@ -1196,10 +1180,6 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
-      }
-      user_is_company_member: {
-        Args: { check_company_id: string }
-        Returns: boolean
       }
       validate_admin_reset_request: {
         Args: {
