@@ -193,6 +193,18 @@ export default function CompanyPage() {
   const canEdit = company?.id && (userRole === 'Admin' || isAdminOfCompany(company.id));
   const isCompanyMember = company?.id && isMemberOfCompany(company.id) && !isAdminOfCompany(company.id) && userRole !== 'Admin';
 
+  // Debug logging for permissions
+  console.log('🔍 CompanyPage Debug:', {
+    companyId: company?.id,
+    userRole,
+    companies,
+    hasAccess,
+    canEdit,
+    isCompanyMember,
+    isAdminOfCompany: company?.id ? isAdminOfCompany(company.id) : false,
+    isMemberOfCompany: company?.id ? isMemberOfCompany(company.id) : false
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background pt-16 lg:pt-20">
