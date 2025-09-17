@@ -30,13 +30,10 @@ export class TenantSecurityManager {
         return { isValid: true, companyId: cached.companyId };
       }
 
-      // Validate company membership using direct query
-      const { data, error } = await supabase
-        .from('company_memberships')
-        .select('id')
-        .eq('company_id', companyId)
-        .eq('user_id', user.id)
-        .single();
+      // Validate company membership
+      const { data, error } = await supabase.rpc('user_is_company_member', {
+        check_company_id: companyId
+      });
 
       if (error) {
         console.error('Tenant validation error:', error);

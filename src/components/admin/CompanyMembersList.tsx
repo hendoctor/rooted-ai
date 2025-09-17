@@ -32,7 +32,7 @@ export const CompanyMembersList: React.FC<CompanyMembersListProps> = ({
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('get_company_members_minimal', {
+      const { data, error } = await supabase.rpc('get_company_members_detailed', {
         p_company_id: companyId
       });
 
