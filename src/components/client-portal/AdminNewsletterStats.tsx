@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Mail, TrendingUp, Calendar } from 'lucide-react';
-import { useCompanyNewsletterStats } from '@/hooks/useNewsletterSubscription';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Users, Mail, TrendingUp, Calendar, ChevronDown, ChevronRight, User, Check, X } from 'lucide-react';
+import { useCompanyNewsletterStats, useCompanyNewsletterDetails } from '@/hooks/useNewsletterSubscription';
 
 interface AdminNewsletterStatsProps {
   companyId: string;
@@ -9,6 +13,9 @@ interface AdminNewsletterStatsProps {
 
 export const AdminNewsletterStats = ({ companyId }: AdminNewsletterStatsProps) => {
   const { stats, loading } = useCompanyNewsletterStats(companyId);
+  const { details, loading: detailsLoading } = useCompanyNewsletterDetails(companyId);
+  const [showTotalMembers, setShowTotalMembers] = useState(false);
+  const [showSubscribedMembers, setShowSubscribedMembers] = useState(false);
 
   if (loading) {
     return (
@@ -35,6 +42,13 @@ export const AdminNewsletterStats = ({ companyId }: AdminNewsletterStatsProps) =
     ? Math.round((stats.subscribed_members / stats.total_members) * 100)
     : 0;
 
+  const subscribedMembers = details.filter(member => member.is_subscribed);
+  const unsubscribedMembers = details.filter(member => !member.is_subscribed);
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -48,26 +62,124 @@ export const AdminNewsletterStats = ({ companyId }: AdminNewsletterStatsProps) =
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Total Members</span>
+          <Collapsible open={showTotalMembers} onOpenChange={setShowTotalMembers}>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Total Members</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-2xl font-bold">{stats.total_members}</div>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                    {showTotalMembers ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
             </div>
-            <div className="text-2xl font-bold">{stats.total_members}</div>
-          </div>
+            <CollapsibleContent className="space-y-2 mt-3">
+              {detailsLoading ? (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-2 animate-pulse">
+                      <div className="h-8 w-8 bg-muted rounded-full"></div>
+                      <div className="h-4 bg-muted rounded flex-1"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {details.map((member) => (
+                    <div key={member.user_id} className="flex items-center gap-2 p-2 rounded border bg-card">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs">
+                          {getInitials(member.display_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{member.display_name}</div>
+                        <div className="text-xs text-muted-foreground truncate">{member.email}</div>
+                      </div>
+                      <Badge variant={member.is_subscribed ? "default" : "outline"} className="text-xs">
+                        {member.is_subscribed ? (
+                          <div className="flex items-center gap-1">
+                            <Check className="h-3 w-3" />
+                            {member.newsletter_frequency}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <X className="h-3 w-3" />
+                            unsubscribed
+                          </div>
+                        )}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
           
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-primary" />
-              <span className="text-sm text-muted-foreground">Subscribed</span>
+          <Collapsible open={showSubscribedMembers} onOpenChange={setShowSubscribedMembers}>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-primary" />
+                <span className="text-sm text-muted-foreground">Subscribed</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-2xl font-bold text-primary">
+                  {stats.subscribed_members}
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {subscriptionRate}%
+                  </Badge>
+                </div>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                    {showSubscribedMembers ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
             </div>
-            <div className="text-2xl font-bold text-primary">
-              {stats.subscribed_members}
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {subscriptionRate}%
-              </Badge>
-            </div>
-          </div>
+            <CollapsibleContent className="space-y-2 mt-3">
+              {detailsLoading ? (
+                <div className="space-y-2">
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-2 animate-pulse">
+                      <div className="h-8 w-8 bg-muted rounded-full"></div>
+                      <div className="h-4 bg-muted rounded flex-1"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {subscribedMembers.map((member) => (
+                    <div key={member.user_id} className="flex items-center gap-2 p-2 rounded border bg-card">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="text-xs">
+                          {getInitials(member.display_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{member.display_name}</div>
+                        <div className="text-xs text-muted-foreground truncate">{member.email}</div>
+                      </div>
+                      <Badge variant="default" className="text-xs">
+                        <div className="flex items-center gap-1">
+                          <Check className="h-3 w-3" />
+                          {member.newsletter_frequency}
+                        </div>
+                      </Badge>
+                    </div>
+                  ))}
+                  {subscribedMembers.length === 0 && (
+                    <div className="text-center text-sm text-muted-foreground py-4">
+                      No subscribed members found
+                    </div>
+                  )}
+                </div>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         <div className="space-y-3">

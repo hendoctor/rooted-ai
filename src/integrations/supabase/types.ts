@@ -993,6 +993,17 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_company_newsletter_details: {
+        Args: { p_company_id: string }
+        Returns: {
+          display_name: string
+          email: string
+          is_subscribed: boolean
+          newsletter_frequency: string
+          newsletter_status: string
+          user_id: string
+        }[]
+      }
       get_company_newsletter_stats: {
         Args: { p_company_id: string }
         Returns: {

@@ -25,6 +25,15 @@ export interface NewsletterStats {
   unsubscribed_members: number;
 }
 
+export interface NewsletterMemberDetail {
+  user_id: string;
+  email: string;
+  display_name: string;
+  newsletter_status: string;
+  newsletter_frequency: string;
+  is_subscribed: boolean;
+}
+
 export const useNewsletterSubscription = (companyId?: string) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -172,5 +181,47 @@ export const useCompanyNewsletterStats = (companyId: string) => {
     stats,
     loading,
     refetch: fetchStats
+  };
+};
+
+export const useCompanyNewsletterDetails = (companyId: string) => {
+  const [details, setDetails] = useState<NewsletterMemberDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchDetails = async () => {
+    if (!companyId) return;
+
+    try {
+      const { data, error } = await supabase.rpc('get_company_newsletter_details', {
+        p_company_id: companyId
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        setDetails(data.map((item: any) => ({
+          user_id: item.user_id,
+          email: item.email,
+          display_name: item.display_name,
+          newsletter_status: item.newsletter_status,
+          newsletter_frequency: item.newsletter_frequency,
+          is_subscribed: item.is_subscribed
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching newsletter details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDetails();
+  }, [companyId]);
+
+  return {
+    details,
+    loading,
+    refetch: fetchDetails
   };
 };
