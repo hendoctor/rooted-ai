@@ -151,13 +151,14 @@ Deno.serve(async (req) => {
       };
 
       if (opts.deleteUserRecord) {
-        // Look up auth_user_id for membership cleanup
-        const { data: userRow } = await supabase
+        // Look up auth_user_id for membership cleanup (case-insensitive)
+        const { data: userRows } = await supabase
           .from('users')
           .select('auth_user_id')
-          .eq('email', userEmail)
-          .maybeSingle();
+          .ilike('email', userEmail)
+          .limit(1);
 
+        const userRow = userRows?.[0];
         if (userRow?.auth_user_id) {
           const { error: delMemErr, count } = await supabase
             .from('company_memberships')
@@ -167,29 +168,32 @@ Deno.serve(async (req) => {
           else partialSummary.memberships_deleted = (count ?? 0);
         }
 
+        // Delete users table record (case-insensitive)
         const { error: delUserErr, count: usersCount } = await supabase
           .from('users')
           .delete({ count: 'exact' })
-          .eq('email', userEmail);
+          .ilike('email', userEmail);
         if (delUserErr) console.warn('Users delete warning:', delUserErr.message);
         else partialSummary.users_deleted = (usersCount ?? 0);
       }
 
       if (opts.deleteInvitations) {
+        // Cancel invitations (case-insensitive)
         const { error: cancelInvErr, count: cancelCount } = await supabase
           .from('user_invitations')
           .update({ status: 'cancelled' })
-          .eq('email', userEmail)
+          .ilike('email', userEmail)
           .eq('status', 'pending');
         if (cancelInvErr) console.warn('Invitation cancel warning:', cancelInvErr.message);
-        else partialSummary.invitations_cancelled = (cancelCount as any)?.length ? (cancelCount as any).length : 0;
+        else partialSummary.invitations_cancelled = (cancelCount ?? 0);
       }
 
       if (opts.deleteNewsletter) {
+        // Delete newsletter subscription (case-insensitive)
         const { error: delNewsErr, count: newsCount } = await supabase
           .from('newsletter_subscriptions')
           .delete({ count: 'exact' })
-          .eq('email', userEmail);
+          .ilike('email', userEmail);
         if (delNewsErr) console.warn('Newsletter delete warning:', delNewsErr.message);
         else partialSummary.newsletter_deleted = (newsCount ?? 0);
       }
