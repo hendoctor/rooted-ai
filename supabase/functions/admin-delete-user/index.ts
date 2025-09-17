@@ -127,22 +127,43 @@ Deno.serve(async (req) => {
 
     if (opts.deleteAll) {
       console.log(`Cleaning up all related data for: ${userEmail}`);
+      
+      // First: Clean up database records (including newsletter)
       const { data: cleanupResult, error: cleanupError } = await supabase
         .rpc('delete_user_completely_enhanced', { user_email: userEmail });
       if (cleanupError) {
         console.error('Database cleanup failed:', cleanupError);
         return new Response(
           JSON.stringify({ 
-            error: 'User deleted from auth but database cleanup failed',
-            details: cleanupError.message,
-            authDeleted: authDeleted
+            error: 'Database cleanup failed',
+            details: cleanupError.message
           }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       databaseCleanup = cleanupResult;
+      console.log('Database cleanup completed:', cleanupResult);
+
+      // Second: Delete auth user if needed and not already done
+      if (opts.deleteAuth && !authDeleted && targetAuthUserId) {
+        console.log(`Deleting user from auth.users: ${userEmail}`);
+        const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(targetAuthUserId);
+        if (deleteAuthError) {
+          console.error('Failed to delete from auth.users:', deleteAuthError);
+          return new Response(
+            JSON.stringify({ 
+              error: 'Database cleaned but auth deletion failed',
+              details: deleteAuthError.message,
+              databaseCleanup
+            }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        authDeleted = true;
+        console.log('Successfully deleted user from auth.users');
+      }
     } else {
-      // Partial operations
+      // Partial operations - ensure proper deletion order
       const partialSummary: Record<string, number | boolean | null> = {
         newsletter_deleted: 0,
         users_deleted: 0,
@@ -150,12 +171,32 @@ Deno.serve(async (req) => {
         invitations_cancelled: 0,
       };
 
+      const normalizedEmail = userEmail.trim();
+      console.log(`Starting partial deletion for: ${normalizedEmail}`);
+
+      // 1. Newsletter deletion first (most important to fix)
+      if (opts.deleteNewsletter) {
+        console.log('Deleting newsletter subscription...');
+        const { error: delNewsErr, count: newsCount } = await supabase
+          .from('newsletter_subscriptions')
+          .delete({ count: 'exact' })
+          .ilike('email', normalizedEmail);
+        if (delNewsErr) {
+          console.error('Newsletter delete error:', delNewsErr.message);
+        } else {
+          partialSummary.newsletter_deleted = (newsCount ?? 0);
+          console.log(`Newsletter deleted: ${newsCount} records`);
+        }
+      }
+
+      // 2. User record and memberships
       if (opts.deleteUserRecord) {
+        console.log('Deleting user record and memberships...');
         // Look up auth_user_id for membership cleanup (case-insensitive)
         const { data: userRows } = await supabase
           .from('users')
           .select('auth_user_id')
-          .ilike('email', userEmail)
+          .ilike('email', normalizedEmail)
           .limit(1);
 
         const userRow = userRows?.[0];
@@ -164,40 +205,44 @@ Deno.serve(async (req) => {
             .from('company_memberships')
             .delete({ count: 'exact' })
             .eq('user_id', userRow.auth_user_id);
-          if (delMemErr) console.warn('Membership deletion warning:', delMemErr.message);
-          else partialSummary.memberships_deleted = (count ?? 0);
+          if (delMemErr) {
+            console.error('Membership deletion error:', delMemErr.message);
+          } else {
+            partialSummary.memberships_deleted = (count ?? 0);
+            console.log(`Memberships deleted: ${count} records`);
+          }
         }
 
         // Delete users table record (case-insensitive)
         const { error: delUserErr, count: usersCount } = await supabase
           .from('users')
           .delete({ count: 'exact' })
-          .ilike('email', userEmail);
-        if (delUserErr) console.warn('Users delete warning:', delUserErr.message);
-        else partialSummary.users_deleted = (usersCount ?? 0);
+          .ilike('email', normalizedEmail);
+        if (delUserErr) {
+          console.error('Users delete error:', delUserErr.message);
+        } else {
+          partialSummary.users_deleted = (usersCount ?? 0);
+          console.log(`Users deleted: ${usersCount} records`);
+        }
       }
 
+      // 3. Invitations last
       if (opts.deleteInvitations) {
-        // Cancel invitations (case-insensitive)
+        console.log('Cancelling invitations...');
         const { error: cancelInvErr, count: cancelCount } = await supabase
           .from('user_invitations')
           .update({ status: 'cancelled' })
-          .ilike('email', userEmail)
+          .ilike('email', normalizedEmail)
           .eq('status', 'pending');
-        if (cancelInvErr) console.warn('Invitation cancel warning:', cancelInvErr.message);
-        else partialSummary.invitations_cancelled = (cancelCount ?? 0);
+        if (cancelInvErr) {
+          console.error('Invitation cancel error:', cancelInvErr.message);
+        } else {
+          partialSummary.invitations_cancelled = (cancelCount ?? 0);
+          console.log(`Invitations cancelled: ${cancelCount} records`);
+        }
       }
 
-      if (opts.deleteNewsletter) {
-        // Delete newsletter subscription (case-insensitive)
-        const { error: delNewsErr, count: newsCount } = await supabase
-          .from('newsletter_subscriptions')
-          .delete({ count: 'exact' })
-          .ilike('email', userEmail);
-        if (delNewsErr) console.warn('Newsletter delete warning:', delNewsErr.message);
-        else partialSummary.newsletter_deleted = (newsCount ?? 0);
-      }
-
+      console.log('Partial deletion summary:', partialSummary);
       databaseCleanup = { success: true, cleanup_summary: partialSummary };
     }
 

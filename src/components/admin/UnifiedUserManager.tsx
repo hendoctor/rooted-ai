@@ -259,6 +259,9 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
 
       const deleteAll = deleteOptions.newsletter && deleteOptions.userRecord && deleteOptions.invitations && deleteOptions.authRecord;
 
+      // Optimistically remove the user from the local state
+      setUsers(prevUsers => prevUsers.filter(u => u.email !== userToDelete.email));
+
       const { data, error } = await supabase.functions.invoke('admin-delete-user', {
         body: {
           userEmail: userToDelete.email,
@@ -283,10 +286,14 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
 
       setIsDeleteDialogOpen(false);
       setUserToDelete(null);
-      fetchUnifiedUsers();
+      
+      // Force refresh to ensure UI is in sync
+      await fetchUnifiedUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
       toast({ title: 'Error', description: 'Failed to delete user', variant: 'destructive' });
+      // Revert optimistic update on error
+      await fetchUnifiedUsers();
     }
   };
 
