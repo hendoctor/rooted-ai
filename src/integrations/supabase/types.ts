@@ -912,6 +912,10 @@ export type Database = {
         Args: { token_input: string }
         Returns: Json
       }
+      check_contact_form_rate_limit: {
+        Args: { client_ip: unknown }
+        Returns: boolean
+      }
       check_invitation_attempt_rate_limit: {
         Args: {
           client_ip: unknown
