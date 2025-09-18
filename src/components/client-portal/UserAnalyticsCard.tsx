@@ -191,10 +191,10 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue={isCompanyAdmin ? "analytics" : "subscription"} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 gap-2 bg-forest-green/5 p-1 rounded-lg">
+          <TabsList className="flex w-full flex-col gap-2 rounded-lg bg-forest-green/5 p-1">
             <TabsTrigger
               value="subscription"
-              className="flex items-center gap-2 text-sm text-forest-green data-[state=active]:bg-forest-green data-[state=active]:text-white data-[state=active]:shadow-sm"
+              className="flex w-full items-center justify-start gap-2 text-sm text-forest-green data-[state=active]:bg-forest-green data-[state=active]:text-white data-[state=active]:shadow-sm"
             >
               <Mail className="h-4 w-4" />
               My Subscription
@@ -202,7 +202,7 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
             <TabsTrigger
               value="analytics"
               disabled={!isCompanyAdmin}
-              className="flex items-center gap-2 text-sm text-forest-green data-[state=active]:bg-forest-green data-[state=active]:text-white data-[state=active]:shadow-sm disabled:text-muted-foreground"
+              className="flex w-full items-center justify-start gap-2 text-sm text-forest-green data-[state=active]:bg-forest-green data-[state=active]:text-white data-[state=active]:shadow-sm disabled:text-muted-foreground"
             >
               <TrendingUp className="h-4 w-4" />
               Company Analytics
