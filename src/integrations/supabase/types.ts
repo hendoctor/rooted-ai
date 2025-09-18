@@ -1031,6 +1031,17 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: Json
       }
+      get_company_user_activity: {
+        Args: { p_company_id: string; p_limit?: number }
+        Returns: {
+          activity_description: string
+          activity_id: string
+          activity_type: string
+          created_at: string
+          metadata: Json
+          user_email: string
+        }[]
+      }
       get_company_users_for_admin: {
         Args: { p_company_id: string }
         Returns: {
@@ -1175,6 +1186,10 @@ export type Database = {
         Args: { company_id_param?: string; required_roles: string[] }
         Returns: boolean
       }
+      resend_company_invitation: {
+        Args: { p_company_id: string; p_invitation_id: string }
+        Returns: Json
+      }
       resync_user_roles: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1182,6 +1197,10 @@ export type Database = {
       shares_company_with_user: {
         Args: { target_auth_id: string }
         Returns: boolean
+      }
+      update_company_user_role: {
+        Args: { p_company_id: string; p_new_role: string; p_user_id: string }
+        Returns: Json
       }
       update_newsletter_preferences: {
         Args: {

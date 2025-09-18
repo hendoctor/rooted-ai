@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { 
   Search, 
@@ -17,16 +18,26 @@ import {
   RefreshCw,
   Users,
   Clock,
-  Trash2
+  Trash2,
+  Send,
+  Copy,
+  RotateCcw,
+  Eye,
+  Shield,
+  User,
+  Building2,
+  Activity
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import InviteUserForm from '@/components/InviteUserForm';
 import { SortableTable } from './SortableTable';
 import { LoadingIcon } from '@/components/LoadingSpinner';
+import { format } from 'date-fns';
 
 interface CompanyUserRecord {
   id: string;
@@ -66,10 +77,17 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<CompanyUserRecord | null>(null);
+  const [editingUser, setEditingUser] = useState<CompanyUserRecord | null>(null);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('users');
+  
   const [editForm, setEditForm] = useState<{
     email: string;
     company_role: string;
@@ -82,7 +100,7 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
     newsletter_frequency: ''
   });
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase.rpc('get_company_users_for_admin', {
@@ -101,13 +119,29 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
+
+  const fetchActivity = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_company_user_activity', {
+        p_company_id: companyId,
+        p_limit: 100
+      });
+
+      if (error) throw error;
+      setActivities(data || []);
+    } catch (error: any) {
+      console.error('Error fetching company activity:', error);
+      toast.error('Failed to load activity logs: ' + error.message);
+    }
+  }, [companyId]);
 
   useEffect(() => {
     if (companyId) {
       fetchUsers();
+      fetchActivity();
     }
-  }, [companyId]);
+  }, [companyId, fetchUsers, fetchActivity]);
 
   // Filter and search users
   const filteredUsers = useMemo(() => {
@@ -116,12 +150,36 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
                           user.email.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+      const matchesRole = roleFilter === 'all' || user.company_role === roleFilter;
       
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus && matchesRole;
     });
-  }, [users, searchTerm, statusFilter]);
+  }, [users, searchTerm, statusFilter, roleFilter]);
+
+  // Bulk selection handlers
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(new Set(filteredUsers.map(user => user.id)));
+    } else {
+      setSelectedUsers(new Set());
+    }
+  };
+
+  const handleSelectUser = (userId: string, checked: boolean) => {
+    const newSelected = new Set(selectedUsers);
+    if (checked) {
+      newSelected.add(userId);
+    } else {
+      newSelected.delete(userId);
+    }
+    setSelectedUsers(newSelected);
+  };
+
+  const isAllSelected = filteredUsers.length > 0 && selectedUsers.size === filteredUsers.length;
+  const isPartiallySelected = selectedUsers.size > 0 && selectedUsers.size < filteredUsers.length;
 
   const openEditDialog = (user: CompanyUserRecord) => {
+    setEditingUser(user);
     setEditForm({
       email: user.email,
       company_role: user.company_role,
@@ -133,28 +191,33 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
 
   const updateUser = async () => {
     try {
-      const userToUpdate = users.find(u => u.email === editForm.email);
-      if (!userToUpdate) return;
+      if (!editingUser) return;
 
-      // Update company role
-      if (userToUpdate.user_id && editForm.company_role !== userToUpdate.company_role) {
-        const { error: roleError } = await supabase
-          .from('company_memberships')
-          .update({ role: editForm.company_role })
-          .eq('company_id', companyId)
-          .eq('user_id', userToUpdate.user_id);
+      // Update company role using new secure function
+      if (editingUser.user_id && editForm.company_role !== editingUser.company_role) {
+      const { data, error } = await supabase.rpc('update_company_user_role', {
+        p_user_id: editingUser.user_id,
+        p_company_id: companyId,
+        p_new_role: editForm.company_role
+      });
 
-        if (roleError) throw roleError;
+      if (error) throw error;
+      if (data && typeof data === 'object' && data !== null && 'success' in data) {
+        const result = data as { success: boolean; error?: string };
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to update user role');
+        }
+      }
       }
 
       // Update newsletter preferences
-      if (userToUpdate.user_id && 
-          (editForm.newsletter_status !== userToUpdate.newsletter_status || 
-           editForm.newsletter_frequency !== userToUpdate.newsletter_frequency)) {
+      if (editingUser.user_id && 
+          (editForm.newsletter_status !== editingUser.newsletter_status || 
+           editForm.newsletter_frequency !== editingUser.newsletter_frequency)) {
         
         const { error: newsletterError } = await supabase.rpc('update_newsletter_preferences', {
-          p_user_id: userToUpdate.user_id,
-          p_email: userToUpdate.email,
+          p_user_id: editingUser.user_id,
+          p_email: editingUser.email,
           p_status: editForm.newsletter_status,
           p_frequency: editForm.newsletter_frequency,
           p_company_id: companyId
@@ -165,10 +228,105 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
 
       toast.success('User updated successfully');
       setEditDialogOpen(false);
+      setEditingUser(null);
       fetchUsers();
+      fetchActivity(); // Refresh activity logs
     } catch (error: any) {
       console.error('Error updating user:', error);
       toast.error('Failed to update user: ' + error.message);
+    }
+  };
+
+  const resendInvitation = async (user: CompanyUserRecord) => {
+    if (!user.invitation_id) {
+      toast.error('Cannot resend: No invitation found');
+      return;
+    }
+
+    try {
+    const { data, error } = await supabase.rpc('resend_company_invitation', {
+      p_invitation_id: user.invitation_id,
+      p_company_id: companyId
+    });
+
+    if (error) throw error;
+    if (data && typeof data === 'object' && data !== null && 'success' in data) {
+      const result = data as { success: boolean; error?: string };
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to resend invitation');
+      }
+    }
+
+      toast.success(`Invitation resent to ${user.email}`);
+      fetchUsers();
+      fetchActivity();
+    } catch (error: any) {
+      console.error('Error resending invitation:', error);
+      toast.error('Failed to resend invitation: ' + error.message);
+    }
+  };
+
+  const copyInvitationLink = (token: string) => {
+    const invitationUrl = `${window.location.origin}/auth?invite=${token}`;
+    navigator.clipboard.writeText(invitationUrl);
+    toast.success('Invitation link copied to clipboard');
+  };
+
+  const toggleNewsletterStatus = async (user: CompanyUserRecord) => {
+    if (!user.user_id) return;
+
+    try {
+      const newStatus = user.newsletter_status === 'active' ? 'unsubscribed' : 'active';
+      const { error } = await supabase.rpc('update_newsletter_preferences', {
+        p_user_id: user.user_id,
+        p_email: user.email,
+        p_status: newStatus,
+        p_frequency: user.newsletter_frequency || 'weekly',
+        p_company_id: companyId
+      });
+
+      if (error) throw error;
+
+      toast.success(
+        newStatus === 'active' 
+          ? `${user.email} subscribed to newsletter` 
+          : `${user.email} unsubscribed from newsletter`
+      );
+      fetchUsers();
+      fetchActivity();
+    } catch (error: any) {
+      console.error('Error updating newsletter status:', error);
+      toast.error('Failed to update newsletter status: ' + error.message);
+    }
+  };
+
+  const bulkRemoveUsers = async () => {
+    if (selectedUsers.size === 0) return;
+
+    try {
+      const selectedUserData = users.filter(user => selectedUsers.has(user.id));
+      
+      for (const user of selectedUserData) {
+        const { data, error } = await supabase.rpc('remove_user_from_company', {
+          p_user_email: user.email,
+          p_company_id: companyId
+        });
+
+        if (error) throw error;
+        
+        const result = data as { success: boolean; error?: string; };
+        if (!result.success) {
+          console.warn(`Failed to remove ${user.email}: ${result.error}`);
+        }
+      }
+
+      toast.success(`Removed ${selectedUsers.size} users from ${companyName}`);
+      setSelectedUsers(new Set());
+      fetchUsers();
+      fetchActivity();
+    } catch (error: any) {
+      console.error('Error removing users:', error);
+      toast.error('Failed to remove some users: ' + error.message);
     }
   };
 
@@ -234,12 +392,30 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
 
   const columns = [
     {
+      key: 'select',
+      label: 'Select',
+      sortable: false,
+      render: (user: CompanyUserRecord) => (
+        <div className="flex items-center">
+          <Checkbox
+            checked={selectedUsers.has(user.id)}
+            onCheckedChange={(checked) => handleSelectUser(user.id, !!checked)}
+            aria-label={`Select ${user.name}`}
+          />
+        </div>
+      )
+    },
+    {
       key: 'name',
       label: 'User',
       sortable: true,
       render: (user: CompanyUserRecord) => (
         <div className="space-y-1">
-          <div className="font-medium">{user.name}</div>
+          <div className="flex items-center gap-2">
+            <div className="font-medium">{user.name}</div>
+            {user.role === 'Admin' && <Shield className="h-4 w-4 text-primary" />}
+            {user.role === 'Client' && <User className="h-4 w-4 text-blue-600" />}
+          </div>
           <div className="text-sm text-muted-foreground">{user.email}</div>
         </div>
       )
@@ -262,11 +438,18 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
       sortable: true,
       render: (user: CompanyUserRecord) => (
         <div className="flex items-center gap-2">
-          {user.newsletter_status === 'active' ? (
-            <Bell className="h-4 w-4 text-forest-green" />
-          ) : (
-            <BellOff className="h-4 w-4 text-muted-foreground" />
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => toggleNewsletterStatus(user)}
+            disabled={!user.user_id || user.status !== 'active'}
+          >
+            {user.newsletter_status === 'active' ? (
+              <Bell className="h-4 w-4 text-green-600" />
+            ) : (
+              <BellOff className="h-4 w-4 text-muted-foreground" />
+            )}
+          </Button>
           <span className="text-sm">
             {user.newsletter_status === 'active' ? user.newsletter_frequency : 'Not subscribed'}
           </span>
@@ -289,21 +472,56 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
       label: 'Actions',
       sortable: false,
       render: (user: CompanyUserRecord) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => openEditDialog(user)}
             disabled={user.status === 'expired'}
+            title="Edit user"
           >
             <Edit className="h-4 w-4" />
           </Button>
+          
+          {user.status === 'pending' && user.invitation_token && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => copyInvitationLink(user.invitation_token!)}
+                title="Copy invitation link"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => resendInvitation(user)}
+                title="Resend invitation"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+          
+          {user.status === 'expired' && user.invitation_id && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => resendInvitation(user)}
+              title="Resend expired invitation"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
+          
           <Button
             variant="ghost"
             size="sm"
             onClick={() => openDeleteDialog(user)}
             disabled={user.status === 'expired'}
             className="text-destructive hover:text-destructive"
+            title="Remove user"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -318,21 +536,32 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Manage Users - {companyName}
+              <Building2 className="h-5 w-5" />
+              Company User Management - {companyName}
             </CardTitle>
             <CardDescription>
-              Manage user roles and permissions for your company
+              Comprehensive user management for your company with full administrative capabilities
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              onClick={fetchUsers}
+              onClick={() => {
+                fetchUsers();
+                fetchActivity();
+              }}
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setActivityDialogOpen(true)}
+              title="View company activity"
+            >
+              <Activity className="h-4 w-4" />
             </Button>
             <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
               <DialogTrigger asChild>
@@ -354,6 +583,7 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
                   onInvitationSent={() => {
                     setInviteDialogOpen(false);
                     fetchUsers();
+                    fetchActivity();
                   }} 
                 />
               </DialogContent>
@@ -361,52 +591,155 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Filters */}
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+      
+      <CardContent className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Users ({filteredUsers.length})
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Activity ({activities.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users" className="space-y-4">
+            {/* Enhanced Filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search users by name or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={isAllSelected}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all users"
+                />
+                <span className="text-sm text-muted-foreground">Select All</span>
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                  <SelectItem value="newsletter_only">Newsletter Only</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="Admin">Company Admin</SelectItem>
+                  <SelectItem value="Member">Company Member</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Users</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
 
-        {/* Users Table */}
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <LoadingIcon size="lg" />
-          </div>
-        ) : (
-          <SortableTable
-            data={filteredUsers}
-            columns={columns}
-            defaultSortKey="registration_date"
-            defaultAsc={false}
-          />
-        )}
+            {/* Bulk Actions */}
+            {selectedUsers.size > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                <span className="text-sm font-medium">
+                  {selectedUsers.size} user{selectedUsers.size === 1 ? '' : 's'} selected
+                </span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={bulkRemoveUsers}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remove Selected
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedUsers(new Set())}
+                >
+                  Clear Selection
+                </Button>
+              </div>
+            )}
 
-        {/* Edit Dialog */}
+            {/* Users Table */}
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <LoadingIcon size="lg" />
+              </div>
+            ) : (
+              <SortableTable
+                data={filteredUsers}
+                columns={columns}
+                defaultSortKey="registration_date"
+                defaultAsc={false}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="activity" className="space-y-4">
+            <div className="rounded-lg border">
+              <div className="p-4 border-b">
+                <h3 className="font-semibold">Company Activity Log</h3>
+                <p className="text-sm text-muted-foreground">
+                  Recent user management activities for {companyName}
+                </p>
+              </div>
+              <div className="max-h-96 overflow-y-auto">
+                {activities.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    No activity logs found
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {activities.map((activity) => (
+                      <div key={activity.activity_id} className="p-4 hover:bg-muted/50">
+                        <div className="flex items-start gap-3">
+                          <Activity className="h-4 w-4 text-muted-foreground mt-1" />
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{activity.activity_type}</span>
+                              {activity.user_email && (
+                                <Badge variant="outline">{activity.user_email}</Badge>
+                              )}
+                            </div>
+                            {activity.activity_description && (
+                              <p className="text-sm text-muted-foreground">
+                                {activity.activity_description}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(activity.created_at), 'MMM dd, yyyy HH:mm')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Enhanced Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
+              <DialogTitle>Edit User - {editingUser?.name}</DialogTitle>
               <DialogDescription>
                 Update user role and newsletter preferences for {editForm.email}
               </DialogDescription>
@@ -421,10 +754,13 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    <SelectItem value="Member">Member</SelectItem>
+                    <SelectItem value="Admin">Company Admin</SelectItem>
+                    <SelectItem value="Member">Company Member</SelectItem>
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Company admins can manage users and settings for this company
+                </p>
               </div>
               
               <div>
@@ -461,33 +797,92 @@ export const CompanyUserManager: React.FC<CompanyUserManagerProps> = ({
               )}
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setEditDialogOpen(false);
+                    setEditingUser(null);
+                  }}
+                >
                   Cancel
                 </Button>
-                <Button onClick={updateUser}>
-                  Save Changes
+                <Button onClick={updateUser} disabled={loading}>
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
 
-        {/* Delete User Confirmation Dialog */}
+        {/* Activity Dialog */}
+        <Dialog open={activityDialogOpen} onOpenChange={setActivityDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Company Activity - {companyName}</DialogTitle>
+              <DialogDescription>
+                Recent user management activities and audit logs
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-96 overflow-y-auto">
+              {activities.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  No activity logs found
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {activities.map((activity) => (
+                    <div key={activity.activity_id} className="border rounded-lg p-3">
+                      <div className="flex items-start gap-3">
+                        <Activity className="h-4 w-4 text-muted-foreground mt-1" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">{activity.activity_type}</span>
+                            {activity.user_email && (
+                              <Badge variant="outline" className="text-xs">
+                                {activity.user_email}
+                              </Badge>
+                            )}
+                          </div>
+                          {activity.activity_description && (
+                            <p className="text-sm text-muted-foreground mb-1">
+                              {activity.activity_description}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(activity.created_at), 'MMM dd, yyyy HH:mm:ss')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Enhanced Delete User Confirmation Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Remove User from Company</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to remove <strong>{userToDelete?.email}</strong> from <strong>{companyName}</strong>?
+                Are you sure you want to remove <strong>{userToDelete?.name}</strong> ({userToDelete?.email}) from <strong>{companyName}</strong>?
                 <br /><br />
-                This will:
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>Remove their access to the company portal</li>
-                  <li>Cancel their newsletter subscription for this company</li>
-                  <li>Remove them from the company's user list</li>
-                </ul>
+                <div className="rounded-lg bg-muted p-3 mt-3">
+                  <p className="font-medium text-sm mb-2">This action will:</p>
+                  <ul className="list-disc list-inside space-y-1 text-sm">
+                    <li>Remove their access to the company portal</li>
+                    <li>Cancel their company-specific newsletter subscription</li>
+                    <li>Remove them from all company teams and projects</li>
+                    <li>Revoke their company admin privileges (if applicable)</li>
+                    <li>Log this removal in the company activity feed</li>
+                  </ul>
+                </div>
                 <br />
-                This action cannot be undone.
+                <p className="text-sm font-medium text-destructive">
+                  ⚠️ This action cannot be undone. The user would need to be re-invited to regain access.
+                </p>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
