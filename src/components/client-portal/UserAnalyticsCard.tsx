@@ -10,12 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
-  Loader2, Mail, Bell, BellOff, Users, TrendingUp, Calendar, 
-  ChevronDown, ChevronRight, Check, X, Search, Download, 
-  BarChart3, UserCheck, UserX, PieChart 
+  Loader2, Mail, Bell, BellOff, Users, TrendingUp, Calendar,
+  ChevronDown, ChevronRight, Check, X, Search, Download,
+  BarChart3, UserCheck, UserX, PieChart, RefreshCw
 } from 'lucide-react';
 import { useNewsletterSubscription, useCompanyNewsletterStats, useCompanyNewsletterDetails, NewsletterFrequency, NewsletterStatus } from '@/hooks/useNewsletterSubscription';
 import { usePermissions } from '@/hooks/usePermissions';
+import { toast } from 'sonner';
 
 interface UserAnalyticsCardProps {
   companyId?: string;
@@ -24,19 +25,34 @@ interface UserAnalyticsCardProps {
 export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
   const { isAdminOfCompany } = usePermissions();
   const isCompanyAdmin = isAdminOfCompany(companyId);
-  
+
   // Personal subscription data
-  const { subscription, loading, updating, updateSubscription } = useNewsletterSubscription(companyId);
+  const {
+    subscription,
+    loading,
+    updating,
+    updateSubscription,
+    refetch: refetchSubscription
+  } = useNewsletterSubscription(companyId);
   const [tempFrequency, setTempFrequency] = useState<NewsletterFrequency>('weekly');
-  
+
   // Company analytics data (only for admins)
-  const { stats, loading: statsLoading } = useCompanyNewsletterStats(companyId || '');
-  const { details, loading: detailsLoading } = useCompanyNewsletterDetails(companyId || '');
-  
+  const {
+    stats,
+    loading: statsLoading,
+    refetch: refetchStats
+  } = useCompanyNewsletterStats(companyId || '');
+  const {
+    details,
+    loading: detailsLoading,
+    refetch: refetchDetails
+  } = useCompanyNewsletterDetails(companyId || '');
+
   // UI state
   const [searchTerm, setSearchTerm] = useState('');
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [showSubscribedOnly, setShowSubscribedOnly] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Personal subscription handlers
   const handleSubscriptionToggle = async (checked: boolean) => {
@@ -86,6 +102,24 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+
+    try {
+      await Promise.all([
+        refetchSubscription(),
+        isCompanyAdmin ? refetchStats() : Promise.resolve(),
+        isCompanyAdmin ? refetchDetails() : Promise.resolve()
+      ]);
+      toast.success('Analytics refreshed');
+    } catch (error) {
+      console.error('Error refreshing analytics data:', error);
+      toast.error('Unable to refresh analytics right now.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const exportMemberData = () => {
     if (!details) return;
     
@@ -126,25 +160,49 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          User Analytics
-        </CardTitle>
-        <CardDescription>
-          Manage your subscription and view company insights
-        </CardDescription>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-2">
+            <CardTitle className="flex items-center gap-2 text-forest-green">
+              <BarChart3 className="h-5 w-5 text-forest-green" />
+              User Analytics
+            </CardTitle>
+            <CardDescription>
+              Manage your subscription and view company insights
+            </CardDescription>
+          </div>
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="w-full sm:w-auto bg-forest-green text-white hover:bg-forest-green/90"
+          >
+            {refreshing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Refreshing
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Data
+              </>
+            )}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue={isCompanyAdmin ? "analytics" : "subscription"} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="subscription" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-2 gap-2 bg-forest-green/5 p-1 rounded-lg">
+            <TabsTrigger
+              value="subscription"
+              className="flex items-center gap-2 text-sm text-forest-green data-[state=active]:bg-forest-green data-[state=active]:text-white data-[state=active]:shadow-sm"
+            >
               <Mail className="h-4 w-4" />
               My Subscription
             </TabsTrigger>
-            <TabsTrigger 
-              value="analytics" 
+            <TabsTrigger
+              value="analytics"
               disabled={!isCompanyAdmin}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 text-sm text-forest-green data-[state=active]:bg-forest-green data-[state=active]:text-white data-[state=active]:shadow-sm disabled:text-muted-foreground"
             >
               <TrendingUp className="h-4 w-4" />
               Company Analytics
@@ -159,15 +217,15 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                <div className="flex flex-col gap-4 p-4 rounded-lg border bg-card sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     {isSubscribed ? (
-                      <Bell className="h-5 w-5 text-primary" />
+                      <Bell className="h-5 w-5 text-forest-green" />
                     ) : (
                       <BellOff className="h-5 w-5 text-muted-foreground" />
                     )}
                     <div>
-                      <Label className="font-medium">
+                      <Label className="font-medium text-forest-green">
                         Newsletter Subscription
                       </Label>
                       <p className="text-sm text-muted-foreground">
@@ -185,7 +243,7 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                 {isSubscribed && (
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-sm font-medium">Newsletter Frequency</Label>
+                      <Label className="text-sm font-medium text-forest-green">Newsletter Frequency</Label>
                       <p className="text-xs text-muted-foreground mb-3">
                         Choose how often you'd like to receive updates
                       </p>
@@ -196,21 +254,21 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                       disabled={updating}
                       className="space-y-3"
                     >
-                      <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                      <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-forest-green/10 transition-colors">
                         <RadioGroupItem value="daily" id="daily" />
                         <Label htmlFor="daily" className="cursor-pointer flex-1">
                           <div className="font-medium">Daily</div>
                           <div className="text-xs text-muted-foreground">Get updates every day</div>
                         </Label>
                       </div>
-                      <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                      <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-forest-green/10 transition-colors">
                         <RadioGroupItem value="weekly" id="weekly" />
                         <Label htmlFor="weekly" className="cursor-pointer flex-1">
                           <div className="font-medium">Weekly</div>
                           <div className="text-xs text-muted-foreground">Get updates once a week</div>
                         </Label>
                       </div>
-                      <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                      <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-forest-green/10 transition-colors">
                         <RadioGroupItem value="monthly" id="monthly" />
                         <Label htmlFor="monthly" className="cursor-pointer flex-1">
                           <div className="font-medium">Monthly</div>
@@ -247,37 +305,37 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                 {/* Analytics Overview */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-4 rounded-lg border bg-card">
-                    <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <div className="text-2xl font-bold">{stats.total_members}</div>
+                    <Users className="h-6 w-6 mx-auto mb-2 text-forest-green" />
+                    <div className="text-2xl font-bold text-forest-green">{stats.total_members}</div>
                     <div className="text-sm text-muted-foreground">Total Members</div>
                   </div>
                   <div className="text-center p-4 rounded-lg border bg-card">
-                    <UserCheck className="h-6 w-6 mx-auto mb-2 text-green-600" />
-                    <div className="text-2xl font-bold text-green-600">{stats.subscribed_members}</div>
+                    <UserCheck className="h-6 w-6 mx-auto mb-2 text-forest-green" />
+                    <div className="text-2xl font-bold text-forest-green">{stats.subscribed_members}</div>
                     <div className="text-sm text-muted-foreground">{subscriptionRate}% Subscribed</div>
                   </div>
                   <div className="text-center p-4 rounded-lg border bg-card">
-                    <Calendar className="h-6 w-6 mx-auto mb-2 text-blue-600" />
-                    <div className="text-2xl font-bold text-blue-600">{stats.weekly_subscribers}</div>
+                    <Calendar className="h-6 w-6 mx-auto mb-2 text-forest-green" />
+                    <div className="text-2xl font-bold text-forest-green">{stats.weekly_subscribers}</div>
                     <div className="text-sm text-muted-foreground">Weekly</div>
                   </div>
                   <div className="text-center p-4 rounded-lg border bg-card">
-                    <PieChart className="h-6 w-6 mx-auto mb-2 text-orange-600" />
-                    <div className="text-2xl font-bold text-orange-600">{stats.daily_subscribers}</div>
+                    <PieChart className="h-6 w-6 mx-auto mb-2 text-forest-green" />
+                    <div className="text-2xl font-bold text-forest-green">{stats.daily_subscribers}</div>
                     <div className="text-sm text-muted-foreground">Daily</div>
                   </div>
                 </div>
 
                 {/* Member Management Section */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Member Management</h3>
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="text-lg font-semibold text-forest-green">Member Management</h3>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end w-full sm:w-auto">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={exportMemberData}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 border-forest-green text-forest-green hover:bg-forest-green/10 w-full sm:w-auto"
                       >
                         <Download className="h-4 w-4" />
                         Export CSV
@@ -286,7 +344,7 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                   </div>
 
                   {/* Search and Filters */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -297,10 +355,10 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                       />
                     </div>
                     <Button
-                      variant={showSubscribedOnly ? "default" : "outline"}
+                      variant="outline"
                       size="sm"
                       onClick={() => setShowSubscribedOnly(!showSubscribedOnly)}
-                      className="flex items-center gap-2"
+                      className={`flex items-center gap-2 border-forest-green transition-colors w-full lg:w-auto ${showSubscribedOnly ? 'bg-forest-green text-white hover:bg-forest-green/90' : 'text-forest-green hover:bg-forest-green/10'}`}
                     >
                       <UserCheck className="h-4 w-4" />
                       Subscribed Only
@@ -311,7 +369,7 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                   <Collapsible open={showAllMembers} onOpenChange={setShowAllMembers}>
                     <div className="space-y-3">
                       <CollapsibleTrigger asChild>
-                        <Button variant="outline" className="w-full justify-between">
+                        <Button variant="outline" className="w-full justify-between border-forest-green text-forest-green hover:bg-forest-green/10">
                           <span>View All Members ({filteredMembers.length})</span>
                           {showAllMembers ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                         </Button>
@@ -333,7 +391,7 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                         ) : (
                           <div className="max-h-96 overflow-y-auto space-y-2">
                             {filteredMembers.map((member) => (
-                              <div key={member.user_id} className="flex items-center gap-3 p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors">
+                              <div key={member.user_id} className="flex items-center gap-3 p-3 border rounded-lg bg-card hover:bg-forest-green/10 transition-colors">
                                 <Avatar className="h-10 w-10">
                                   <AvatarFallback className="text-sm">
                                     {getInitials(member.display_name)}
@@ -374,20 +432,20 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                   </Collapsible>
 
                   {/* Frequency Breakdown */}
-                  <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-600">{stats.daily_subscribers}</div>
-                      <div className="text-sm text-muted-foreground">Daily Subscribers</div>
+                    <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-forest-green">{stats.daily_subscribers}</div>
+                        <div className="text-sm text-muted-foreground">Daily Subscribers</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-forest-green">{stats.weekly_subscribers}</div>
+                        <div className="text-sm text-muted-foreground">Weekly Subscribers</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-forest-green">{stats.monthly_subscribers}</div>
+                        <div className="text-sm text-muted-foreground">Monthly Subscribers</div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">{stats.weekly_subscribers}</div>
-                      <div className="text-sm text-muted-foreground">Weekly Subscribers</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">{stats.monthly_subscribers}</div>
-                      <div className="text-sm text-muted-foreground">Monthly Subscribers</div>
-                    </div>
-                  </div>
 
                   {stats.unsubscribed_members > 0 && (
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
