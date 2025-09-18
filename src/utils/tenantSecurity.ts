@@ -31,8 +31,9 @@ export class TenantSecurityManager {
       }
 
       // Validate company membership
-      const { data, error } = await supabase.rpc('user_is_company_member', {
-        check_company_id: companyId
+      const { data, error } = await supabase.rpc('require_role', {
+        required_roles: ['Admin', 'Member'],
+        company_id_param: companyId
       });
 
       if (error) {

@@ -9,10 +9,10 @@ import { toast } from 'sonner';
 
 interface CompanyMember {
   user_id: string;
-  display_name: string;
-  member_role: string;
+  name: string;
+  company_role: string;
   email?: string;
-  joined_date?: string;
+  registration_date?: string;
   newsletter_status: string;
   newsletter_frequency: string;
 }
@@ -32,7 +32,7 @@ export const CompanyMembersList: React.FC<CompanyMembersListProps> = ({
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('get_company_members_detailed', {
+      const { data, error } = await supabase.rpc('get_company_users_for_admin', {
         p_company_id: companyId
       });
 
@@ -123,7 +123,7 @@ export const CompanyMembersList: React.FC<CompanyMembersListProps> = ({
                   </div>
                   <div>
                     <div className="font-medium">
-                      {member.display_name || 'Unknown User'}
+                      {member.name || 'Unknown User'}
                     </div>
                     {member.email && (
                       <div className="text-sm text-muted-foreground flex items-center gap-1">
@@ -134,7 +134,7 @@ export const CompanyMembersList: React.FC<CompanyMembersListProps> = ({
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {getRoleBadge(member.member_role)}
+                  {getRoleBadge(member.company_role)}
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     {member.newsletter_status === 'active' ? (
                       <>
@@ -148,10 +148,10 @@ export const CompanyMembersList: React.FC<CompanyMembersListProps> = ({
                       </>
                     )}
                   </div>
-                  {member.joined_date && (
+                  {member.registration_date && (
                     <div className="text-sm text-muted-foreground flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {new Date(member.joined_date).toLocaleDateString()}
+                      {new Date(member.registration_date).toLocaleDateString()}
                     </div>
                   )}
                 </div>

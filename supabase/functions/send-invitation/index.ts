@@ -14,6 +14,7 @@ interface InvitationRequest {
   full_name: string;
   role: string;
   client_name?: string;
+  company_id?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -42,20 +43,58 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Unauthorized");
     }
 
-    // Check if user is admin
+    // Get request body early to check company_id
+    const { email, full_name, role, client_name, company_id }: InvitationRequest = await req.json();
+
+    // Check if user has admin permissions (global or company-specific)
     const { data: userData, error: userError } = await supabaseClient
       .from("users")
       .select("role")
       .eq("email", user.email)
       .single();
 
-    if (userError || userData?.role !== "Admin") {
+    if (userError) {
+      throw new Error("Failed to verify user permissions");
+    }
+
+    // Check authorization: Global admin OR company admin
+    let isAuthorized = false;
+    let authorizationType = "";
+    
+    if (userData?.role === "Admin") {
+      // Global admin can invite to any company
+      isAuthorized = true;
+      authorizationType = "global_admin";
+    } else if (company_id) {
+      // Check if user is admin of the specific company
+      const { data: companyAdminCheck, error: companyAdminError } = await supabaseClient
+        .rpc('require_role', {
+          required_roles: ['Admin'],
+          company_id_param: company_id
+        });
+      
+      if (!companyAdminError && companyAdminCheck) {
+        isAuthorized = true;
+        authorizationType = "company_admin";
+      }
+    }
+
+    if (!isAuthorized) {
       // Log unauthorized invitation attempt
       await supabaseClient.rpc('log_security_event', {
         event_type: 'unauthorized_invitation_attempt',
-        event_details: { attempted_by: user.email, ip_address: req.headers.get('x-forwarded-for') }
+        event_details: { 
+          attempted_by: user.email, 
+          user_role: userData?.role,
+          company_id: company_id,
+          ip_address: req.headers.get('x-forwarded-for') 
+        }
       });
-      throw new Error("Insufficient permissions");
+      
+      const errorMessage = company_id 
+        ? "You don't have admin permissions for this company"
+        : "Insufficient permissions - admin role required";
+      throw new Error(errorMessage);
     }
 
     // Check invitation rate limit
@@ -72,9 +111,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Rate limit exceeded. Please wait before sending more invitations.");
     }
 
-    const { email, full_name, role, client_name }: InvitationRequest = await req.json();
-
-    console.log("Processing invitation for:", { email, full_name, role });
+    console.log("Processing invitation for:", { email, full_name, role, company_id, authorization: authorizationType });
 
     // Check if user already exists
     const { data: existingUser } = await supabaseClient
@@ -102,15 +139,22 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Create invitation record
+    const invitationData: any = {
+      invited_by: user.id,
+      email,
+      full_name,
+      role,
+      client_name,
+    };
+    
+    // Add company_id if provided (for company-specific invitations)
+    if (company_id) {
+      invitationData.company_id = company_id;
+    }
+    
     const { data: invitation, error: inviteError } = await supabaseClient
       .from("user_invitations")
-      .insert({
-        invited_by: user.id,
-        email,
-        full_name,
-        role,
-        client_name,
-      })
+      .insert(invitationData)
       .select()
       .single();
 
@@ -129,7 +173,9 @@ const handler = async (req: Request): Promise<Response> => {
         invited_email: email, 
         invited_role: role, 
         invited_by: user.email,
-        invitation_id: invitation.id 
+        invitation_id: invitation.id,
+        company_id: company_id,
+        authorization_type: authorizationType
       }
     });
 
