@@ -99,14 +99,35 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Check if user has admin permissions (global or company-specific)
+    console.log("Looking up user permissions for:", user.email);
+    
     const { data: userData, error: userError } = await supabaseClient
       .from("users")
-      .select("role")
+      .select("role, auth_user_id")
       .eq("email", user.email)
       .single();
 
+    console.log("User lookup result:", { userData, userError });
+
     if (userError) {
-      throw new Error("Failed to verify user permissions");
+      console.error("User lookup failed:", userError);
+      // Try alternative lookup by auth_user_id
+      const { data: userDataById, error: userByIdError } = await supabaseClient
+        .from("users")
+        .select("role, auth_user_id")
+        .eq("auth_user_id", user.id)
+        .single();
+      
+      console.log("User lookup by ID result:", { userDataById, userByIdError });
+      
+      if (userByIdError) {
+        console.error("Failed both user lookup methods:", { userError, userByIdError });
+        throw new Error("Failed to verify user permissions");
+      }
+      
+      // Use the data from ID lookup
+      userData.role = userDataById.role;
+      userData.auth_user_id = userDataById.auth_user_id;
     }
 
     // Check authorization: Global admin OR company admin
@@ -114,19 +135,36 @@ const handler = async (req: Request): Promise<Response> => {
     let authorizationType = "";
     let adminMemberships: Array<{ company_id: string; company_name: string | null }> = [];
 
+    console.log("Authorization check - User:", { id: user.id, email: user.email, role: userData?.role });
+
     if (userData?.role === "Admin") {
       // Global admin can invite to any company
       isAuthorized = true;
       authorizationType = "global_admin";
+      console.log("Authorization: Global admin access granted");
     } else {
+      // Check company admin permissions using service role to bypass RLS
+      // Use the auth_user_id from the user record if available, otherwise use the JWT user ID
+      const membershipUserId = userData?.auth_user_id || user.id;
+      console.log("Checking company admin permissions for user:", { membershipUserId, jwtUserId: user.id });
+      
       const { data: membershipData, error: membershipError } = await supabaseClient
         .from("company_memberships")
         .select("company_id, role, companies(name)")
-        .eq("user_id", user.id)
+        .eq("user_id", membershipUserId)
         .eq("role", "Admin");
+
+      console.log("Company membership query result:", { membershipData, membershipError });
 
       if (membershipError) {
         console.error("Failed to verify company membership:", membershipError);
+        // Log more details about the error
+        console.error("Membership error details:", {
+          code: membershipError.code,
+          message: membershipError.message,
+          details: membershipError.details,
+          hint: membershipError.hint
+        });
         throw new Error("Failed to verify user permissions");
       }
 
@@ -140,13 +178,17 @@ const handler = async (req: Request): Promise<Response> => {
         company_name: membership.companies?.name ?? null,
       }));
 
+      console.log("Admin memberships found:", adminMemberships);
+
       if (!targetCompanyId) {
         if (adminMemberships.length === 1) {
           targetCompanyId = adminMemberships[0].company_id;
           if (!requestedClientName && adminMemberships[0].company_name) {
             requestedClientName = adminMemberships[0].company_name ?? "";
           }
+          console.log("Auto-selected company for invitation:", { targetCompanyId, requestedClientName });
         } else if (adminMemberships.length > 1) {
+          console.log("Multiple admin memberships found, company must be specified");
           throw new Error("Please specify which company to invite the user to");
         }
       }
@@ -154,6 +196,9 @@ const handler = async (req: Request): Promise<Response> => {
       if (targetCompanyId && adminMemberships.some((membership) => membership.company_id === targetCompanyId)) {
         isAuthorized = true;
         authorizationType = "company_admin";
+        console.log("Authorization: Company admin access granted for company:", targetCompanyId);
+      } else if (targetCompanyId) {
+        console.log("User is not admin of target company:", { targetCompanyId, adminMemberships });
       }
     }
 
