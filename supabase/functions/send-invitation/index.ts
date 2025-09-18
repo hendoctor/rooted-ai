@@ -15,6 +15,7 @@ interface InvitationRequest {
   role: string;
   client_name?: string;
   company_id?: string;
+  company_role?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -44,7 +45,58 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Get request body early to check company_id
-    const { email, full_name, role, client_name, company_id }: InvitationRequest = await req.json();
+    const requestBody: InvitationRequest = await req.json();
+    const { email, full_name, role } = requestBody;
+
+    const rawClientName = typeof requestBody.client_name === "string"
+      ? requestBody.client_name.trim()
+      : "";
+    let requestedClientName =
+      rawClientName && rawClientName.toLowerCase() !== "undefined"
+        ? rawClientName
+        : "";
+
+    const rawCompanyId = typeof requestBody.company_id === "string"
+      ? requestBody.company_id.trim()
+      : "";
+    const sanitizedCompanyId =
+      rawCompanyId && rawCompanyId.toLowerCase() !== "undefined"
+        ? rawCompanyId
+        : "";
+
+    let targetCompanyId: string | null = sanitizedCompanyId || null;
+
+    // Attempt to resolve company details if only name is provided
+    if (!targetCompanyId && requestedClientName) {
+      const normalizedName = requestedClientName.replace(/\s+/g, " ").trim();
+      const derivedSlug = normalizedName
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+
+      const nameFilterValue = `%${normalizedName}%`;
+      const filterParts = [] as string[];
+      if (derivedSlug) {
+        filterParts.push(`slug.eq.${derivedSlug}`);
+      }
+      filterParts.push(`name.ilike.${nameFilterValue}`);
+
+      const { data: companyMatch, error: companyLookupError } = await supabaseClient
+        .from("companies")
+        .select("id, name")
+        .or(filterParts.join(','))
+        .maybeSingle();
+
+      if (companyLookupError) {
+        console.error("Failed to look up company by name:", companyLookupError);
+      }
+
+      if (companyMatch) {
+        targetCompanyId = companyMatch.id;
+        requestedClientName = companyMatch.name;
+      }
+    }
 
     // Check if user has admin permissions (global or company-specific)
     const { data: userData, error: userError } = await supabaseClient
@@ -60,44 +112,84 @@ const handler = async (req: Request): Promise<Response> => {
     // Check authorization: Global admin OR company admin
     let isAuthorized = false;
     let authorizationType = "";
-    
+    let adminMemberships: Array<{ company_id: string; company_name: string | null }> = [];
+
     if (userData?.role === "Admin") {
       // Global admin can invite to any company
       isAuthorized = true;
       authorizationType = "global_admin";
-    } else if (company_id) {
-      // Check if user is admin of the specific company via membership lookup
-      const { data: companyMembership, error: companyMembershipError } = await supabaseClient
+    } else {
+      const { data: membershipData, error: membershipError } = await supabaseClient
         .from("company_memberships")
-        .select("role")
-        .eq("company_id", company_id)
+        .select("company_id, role, companies(name)")
         .eq("user_id", user.id)
-        .maybeSingle();
+        .eq("role", "Admin");
 
-      if (companyMembershipError) {
-        console.error("Failed to verify company membership:", companyMembershipError);
+      if (membershipError) {
+        console.error("Failed to verify company membership:", membershipError);
         throw new Error("Failed to verify user permissions");
       }
 
-      if (companyMembership?.role === "Admin") {
+      const membershipRows = (membershipData ?? []) as Array<{
+        company_id: string;
+        companies?: { name?: string | null } | null;
+      }>;
+
+      adminMemberships = membershipRows.map((membership) => ({
+        company_id: membership.company_id,
+        company_name: membership.companies?.name ?? null,
+      }));
+
+      if (!targetCompanyId) {
+        if (adminMemberships.length === 1) {
+          targetCompanyId = adminMemberships[0].company_id;
+          if (!requestedClientName && adminMemberships[0].company_name) {
+            requestedClientName = adminMemberships[0].company_name ?? "";
+          }
+        } else if (adminMemberships.length > 1) {
+          throw new Error("Please specify which company to invite the user to");
+        }
+      }
+
+      if (targetCompanyId && adminMemberships.some((membership) => membership.company_id === targetCompanyId)) {
         isAuthorized = true;
         authorizationType = "company_admin";
       }
+    }
+
+    if (targetCompanyId && !requestedClientName) {
+      const { data: companyRecord, error: companyRecordError } = await supabaseClient
+        .from("companies")
+        .select("name")
+        .eq("id", targetCompanyId)
+        .maybeSingle();
+
+      if (companyRecordError) {
+        console.error("Failed to fetch company details:", companyRecordError);
+      }
+
+      if (companyRecord?.name) {
+        requestedClientName = companyRecord.name;
+      }
+    }
+
+    if (!targetCompanyId && authorizationType !== "global_admin") {
+      throw new Error("Company context is required to send this invitation");
     }
 
     if (!isAuthorized) {
       // Log unauthorized invitation attempt
       await supabaseClient.rpc('log_security_event', {
         event_type: 'unauthorized_invitation_attempt',
-        event_details: { 
-          attempted_by: user.email, 
+        event_details: {
+          attempted_by: user.email,
           user_role: userData?.role,
-          company_id: company_id,
-          ip_address: req.headers.get('x-forwarded-for') 
+          company_id: targetCompanyId,
+          ip_address: req.headers.get('x-forwarded-for')
         }
       });
-      
-      const errorMessage = company_id 
+
+      const errorMessage = targetCompanyId
         ? "You don't have admin permissions for this company"
         : "Insufficient permissions - admin role required";
       throw new Error(errorMessage);
@@ -117,7 +209,7 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Rate limit exceeded. Please wait before sending more invitations.");
     }
 
-    console.log("Processing invitation for:", { email, full_name, role, company_id, authorization: authorizationType });
+    console.log("Processing invitation for:", { email, full_name, role, company_id: targetCompanyId, authorization: authorizationType });
 
     // Check if user already exists
     const { data: existingUser } = await supabaseClient
@@ -145,17 +237,24 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Create invitation record
-    const invitationData: any = {
+    const invitationData: {
+      invited_by: string;
+      email: string;
+      full_name: string;
+      role: string;
+      client_name: string | null;
+      company_id?: string;
+    } = {
       invited_by: user.id,
       email,
       full_name,
       role,
-      client_name,
+      client_name: requestedClientName || null,
     };
-    
+
     // Add company_id if provided (for company-specific invitations)
-    if (company_id) {
-      invitationData.company_id = company_id;
+    if (targetCompanyId) {
+      invitationData.company_id = targetCompanyId;
     }
     
     const { data: invitation, error: inviteError } = await supabaseClient
@@ -177,10 +276,10 @@ const handler = async (req: Request): Promise<Response> => {
       event_type: 'invitation_sent',
       event_details: { 
         invited_email: email, 
-        invited_role: role, 
+        invited_role: role,
         invited_by: user.email,
         invitation_id: invitation.id,
-        company_id: company_id,
+        company_id: targetCompanyId,
         authorization_type: authorizationType
       }
     });
@@ -369,12 +468,13 @@ const handler = async (req: Request): Promise<Response> => {
         },
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in send-invitation function:", error);
+    const message = error instanceof Error ? error.message : "Failed to send invitation";
     return new Response(
-      JSON.stringify({ 
-        error: error.message || "Failed to send invitation",
-        success: false 
+      JSON.stringify({
+        error: message,
+        success: false
       }),
       {
         status: 400,
