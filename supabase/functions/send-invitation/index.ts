@@ -66,14 +66,20 @@ const handler = async (req: Request): Promise<Response> => {
       isAuthorized = true;
       authorizationType = "global_admin";
     } else if (company_id) {
-      // Check if user is admin of the specific company
-      const { data: companyAdminCheck, error: companyAdminError } = await supabaseClient
-        .rpc('require_role', {
-          required_roles: ['Admin'],
-          company_id_param: company_id
-        });
-      
-      if (!companyAdminError && companyAdminCheck) {
+      // Check if user is admin of the specific company via membership lookup
+      const { data: companyMembership, error: companyMembershipError } = await supabaseClient
+        .from("company_memberships")
+        .select("role")
+        .eq("company_id", company_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (companyMembershipError) {
+        console.error("Failed to verify company membership:", companyMembershipError);
+        throw new Error("Failed to verify user permissions");
+      }
+
+      if (companyMembership?.role === "Admin") {
         isAuthorized = true;
         authorizationType = "company_admin";
       }
