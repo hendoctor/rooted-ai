@@ -24,21 +24,39 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
-    // Get the authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("No authorization header");
     }
 
-    // Set the auth for the request
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    const supabaseAuthed = anonKey
+      ? createClient(supabaseUrl, anonKey, {
+          global: {
+            headers: {
+              Authorization: authHeader,
+            },
+          },
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+          },
+        })
+      : null;
+
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-    
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
     if (authError || !user) {
       throw new Error("Unauthorized");
     }
@@ -47,7 +65,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { email, full_name, role, client_name, company_id }: InvitationRequest = await req.json();
 
     // Check if user has admin permissions (global or company-specific)
-    const { data: userData, error: userError } = await supabaseClient
+    const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
       .select("role")
       .eq("email", user.email)
@@ -66,14 +84,46 @@ const handler = async (req: Request): Promise<Response> => {
       isAuthorized = true;
       authorizationType = "global_admin";
     } else if (company_id) {
-      // Check if user is admin of the specific company
-      const { data: companyAdminCheck, error: companyAdminError } = await supabaseClient
-        .rpc('require_role', {
-          required_roles: ['Admin'],
-          company_id_param: company_id
-        });
-      
-      if (!companyAdminError && companyAdminCheck) {
+      let membershipAuthorized = false;
+
+      // Try the shared require_role helper first so we stay aligned with policy logic
+      if (supabaseAuthed) {
+        const { data: requireRoleResult, error: requireRoleError } = await supabaseAuthed
+          .rpc("require_role", {
+            required_roles: ["Admin"],
+            company_id_param: company_id,
+          });
+
+        if (requireRoleError) {
+          console.warn("require_role check failed, falling back to direct membership lookup:", requireRoleError);
+        } else if (requireRoleResult === true) {
+          membershipAuthorized = true;
+        }
+      } else {
+        console.warn("SUPABASE_ANON_KEY not configured - skipping require_role RPC check");
+      }
+
+      if (!membershipAuthorized) {
+        // Fallback: direct membership lookup using service client
+        const { data: companyMembership, error: companyMembershipError } = await supabaseAdmin
+          .from("company_memberships")
+          .select("role")
+          .eq("company_id", company_id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (companyMembershipError) {
+          console.error("Failed to verify company membership:", companyMembershipError);
+          throw new Error("Failed to verify user permissions");
+        }
+
+        const membershipRole = (companyMembership?.role ?? "").trim().toLowerCase();
+        if (["admin", "company admin", "company_admin", "owner"].includes(membershipRole)) {
+          membershipAuthorized = true;
+        }
+      }
+
+      if (membershipAuthorized) {
         isAuthorized = true;
         authorizationType = "company_admin";
       }
@@ -81,10 +131,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!isAuthorized) {
       // Log unauthorized invitation attempt
-      await supabaseClient.rpc('log_security_event', {
+      await supabaseAdmin.rpc('log_security_event', {
         event_type: 'unauthorized_invitation_attempt',
-        event_details: { 
-          attempted_by: user.email, 
+        event_details: {
+          attempted_by: user.email,
           user_role: userData?.role,
           company_id: company_id,
           ip_address: req.headers.get('x-forwarded-for') 
@@ -98,13 +148,13 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Check invitation rate limit
-    const { data: rateLimitCheck, error: rateLimitError } = await supabaseClient.rpc('check_invitation_rate_limit', {
+    const { data: rateLimitCheck, error: rateLimitError } = await supabaseAdmin.rpc('check_invitation_rate_limit', {
       admin_id: user.id
     });
 
     if (rateLimitError || !rateLimitCheck) {
       // Log rate limit violation
-      await supabaseClient.rpc('log_security_event', {
+      await supabaseAdmin.rpc('log_security_event', {
         event_type: 'invitation_rate_limit_exceeded',
         event_details: { admin_id: user.id, admin_email: user.email }
       });
@@ -114,7 +164,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Processing invitation for:", { email, full_name, role, company_id, authorization: authorizationType });
 
     // Check if user already exists
-    const { data: existingUser } = await supabaseClient
+    const { data: existingUser } = await supabaseAdmin
       .from("users")
       .select("email")
       .eq("email", email)
@@ -126,7 +176,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Check if there's already a pending invitation that hasn't expired (using UTC)
     const currentUTC = new Date().toISOString();
-    const { data: existingInvitation } = await supabaseClient
+    const { data: existingInvitation } = await supabaseAdmin
       .from("user_invitations")
       .select("id, expires_at, status")
       .eq("email", email)
@@ -152,7 +202,7 @@ const handler = async (req: Request): Promise<Response> => {
       invitationData.company_id = company_id;
     }
     
-    const { data: invitation, error: inviteError } = await supabaseClient
+    const { data: invitation, error: inviteError } = await supabaseAdmin
       .from("user_invitations")
       .insert(invitationData)
       .select()
@@ -167,10 +217,10 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Created invitation:", invitation);
 
     // Log successful invitation creation
-    await supabaseClient.rpc('log_security_event', {
+    await supabaseAdmin.rpc('log_security_event', {
       event_type: 'invitation_sent',
-      event_details: { 
-        invited_email: email, 
+      event_details: {
+        invited_email: email,
         invited_role: role, 
         invited_by: user.email,
         invitation_id: invitation.id,
