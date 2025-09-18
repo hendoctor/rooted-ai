@@ -303,7 +303,7 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
             ) : stats ? (
               <>
                 {/* Analytics Overview */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                   <div className="text-center p-4 rounded-lg border bg-card">
                     <Users className="h-6 w-6 mx-auto mb-2 text-forest-green" />
                     <div className="text-2xl font-bold text-forest-green">{stats.total_members}</div>
@@ -312,7 +312,14 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                   <div className="text-center p-4 rounded-lg border bg-card">
                     <UserCheck className="h-6 w-6 mx-auto mb-2 text-forest-green" />
                     <div className="text-2xl font-bold text-forest-green">{stats.subscribed_members}</div>
-                    <div className="text-sm text-muted-foreground">{subscriptionRate}% Subscribed</div>
+                    <div className="text-sm text-muted-foreground">
+                      Total Subscribed{stats.total_members > 0 ? ` (${subscriptionRate}%)` : ''}
+                    </div>
+                  </div>
+                  <div className="text-center p-4 rounded-lg border bg-card">
+                    <PieChart className="h-6 w-6 mx-auto mb-2 text-forest-green" />
+                    <div className="text-2xl font-bold text-forest-green">{stats.daily_subscribers}</div>
+                    <div className="text-sm text-muted-foreground">Daily</div>
                   </div>
                   <div className="text-center p-4 rounded-lg border bg-card">
                     <Calendar className="h-6 w-6 mx-auto mb-2 text-forest-green" />
@@ -320,9 +327,9 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                     <div className="text-sm text-muted-foreground">Weekly</div>
                   </div>
                   <div className="text-center p-4 rounded-lg border bg-card">
-                    <PieChart className="h-6 w-6 mx-auto mb-2 text-forest-green" />
-                    <div className="text-2xl font-bold text-forest-green">{stats.daily_subscribers}</div>
-                    <div className="text-sm text-muted-foreground">Daily</div>
+                    <TrendingUp className="h-6 w-6 mx-auto mb-2 text-forest-green" />
+                    <div className="text-2xl font-bold text-forest-green">{stats.monthly_subscribers}</div>
+                    <div className="text-sm text-muted-foreground">Monthly</div>
                   </div>
                 </div>
 
@@ -430,22 +437,6 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                       </CollapsibleContent>
                     </div>
                   </Collapsible>
-
-                  {/* Frequency Breakdown */}
-                    <div className="grid grid-cols-3 gap-4 pt-4 border-t">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-forest-green">{stats.daily_subscribers}</div>
-                        <div className="text-sm text-muted-foreground">Daily Subscribers</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-forest-green">{stats.weekly_subscribers}</div>
-                        <div className="text-sm text-muted-foreground">Weekly Subscribers</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-forest-green">{stats.monthly_subscribers}</div>
-                        <div className="text-sm text-muted-foreground">Monthly Subscribers</div>
-                      </div>
-                    </div>
 
                   {stats.unsubscribed_members > 0 && (
                     <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
