@@ -1,5 +1,5 @@
 // Simplified Company Page - best practices implementation
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
-import { Lock, AlertCircle, Shield, Users, Settings } from 'lucide-react';
+import { Lock, AlertCircle, Shield, Users, Settings, RefreshCw } from 'lucide-react';
 import { CompanyUserManager } from '@/components/admin/CompanyUserManager';
 import { CompanyMembersList } from '@/components/admin/CompanyMembersList';
 import Header from '@/components/Header';
@@ -47,6 +47,7 @@ export default function CompanyPage() {
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [isAdminSimulating, setIsAdminSimulating] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -57,63 +58,73 @@ export default function CompanyPage() {
     address: ''
   });
 
-  // Initialize company data
-  useEffect(() => {
-    const initializeCompany = async () => {
-      if (!user || !slug) return;
+  const fetchCompany = useCallback(async (showFullLoading = false) => {
+    if (!user || !slug) return;
 
-      try {
-        setLoading(true);
-        setError(null);
+    if (showFullLoading) {
+      setLoading(true);
+    } else {
+      setRefreshing(true);
+    }
 
-        // Find company from user's companies first
-        const userCompany = companies.find(c => c.slug === slug);
-        let foundCompany = null;
-        
-        if (userCompany) {
-          // Fetch full company data
+    try {
+      setError(null);
+      setIsAdminSimulating(false);
+
+      const userCompany = companies.find(c => c.slug === slug);
+      let foundCompany: Company | null = null;
+
+      if (userCompany) {
+        const { data, error } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', userCompany.id)
+          .single();
+
+        if (error) throw error;
+        foundCompany = data as Company;
+      } else if (userRole === 'Admin') {
+        try {
           const { data, error } = await supabase
             .from('companies')
             .select('*')
-            .eq('id', userCompany.id)
+            .eq('slug', slug)
             .single();
 
-          if (error) throw error;
-          foundCompany = data as Company;
-        } else if (userRole === 'Admin') {
-          // If Admin and company not found in their list, try to fetch any company by slug
-          try {
-            const { data, error } = await supabase
-              .from('companies')
-              .select('*')
-              .eq('slug', slug)
-              .single();
-
-            if (!error && data) {
-              foundCompany = data as Company;
-              setIsAdminSimulating(true);
-            }
-          } catch (err) {
-            console.error('Failed to fetch company for admin:', err);
+          if (!error && data) {
+            foundCompany = data as Company;
+            setIsAdminSimulating(true);
           }
+        } catch (err) {
+          console.error('Failed to fetch company for admin:', err);
         }
-        
-        if (foundCompany) {
-          setCompany(foundCompany);
-        } else {
-          setError('Access denied to this company');
-          return;
-        }
-      } catch (err) {
-        console.error('Error initializing company:', err);
-        setError('Failed to load company');
-      } finally {
-        setLoading(false);
       }
-    };
 
-    initializeCompany();
-  }, [user, userRole, companies, slug]);
+      if (foundCompany) {
+        setCompany(foundCompany);
+      } else {
+        setCompany(null);
+        setError('Access denied to this company');
+      }
+    } catch (err) {
+      console.error('Error initializing company:', err);
+      setError('Failed to load company');
+    } finally {
+      if (showFullLoading) {
+        setLoading(false);
+      } else {
+        setRefreshing(false);
+      }
+    }
+  }, [user, slug, companies, userRole]);
+
+  useEffect(() => {
+    fetchCompany(true);
+  }, [fetchCompany]);
+
+  const handleRefresh = () => {
+    fetchCompany(false);
+  };
 
   // Update form data when company loads
   useEffect(() => {
@@ -225,11 +236,23 @@ export default function CompanyPage() {
                 Manage your company information and preferences
               </p>
             </div>
-            <Link to={`/${company.slug}`}>
-              <Button variant="outline">
-                Back to Portal
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={refreshing || loading}
+                className="w-full justify-center sm:w-auto"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
               </Button>
-            </Link>
+              <Link to={`/${company.slug}`} className="w-full sm:w-auto">
+                <Button variant="outline" size="sm" className="w-full justify-center sm:w-auto">
+                  Back to Portal
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Permission Alert for Company Members */}

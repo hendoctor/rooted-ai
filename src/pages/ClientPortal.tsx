@@ -595,19 +595,19 @@ const ClientPortal: React.FC = () => {
         {/* Contact Footer */}
         <Card className="bg-muted/50">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-center sm:text-left">
                 <h3 className="font-semibold mb-2">Need Support?</h3>
                 <p className="text-sm text-muted-foreground">
                   Contact our team for assistance with your portal.
                 </p>
               </div>
-              <div className="flex gap-4">
-                <Button variant="outline" size="sm">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:gap-4">
+                <Button variant="outline" size="sm" className="w-full justify-center sm:w-auto">
                   <Phone className="h-4 w-4 mr-2" />
                   Contact
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="w-full justify-center sm:w-auto">
                   <Calendar className="h-4 w-4 mr-2" />
                   Schedule
                 </Button>
