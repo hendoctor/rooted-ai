@@ -207,7 +207,8 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
           email: inviteForm.email,
           full_name: inviteForm.full_name,
           role: inviteForm.role,
-          client_name: clientName
+          client_name: clientName,
+          company_id: inviteForm.companyId || undefined
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -402,14 +403,36 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
         }
       } else if (editingUser.source_table === 'user_invitations') {
         // Update pending invitation
+        const nextCompanyId = editForm.companyId || null;
+
+        if (editForm.role === 'Client' && !nextCompanyId) {
+          throw new Error('Please select a company for client invitations');
+        }
+
+        let nextClientName: string | null = null;
+
+        if (nextCompanyId) {
+          const selectedCompany = companies.find((company) => company.id === nextCompanyId);
+          if (!selectedCompany) {
+            throw new Error('Selected company could not be found');
+          }
+          nextClientName = selectedCompany.name;
+        } else if (editForm.role === 'Admin') {
+          nextClientName = ROOT_COMPANY_NAME;
+        } else {
+          nextClientName = editingUser.companies?.[0]?.name ?? null;
+        }
+
         const { error } = await supabase
           .from('user_invitations')
-          .update({ 
+          .update({
             full_name: editForm.display_name,
-            role: editForm.role 
+            role: editForm.role,
+            company_id: nextCompanyId,
+            client_name: nextClientName,
           })
           .eq('id', editingUser.invitation_id);
-        
+
         if (error) throw error;
       }
 

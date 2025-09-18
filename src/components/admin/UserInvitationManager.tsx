@@ -17,6 +17,7 @@ interface Invitation {
   email: string;
   full_name: string;
   client_name: string | null;
+  company_id?: string | null;
   role: string;
   status: string;
   created_at: string;
@@ -118,7 +119,8 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
           email: formData.email,
           full_name: formData.full_name,
           role: formData.role,
-          client_name: clientName
+          client_name: clientName,
+          company_id: formData.companyId || undefined
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -195,8 +197,8 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
 
   const handleEdit = (invitation: Invitation) => {
     setEditingInvitation(invitation);
-    let companyId = '';
-    if (invitation.role === 'Client' && invitation.client_name) {
+    let companyId = invitation.company_id || '';
+    if (!companyId && invitation.role === 'Client' && invitation.client_name) {
       const company = companies.find(c => c.name === invitation.client_name);
       if (company) {
         companyId = company.id;
@@ -233,6 +235,7 @@ const UserInvitationManager: React.FC<UserInvitationManagerProps> = ({ onInvitat
           full_name: editFormData.full_name,
           role: editFormData.role,
           client_name: clientName,
+          company_id: editFormData.companyId || null,
         })
         .eq('id', editingInvitation.id);
 
