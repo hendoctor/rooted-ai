@@ -1143,6 +1143,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_company_admin: {
+        Args: { company_id_param: string }
+        Returns: boolean
+      }
+      is_company_member: {
+        Args: { company_id_param: string }
+        Returns: boolean
+      }
       log_invitation_access: {
         Args: { access_result: string; token_used: string; user_ip?: unknown }
         Returns: undefined
