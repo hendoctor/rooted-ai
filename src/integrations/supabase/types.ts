@@ -1037,10 +1037,9 @@ export type Database = {
       get_company_user_activity: {
         Args: { p_company_id: string; p_limit?: number }
         Returns: {
-          activity_description: string
-          activity_id: string
+          activity_time: string
           activity_type: string
-          created_at: string
+          description: string
           metadata: Json
           user_email: string
         }[]
@@ -1186,11 +1185,13 @@ export type Database = {
         Returns: undefined
       }
       remove_user_from_company: {
-        Args: {
-          p_admin_user_id?: string
-          p_company_id: string
-          p_user_email: string
-        }
+        Args:
+          | {
+              p_admin_user_id?: string
+              p_company_id: string
+              p_user_email: string
+            }
+          | { p_company_id: string; p_user_email: string }
         Returns: Json
       }
       require_role: {

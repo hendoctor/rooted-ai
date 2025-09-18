@@ -268,7 +268,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Prepare invitation payload - always Client for global role, company_role for membership
     const invitationRole = "Client"; // Always Client for global role when inviting to company
-    const companyRole = targetCompanyId ? (requestBody.company_role || requestBody.role || "Member") : null;
+    
+    // Normalize company_role: ensure it's only Admin or Member, default to Member
+    let companyRole: string | null = null;
+    if (targetCompanyId) {
+      const rawCompanyRole = requestBody.company_role || requestBody.role || "Member";
+      // Normalize: if it's "Client" or anything else invalid, default to "Member"
+      if (rawCompanyRole === "Admin") {
+        companyRole = "Admin";
+      } else {
+        companyRole = "Member"; // Default for anything else including "Client"
+      }
+    }
 
     // Create invitation record
     const invitationData: {

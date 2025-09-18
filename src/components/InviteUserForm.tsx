@@ -15,17 +15,17 @@ interface InviteUserFormProps {
 }
 
 const InviteUserForm = ({ onInvitationSent, companyId, companyName }: InviteUserFormProps) => {
+  // Determine if this is being used in company context
+  const isCompanyContext = Boolean(companyId && companyName);
+  
   const [formData, setFormData] = useState({
     email: '',
     full_name: '',
-    role: 'Client', // Default to Client which will create a company Member
+    role: isCompanyContext ? 'Member' : 'Client', // Default to Member for company context
     client_name: companyName || ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
-  // Determine if this is being used in company context
-  const isCompanyContext = Boolean(companyId && companyName);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +70,7 @@ const InviteUserForm = ({ onInvitationSent, companyId, companyName }: InviteUser
       setFormData({
         email: '',
         full_name: '',
-        role: 'Client',
+        role: isCompanyContext ? 'Member' : 'Client',
         client_name: companyName || ''
       });
 
@@ -190,7 +190,7 @@ const InviteUserForm = ({ onInvitationSent, companyId, companyName }: InviteUser
               <SelectContent>
                 {isCompanyContext ? (
                   <>
-                    <SelectItem value="Client">Company Member</SelectItem>
+                    <SelectItem value="Member">Company Member</SelectItem>
                     <SelectItem value="Admin">Company Admin</SelectItem>
                   </>
                 ) : (
