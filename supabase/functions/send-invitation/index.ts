@@ -99,35 +99,14 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Check if user has admin permissions (global or company-specific)
-    console.log("Looking up user permissions for:", user.email);
-    
     const { data: userData, error: userError } = await supabaseClient
       .from("users")
       .select("role, auth_user_id")
-      .eq("email", user.email)
+      .eq("auth_user_id", user.id)
       .single();
 
-    console.log("User lookup result:", { userData, userError });
-
     if (userError) {
-      console.error("User lookup failed:", userError);
-      // Try alternative lookup by auth_user_id
-      const { data: userDataById, error: userByIdError } = await supabaseClient
-        .from("users")
-        .select("role, auth_user_id")
-        .eq("auth_user_id", user.id)
-        .single();
-      
-      console.log("User lookup by ID result:", { userDataById, userByIdError });
-      
-      if (userByIdError) {
-        console.error("Failed both user lookup methods:", { userError, userByIdError });
-        throw new Error("Failed to verify user permissions");
-      }
-      
-      // Use the data from ID lookup
-      userData.role = userDataById.role;
-      userData.auth_user_id = userDataById.auth_user_id;
+      throw new Error("Failed to verify user permissions");
     }
 
     // Check authorization: Global admin OR company admin
@@ -150,8 +129,8 @@ const handler = async (req: Request): Promise<Response> => {
       
       const { data: membershipData, error: membershipError } = await supabaseClient
         .from("company_memberships")
-        .select("company_id, role, companies(name)")
-        .eq("user_id", membershipUserId)
+        .select("company_id, role")
+        .eq("user_id", user.id)
         .eq("role", "Admin");
 
       console.log("Company membership query result:", { membershipData, membershipError });
@@ -168,15 +147,21 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error("Failed to verify user permissions");
       }
 
-      const membershipRows = (membershipData ?? []) as Array<{
-        company_id: string;
-        companies?: { name?: string | null } | null;
-      }>;
-
-      adminMemberships = membershipRows.map((membership) => ({
-        company_id: membership.company_id,
-        company_name: membership.companies?.name ?? null,
-      }));
+      if (membershipData && membershipData.length > 0) {
+        // Get company names separately to avoid join issues
+        for (const membership of membershipData) {
+          const { data: companyData } = await supabaseClient
+            .from("companies")
+            .select("name")
+            .eq("id", membership.company_id)
+            .single();
+          
+          adminMemberships.push({
+            company_id: membership.company_id,
+            company_name: companyData?.name ?? null,
+          });
+        }
+      }
 
       console.log("Admin memberships found:", adminMemberships);
 
@@ -281,6 +266,10 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Active invitation already exists for this email");
     }
 
+    // Prepare invitation payload - always Client for global role, company_role for membership
+    const invitationRole = "Client"; // Always Client for global role when inviting to company
+    const companyRole = targetCompanyId ? (requestBody.company_role || requestBody.role || "Member") : null;
+
     // Create invitation record
     const invitationData: {
       invited_by: string;
@@ -289,17 +278,19 @@ const handler = async (req: Request): Promise<Response> => {
       role: string;
       client_name: string | null;
       company_id?: string;
+      company_role?: string | null;
     } = {
       invited_by: user.id,
       email,
       full_name,
-      role,
+      role: invitationRole,
       client_name: requestedClientName || null,
     };
 
-    // Add company_id if provided (for company-specific invitations)
+    // Add company_id and company_role if provided (for company-specific invitations)
     if (targetCompanyId) {
       invitationData.company_id = targetCompanyId;
+      invitationData.company_role = companyRole;
     }
     
     const { data: invitation, error: inviteError } = await supabaseClient

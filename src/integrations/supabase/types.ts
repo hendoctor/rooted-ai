@@ -831,6 +831,7 @@ export type Database = {
           accepted_at: string | null
           client_name: string | null
           company_id: string | null
+          company_role: string
           created_at: string
           email: string
           expires_at: string
@@ -845,6 +846,7 @@ export type Database = {
           accepted_at?: string | null
           client_name?: string | null
           company_id?: string | null
+          company_role?: string
           created_at?: string
           email: string
           expires_at?: string
@@ -859,6 +861,7 @@ export type Database = {
           accepted_at?: string | null
           client_name?: string | null
           company_id?: string | null
+          company_role?: string
           created_at?: string
           email?: string
           expires_at?: string

@@ -42,6 +42,9 @@ const InviteUserForm = ({ onInvitationSent, companyId, companyName }: InviteUser
       const { data, error } = await supabase.functions.invoke('send-invitation', {
         body: {
           ...formData,
+          // Force Client role for company invitations, use company_role for company membership
+          role: isCompanyContext ? 'Client' : formData.role,
+          company_role: isCompanyContext ? formData.role : undefined,
           company_id: companyId,
           client_name: companyName || formData.client_name
         },
