@@ -453,6 +453,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
             role: editForm.role,
             company_id: nextCompanyId,
             client_name: nextClientName,
+            company_role: editForm.companyRole,
           })
           .eq('id', editingUser.invitation_id);
 
