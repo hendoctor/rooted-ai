@@ -4,13 +4,12 @@ import { Download } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import PWAInstallDialog from './PWAInstallDialog';
 import ProfileMenu from './ProfileMenu';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { useAuth } from '@/hooks/useAuth';
 import { SimpleMenuManager } from '@/utils/simpleMenuUtils';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
-import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -184,9 +183,7 @@ const Header = () => {
                     <Download className="w-5 h-5" />
                   </Button>
                 )}
-                {user && (
-                  <NotificationCenter onNavigate={handleNotificationNavigate} />
-                )}
+                {user && <NotificationCenter />}
               </div>
               
               {/* Auth buttons */}

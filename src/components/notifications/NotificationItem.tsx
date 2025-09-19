@@ -1,28 +1,26 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { 
-  Bell, 
+  Megaphone, 
   FileText, 
   Bot, 
   Link, 
   HelpCircle, 
-  Video, 
+  Users, 
   BarChart3,
-  Circle 
+  Circle
 } from 'lucide-react';
 import { Notification } from '@/hooks/useNotifications';
-import { Button } from '@/components/ui/button';
 
 interface NotificationItemProps {
   notification: Notification;
-  onMarkAsRead: (id: string) => void;
-  onNavigate?: (notification: Notification) => void;
+  onClick: (notification: Notification) => void;
 }
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
     case 'announcement':
-      return <Bell className="w-4 h-4" />;
+      return <Megaphone className="w-4 h-4" />;
     case 'resource':
       return <FileText className="w-4 h-4" />;
     case 'ai_tool':
@@ -32,97 +30,95 @@ const getNotificationIcon = (type: string) => {
     case 'faq':
       return <HelpCircle className="w-4 h-4" />;
     case 'coaching':
-      return <Video className="w-4 h-4" />;
+      return <Users className="w-4 h-4" />;
     case 'kpi':
       return <BarChart3 className="w-4 h-4" />;
     default:
-      return <Bell className="w-4 h-4" />;
+      return <Circle className="w-4 h-4" />;
   }
 };
 
 const getPriorityColor = (priority: string) => {
   switch (priority) {
     case 'high':
-      return 'text-red-500';
+      return 'text-destructive';
     case 'medium':
       return 'text-forest-green';
     case 'low':
-      return 'text-slate-gray';
+      return 'text-muted-foreground';
     default:
-      return 'text-slate-gray';
+      return 'text-muted-foreground';
   }
 };
 
 export const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
-  onMarkAsRead,
-  onNavigate
+  onClick,
 }) => {
   const handleClick = () => {
-    if (!notification.is_read) {
-      onMarkAsRead(notification.id);
-    }
-    onNavigate?.(notification);
+    onClick(notification);
   };
 
-  const handleMarkAsRead = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onMarkAsRead(notification.id);
-  };
+  const timeAgo = formatDistanceToNow(new Date(notification.created_at), { 
+    addSuffix: true 
+  });
 
   return (
     <div
-      className={`p-3 border-b border-border last:border-b-0 cursor-pointer transition-all duration-200 hover:bg-muted/50 ${
-        !notification.is_read ? 'bg-forest-green/5 border-l-4 border-l-forest-green' : ''
-      }`}
       onClick={handleClick}
+      className={`
+        group p-4 cursor-pointer transition-all duration-200
+        hover:bg-muted/50 border-l-4
+        ${notification.is_read 
+          ? 'border-l-transparent bg-background' 
+          : 'border-l-forest-green bg-forest-green/5'
+        }
+      `}
     >
-      <div className="flex items-start gap-3">
-        <div className={`flex-shrink-0 p-2 rounded-full bg-muted ${getPriorityColor(notification.priority)}`}>
+      <div className="flex items-start space-x-3">
+        {/* Icon */}
+        <div className={`
+          flex-shrink-0 p-2 rounded-full 
+          ${notification.is_read ? 'bg-muted' : 'bg-forest-green/10'}
+          ${getPriorityColor(notification.priority)}
+        `}>
           {getNotificationIcon(notification.notification_type)}
         </div>
-        
+
+        {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <h4 className={`font-medium text-sm leading-tight ${
-              !notification.is_read ? 'text-foreground' : 'text-muted-foreground'
-            }`}>
-              {notification.title}
-            </h4>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h4 className={`
+                text-sm font-medium leading-tight
+                ${notification.is_read ? 'text-muted-foreground' : 'text-foreground'}
+              `}>
+                {notification.title}
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                {notification.message}
+              </p>
+              {notification.content_title && (
+                <p className="text-xs font-medium text-forest-green mt-1">
+                  {notification.content_title}
+                </p>
+              )}
+            </div>
             
             {!notification.is_read && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleMarkAsRead}
-                className="flex-shrink-0 h-6 w-6 p-0 hover:bg-forest-green/20"
-                aria-label="Mark as read"
-              >
-                <Circle className="w-3 h-3 text-forest-green" />
-              </Button>
+              <div className="w-2 h-2 bg-forest-green rounded-full flex-shrink-0 ml-2 mt-1"></div>
             )}
           </div>
-          
-          <p className={`text-xs mt-1 line-clamp-2 ${
-            !notification.is_read ? 'text-muted-foreground' : 'text-muted-foreground/80'
-          }`}>
-            {notification.message}
-          </p>
-          
-          {notification.content_title && (
-            <p className="text-xs text-forest-green mt-1 font-medium">
-              {notification.content_title}
-            </p>
-          )}
-          
+
           <div className="flex items-center justify-between mt-2">
-            <time className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-            </time>
-            
-            <span className={`text-xs px-2 py-1 rounded-full bg-muted ${getPriorityColor(notification.priority)}`}>
-              {notification.priority}
+            <span className="text-xs text-muted-foreground">
+              {timeAgo}
             </span>
+            {notification.priority === 'high' && (
+              <span className="text-xs font-medium text-destructive bg-destructive/10 px-2 py-1 rounded">
+                High Priority
+              </span>
+            )}
           </div>
         </div>
       </div>

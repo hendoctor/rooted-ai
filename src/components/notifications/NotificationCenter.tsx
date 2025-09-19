@@ -1,87 +1,109 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { NotificationBell } from './NotificationBell';
 import { NotificationDropdown } from './NotificationDropdown';
 import { useNotifications, Notification } from '@/hooks/useNotifications';
-import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
-interface NotificationCenterProps {
-  onNavigate?: (notification: Notification) => void;
-}
-
-export const NotificationCenter: React.FC<NotificationCenterProps> = ({
-  onNavigate
-}) => {
+export const NotificationCenter: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
-  
-  const {
-    notifications,
-    unreadCount,
-    loading,
-    error,
-    markAsRead,
+  const { 
+    notifications, 
+    unreadCount, 
+    loading, 
+    markAsRead, 
     markAllAsRead,
-    refresh
+    error 
   } = useNotifications();
+  const { toast } = useToast();
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      // Mark as read if unread
+      if (!notification.is_read) {
+        await markAsRead(notification.id);
       }
-    };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+      // Navigate to content if URL exists
+      if (notification.content_url) {
+        window.open(notification.content_url, '_blank');
+      }
 
-  // Don't render if user is not logged in
-  if (!user) {
-    return null;
-  }
+      // Close dropdown
+      setIsOpen(false);
 
-  const handleBellClick = () => {
-    setIsOpen(!isOpen);
+      // Show toast confirmation
+      toast({
+        title: "Notification opened",
+        description: notification.content_title || notification.title,
+      });
+    } catch (error) {
+      console.error('Error handling notification click:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process notification",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleMarkAsRead = (id: string) => {
-    markAsRead(id);
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllAsRead();
+      toast({
+        title: "All notifications marked as read",
+        description: `${unreadCount} notifications updated`,
+      });
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as read",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    markAllAsRead();
+  const handleClose = () => {
     setIsOpen(false);
   };
 
-  const handleNavigate = (notification: Notification) => {
-    setIsOpen(false);
-    onNavigate?.(notification);
-  };
+  // Show error toast if there's an error
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Notification Error",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <NotificationBell
-        unreadCount={unreadCount}
-        onClick={handleBellClick}
-        isOpen={isOpen}
-      />
-      
-      {isOpen && (
-        <div className="absolute right-0 top-full mt-2 z-50">
-          <NotificationDropdown
-            notifications={notifications}
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <div>
+          <NotificationBell
             unreadCount={unreadCount}
-            loading={loading}
-            error={error}
-            onMarkAsRead={handleMarkAsRead}
-            onMarkAllAsRead={handleMarkAllAsRead}
-            onRefresh={refresh}
-            onNavigate={handleNavigate}
+            onClick={() => setIsOpen(!isOpen)}
+            isOpen={isOpen}
           />
         </div>
-      )}
-    </div>
+      </PopoverTrigger>
+      <PopoverContent 
+        align="end" 
+        className="w-80 p-0 border-0 shadow-lg"
+        sideOffset={8}
+      >
+        <NotificationDropdown
+          notifications={notifications}
+          unreadCount={unreadCount}
+          loading={loading}
+          onMarkAllAsRead={handleMarkAllAsRead}
+          onNotificationClick={handleNotificationClick}
+          onClose={handleClose}
+        />
+      </PopoverContent>
+    </Popover>
   );
 };
