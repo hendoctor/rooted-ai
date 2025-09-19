@@ -1008,6 +1008,10 @@ export type Database = {
         Args: { token_input: string }
         Returns: Json
       }
+      can_access_full_user_profile: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       check_contact_form_rate_limit: {
         Args: { client_ip: unknown }
         Returns: boolean
@@ -1070,6 +1074,17 @@ export type Database = {
           resource_count: number
           useful_link_count: number
           user_count: number
+        }[]
+      }
+      get_company_member_profiles: {
+        Args: { company_id_param: string }
+        Returns: {
+          avatar_url: string
+          client_name: string
+          created_at: string
+          display_name: string
+          role: string
+          user_id: string
         }[]
       }
       get_company_members_detailed: {
