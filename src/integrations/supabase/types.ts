@@ -951,13 +951,6 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "user_invitations_company_id_fkey1"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "company_memberships"
-            referencedColumns: ["id"]
-          },
         ]
       }
       users: {
