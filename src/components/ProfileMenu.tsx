@@ -37,6 +37,27 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
     };
 
     fetchAvatar();
+
+    // Set up real-time subscription to listen for avatar changes
+    const channel = supabase
+      .channel('user-avatar-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `auth_user_id=eq.${user?.id}`
+        },
+        (payload) => {
+          setAvatarUrl(payload.new.avatar_url || '');
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   if (!user) return null;

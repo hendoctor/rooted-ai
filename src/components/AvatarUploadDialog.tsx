@@ -101,6 +101,45 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
     }
   };
 
+  const handleRemove = async () => {
+    if (!user) return;
+
+    setUploading(true);
+    try {
+      const fileName = `${user.id}.jpg`;
+
+      // Remove from storage (ignore error if file doesn't exist)
+      await supabase.storage
+        .from('avatars')
+        .remove([fileName]);
+
+      // Update user record to remove avatar_url
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: null })
+        .eq('auth_user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      onAvatarUpdated('');
+      onOpenChange(false);
+      setImageSrc('');
+      
+      toast({
+        title: "Success",
+        description: "Profile picture removed successfully"
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Remove failed",
+        description: error.message || "Failed to remove profile picture"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const resetCrop = () => {
     setCrop({ x: 0, y: 0 });
     setZoom(1);
@@ -169,13 +208,25 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          {imageSrc && (
-            <Button onClick={handleUpload} disabled={uploading}>
-              {uploading ? 'Uploading...' : 'Upload'}
+        <DialogFooter className="flex-col gap-2">
+          <div className="flex gap-2 w-full">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            {imageSrc && (
+              <Button onClick={handleUpload} disabled={uploading}>
+                {uploading ? 'Uploading...' : 'Upload'}
+              </Button>
+            )}
+          </div>
+          {!imageSrc && (
+            <Button 
+              variant="destructive" 
+              onClick={handleRemove} 
+              disabled={uploading}
+              className="w-full"
+            >
+              {uploading ? 'Removing...' : 'Remove Current Photo'}
             </Button>
           )}
         </DialogFooter>
