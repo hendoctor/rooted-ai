@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ import { activityLogger } from '@/utils/activityLogger';
 import AccessDenied from './AccessDenied';
 import ActivityLogsTable from '@/components/admin/ActivityLogsTable';
 import AdminPortalPreview from '@/components/admin/AdminPortalPreview';
+import CompanyUsersDialog from '@/components/admin/CompanyUsersDialog';
 
 interface CompanyWithCount {
   id: string;
@@ -37,8 +38,8 @@ const AdminDashboard: React.FC = () => {
   const [companyForm, setCompanyForm] = useState({ name: '', slug: '' });
   const [isCompanyUsersDialogOpen, setIsCompanyUsersDialogOpen] = useState(false);
   const [selectedCompanyName, setSelectedCompanyName] = useState('');
+  const [selectedCompanySlug, setSelectedCompanySlug] = useState('');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
-  const [userToAdd, setUserToAdd] = useState('');
   const { toast } = useToast();
 
   // Enhanced data loading with auth state handling
@@ -185,10 +186,10 @@ const AdminDashboard: React.FC = () => {
     setIsCompanyDialogOpen(true);
   };
 
-  const openCompanyUsersDialog = (company: CompanyWithCount) => {
+  const openCompanyUsersDialog = (company: { id: string; name: string; slug: string }) => {
     setSelectedCompanyName(company.name);
+    setSelectedCompanySlug(company.slug);
     setSelectedCompanyId(company.id);
-    setUserToAdd('');
     setIsCompanyUsersDialogOpen(true);
   };
 
@@ -258,7 +259,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Company Portals Section */}
-        <AdminPortalPreview 
+        <AdminPortalPreview
           onAddCompany={() => openCompanyDialog()}
           onEditCompany={(company) => openCompanyDialog({ id: company.id, name: company.name, slug: company.slug, userCount: 0 })}
           onDeleteCompany={deleteCompany}
@@ -318,6 +319,20 @@ const AdminDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
+        <CompanyUsersDialog
+          open={isCompanyUsersDialogOpen}
+          onOpenChange={(open) => {
+            setIsCompanyUsersDialogOpen(open);
+            if (!open) {
+              setSelectedCompanyId(null);
+              setSelectedCompanyName('');
+              setSelectedCompanySlug('');
+            }
+          }}
+          companyId={selectedCompanyId}
+          companyName={selectedCompanyName}
+          companySlug={selectedCompanySlug}
+        />
       </div>
       <Footer />
     </div>
