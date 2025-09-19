@@ -73,7 +73,7 @@ export const usePortalContent = ({
 
       // Fetch enhanced session data along with other content
       const [contentResult, sessionsResult] = await Promise.all([
-        supabase.rpc('get_company_portal_content', { p_company_id: companyId }),
+        supabase.rpc('get_company_portal_content', { company_id_param: companyId }),
         supabase.rpc('get_session_with_leader_info', { company_id_param: companyId })
       ]);
 
@@ -81,7 +81,8 @@ export const usePortalContent = ({
         throw contentResult.error;
       }
 
-      const parsedContent = contentResult.data as any;
+      // The function returns a single row with columns, so we need the first item
+      const parsedContent = contentResult.data?.[0] as any;
       const sessionData = sessionsResult.data || [];
       
       if (parsedContent?.error) {
