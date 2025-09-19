@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ExternalLink, Users, FileText, MessageSquare, Brain, HelpCircle, GraduationCap, BarChart3, Edit2, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -18,6 +19,7 @@ interface PortalStats {
   coaching_count: number;
   kpi_count: number;
   last_updated: string;
+  logo_url?: string;
 }
 
 interface PortalStatsCardProps {
@@ -43,18 +45,36 @@ const PortalStatsCard: React.FC<PortalStatsCardProps> = ({ stats, onEditCompany,
     { icon: BarChart3, count: stats.kpi_count, label: 'KPIs', color: 'bg-red-500/10 text-red-700 dark:text-red-300' }
   ];
 
+  // Helper function to get company initials
+  const getCompanyInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <Card className="relative overflow-hidden border border-border/50 hover:border-border transition-all duration-200 hover:shadow-lg h-full flex flex-col">
       <CardHeader className="pb-2">
-        <div className="space-y-1">
-          <CardTitle className="text-lg font-semibold text-forest-green">{stats.company_name}</CardTitle>
-          <CardDescription className="flex items-center gap-2">
-            <code className="text-xs bg-muted px-2 py-1 rounded">/{stats.company_slug}</code>
-            <Badge variant="outline" className="text-xs">
-              <Users className="w-3 h-3 mr-1" />
-              {stats.user_count} {stats.user_count === 1 ? 'user' : 'users'}
-            </Badge>
-          </CardDescription>
+        <div className="flex items-start justify-between">
+          <div className="space-y-1 flex-1">
+            <CardTitle className="text-lg font-semibold text-forest-green">{stats.company_name}</CardTitle>
+            <CardDescription className="flex items-center gap-2">
+              <code className="text-xs bg-muted px-2 py-1 rounded">/{stats.company_slug}</code>
+              <Badge variant="outline" className="text-xs">
+                <Users className="w-3 h-3 mr-1" />
+                {stats.user_count} {stats.user_count === 1 ? 'user' : 'users'}
+              </Badge>
+            </CardDescription>
+          </div>
+          <Avatar className="h-10 w-10 border-2 border-border">
+            <AvatarImage src={stats.logo_url} alt={`${stats.company_name} logo`} />
+            <AvatarFallback className="text-xs font-semibold bg-muted">
+              {getCompanyInitials(stats.company_name)}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </CardHeader>
 
