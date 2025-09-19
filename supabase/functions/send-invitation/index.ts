@@ -358,16 +358,25 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send invitation email
     const emailResponse = await resend.emails.send({
-      from: "Team <hi@rootedai.tech>",
+      from: "RootedAI Team <hi@rootedai.tech>",
       to: [email],
-      subject: "You've been invited to join our platform!",
+      subject: "RootedAI - Join our Partner App!",
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Welcome to Our Platform</title>
+          <title>Welcome to RootedAI</title>
+          <!--[if mso]>
+          <noscript>
+            <xml>
+              <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+              </o:OfficeDocumentSettings>
+            </xml>
+          </noscript>
+          <![endif]-->
           <style>
             body {
               font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -377,6 +386,8 @@ const handler = async (req: Request): Promise<Response> => {
               margin: 0 auto;
               padding: 20px;
               background-color: #f8f6f1;
+              -webkit-text-size-adjust: 100%;
+              -ms-text-size-adjust: 100%;
             }
             .container {
               background-color: white;
@@ -391,27 +402,47 @@ const handler = async (req: Request): Promise<Response> => {
               border-bottom: 2px solid #2d5016;
             }
             .logo {
-              width: 60px;
-              height: 60px;
-              background-color: #2d5016;
-              border-radius: 50%;
+              width: 80px;
+              height: 80px;
               margin: 0 auto 20px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-size: 24px;
-              font-weight: bold;
+              display: block;
+              border-radius: 8px;
             }
             h1 {
               color: #2d5016;
-              margin: 0;
+              margin: 0 0 10px 0;
               font-size: 28px;
+              font-weight: 700;
+            }
+            .tagline {
+              color: #5a6c7d;
+              font-size: 16px;
+              font-style: italic;
+              margin: 0 0 20px 0;
+              font-weight: 400;
             }
             .welcome-text {
               font-size: 18px;
               margin-bottom: 30px;
               color: #5a6c7d;
+            }
+            @media only screen and (max-width: 600px) {
+              body {
+                padding: 10px;
+              }
+              .container {
+                padding: 20px;
+              }
+              .logo {
+                width: 60px;
+                height: 60px;
+              }
+              h1 {
+                font-size: 24px;
+              }
+              .tagline {
+                font-size: 14px;
+              }
             }
             .role-badge {
               display: inline-block;
@@ -456,8 +487,9 @@ const handler = async (req: Request): Promise<Response> => {
         <body>
           <div class="container">
             <div class="header">
-              <div class="logo">P</div>
-              <h1>Welcome to Our Platform!</h1>
+              <img src="https://rootedai.tech/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png" alt="RootedAI Logo" class="logo" style="max-width: 80px; height: auto; display: block; margin: 0 auto 20px;">
+              <h1>Welcome to RootedAI</h1>
+              <p class="tagline">Grow Smarter. Stay Rooted.</p>
             </div>
             
             <p class="welcome-text">
