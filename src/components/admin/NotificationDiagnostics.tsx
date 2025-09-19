@@ -57,6 +57,8 @@ interface NotificationHistoryGroup {
   entries: NotificationHistoryEntry[];
 }
 
+const HISTORY_BATCH_SIZE = 5;
+
 export const NotificationDiagnostics: React.FC = () => {
   const [diagnostics, setDiagnostics] = useState<DiagnosticData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -65,6 +67,7 @@ export const NotificationDiagnostics: React.FC = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [notificationHistory, setNotificationHistory] = useState<NotificationHistoryEntry[]>([]);
+  const [visibleHistoryCounts, setVisibleHistoryCounts] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   const fetchDiagnostics = async () => {
@@ -227,6 +230,35 @@ export const NotificationDiagnostics: React.FC = () => {
       a.companyName.localeCompare(b.companyName)
     );
   }, [notificationHistory]);
+
+  useEffect(() => {
+    setVisibleHistoryCounts((previous) => {
+      const nextCounts: Record<string, number> = {};
+
+      groupedHistory.forEach((group) => {
+        const defaultCount = Math.min(HISTORY_BATCH_SIZE, group.entries.length);
+        const previousCount = previous[group.companyId];
+
+        nextCounts[group.companyId] = Math.min(
+          group.entries.length,
+          previousCount ?? defaultCount
+        );
+      });
+
+      return nextCounts;
+    });
+  }, [groupedHistory]);
+
+  const isAllHistoryLoaded = useMemo(() => {
+    if (groupedHistory.length === 0) return false;
+
+    return groupedHistory.every((group) => {
+      const visibleCount = visibleHistoryCounts[group.companyId] ??
+        Math.min(HISTORY_BATCH_SIZE, group.entries.length);
+
+      return visibleCount >= group.entries.length;
+    });
+  }, [groupedHistory, visibleHistoryCounts]);
 
   return (
     <Dialog open={isHistoryDialogOpen} onOpenChange={handleHistoryOpenChange}>
@@ -392,7 +424,10 @@ export const NotificationDiagnostics: React.FC = () => {
                     </div>
 
                     <div className="mt-3 space-y-3">
-                      {group.entries.slice(0, 5).map((entry) => (
+                      {group.entries
+                        .slice(0, visibleHistoryCounts[group.companyId] ??
+                          Math.min(HISTORY_BATCH_SIZE, group.entries.length))
+                        .map((entry) => (
                         <div
                           key={entry.id}
                           className="rounded-md border border-border/60 bg-background/60 p-3 shadow-sm"
@@ -423,9 +458,40 @@ export const NotificationDiagnostics: React.FC = () => {
                         </div>
                       ))}
 
-                      {group.entries.length > 5 && (
-                        <p className="text-xs text-muted-foreground">
-                          Showing latest 5 of {group.entries.length} notifications for this company.
+                      {group.entries.length >
+                        (visibleHistoryCounts[group.companyId] ??
+                          Math.min(HISTORY_BATCH_SIZE, group.entries.length)) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setVisibleHistoryCounts((prev) => {
+                              const currentVisible = prev[group.companyId] ??
+                                Math.min(HISTORY_BATCH_SIZE, group.entries.length);
+                              const nextVisible = Math.min(
+                                currentVisible + HISTORY_BATCH_SIZE,
+                                group.entries.length
+                              );
+
+                              return {
+                                ...prev,
+                                [group.companyId]: nextVisible,
+                              };
+                            })
+                          }
+                          className="w-full border-forest-green text-forest-green hover:bg-forest-green/10"
+                        >
+                          Load more notifications
+                        </Button>
+                      )}
+
+                      {group.entries.length <=
+                        (visibleHistoryCounts[group.companyId] ??
+                          Math.min(HISTORY_BATCH_SIZE, group.entries.length)) && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          Showing all {group.entries.length}{' '}
+                          {group.entries.length === 1 ? 'notification' : 'notifications'}
+                          {' '}for this company.
                         </p>
                       )}
                     </div>
@@ -434,6 +500,12 @@ export const NotificationDiagnostics: React.FC = () => {
               </div>
             )}
           </ScrollArea>
+        )}
+
+        {isAllHistoryLoaded && (
+          <div className="pt-4 text-center text-xs text-muted-foreground">
+            You're all caught up on notification history.
+          </div>
         )}
 
         <DialogFooter className="gap-2 pt-2">
