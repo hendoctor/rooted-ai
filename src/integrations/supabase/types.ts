@@ -1078,6 +1078,7 @@ export type Database = {
           faq_count: number
           kpi_count: number
           last_updated: string
+          logo_url: string
           resource_count: number
           useful_link_count: number
           user_count: number
