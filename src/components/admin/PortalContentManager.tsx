@@ -27,7 +27,8 @@ import {
   X,
   Copy
 } from 'lucide-react';
-import SortableTable, { Column } from './SortableTable';
+import SortableTable, { Column, TableConfig } from './SortableTable';
+import { TableViewManager, TableViewConfig } from './TableViewManager';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -123,6 +124,14 @@ type SectionKey =
   | 'aiTools';
 
 const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?: string }> = ({ companies, currentAdmin }) => {
+  // Table view configurations state
+  const [tableConfigs, setTableConfigs] = useState<Record<string, TableViewConfig>>({});
+  
+  const updateTableConfig = (contentType: string, config: TableViewConfig) => {
+    setTableConfigs(prev => ({ ...prev, [contentType]: config }));
+  };
+
+  // Existing state variables
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [resources, setResources] = useState<Resource[]>([]);
   const [links, setLinks] = useState<UsefulLink[]>([]);
@@ -1567,9 +1576,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                 <SortableTable
                   data={announcements}
                   columns={announcementColumns}
+                  externalConfig={tableConfigs.announcements}
+                  onConfigChange={(config) => updateTableConfig('announcements', config)}
                   toolbar={(columnsButton) => (
-                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                      <DialogTrigger asChild>
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-between">
+                      <TableViewManager 
+                        contentType="announcements"
+                        currentConfig={tableConfigs.announcements || { visibleColumns: announcementColumns.map(c => c.key), columnWidths: {} }}
+                        onConfigChange={(config) => updateTableConfig('announcements', config)}
+                      />
+                      <div className="flex gap-2">
+                        <DialogTrigger asChild>
                         <Button
                           size="sm"
                           className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
@@ -1577,8 +1594,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                           <Plus className="h-4 w-4 mr-1" />
                           Add Announcement
                         </Button>
-                      </DialogTrigger>
-                      {columnsButton}
+                        </DialogTrigger>
+                        {columnsButton}
+                      </div>
                     </div>
                   )}
                 />
@@ -1685,9 +1703,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                 <SortableTable
                   data={resources}
                   columns={resourceColumns}
+                  externalConfig={tableConfigs.resources}
+                  onConfigChange={(config) => updateTableConfig('resources', config)}
                   toolbar={(columnsButton) => (
-                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                      <DialogTrigger asChild>
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-between">
+                      <TableViewManager 
+                        contentType="resources"
+                        currentConfig={tableConfigs.resources || { visibleColumns: resourceColumns.map(c => c.key), columnWidths: {} }}
+                        onConfigChange={(config) => updateTableConfig('resources', config)}
+                      />
+                      <div className="flex gap-2">
+                        <DialogTrigger asChild>
                         <Button
                           size="sm"
                           className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
@@ -1695,8 +1721,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                           <Plus className="h-4 w-4 mr-1" />
                           Add Resource
                         </Button>
-                      </DialogTrigger>
-                      {columnsButton}
+                        </DialogTrigger>
+                        {columnsButton}
+                      </div>
                     </div>
                   )}
                 />
@@ -1792,9 +1819,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                 <SortableTable
                   data={links}
                   columns={linkColumns}
+                  externalConfig={tableConfigs.links}
+                  onConfigChange={(config) => updateTableConfig('links', config)}
                   toolbar={(columnsButton) => (
-                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                      <DialogTrigger asChild>
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-between">
+                      <TableViewManager 
+                        contentType="links"
+                        currentConfig={tableConfigs.links || { visibleColumns: linkColumns.map(c => c.key), columnWidths: {} }}
+                        onConfigChange={(config) => updateTableConfig('links', config)}
+                      />
+                      <div className="flex gap-2">
+                        <DialogTrigger asChild>
                         <Button
                           size="sm"
                           className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
@@ -1802,8 +1837,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                           <Plus className="h-4 w-4 mr-1" />
                           Add Link
                         </Button>
-                      </DialogTrigger>
-                      {columnsButton}
+                        </DialogTrigger>
+                        {columnsButton}
+                      </div>
                     </div>
                   )}
                 />
@@ -1894,9 +1930,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                 <SortableTable
                   data={coachings}
                   columns={coachingColumns}
+                  externalConfig={tableConfigs.coaching}
+                  onConfigChange={(config) => updateTableConfig('coaching', config)}
                   toolbar={(columnsButton) => (
-                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                      <DialogTrigger asChild>
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-between">
+                      <TableViewManager 
+                        contentType="coaching"
+                        currentConfig={tableConfigs.coaching || { visibleColumns: coachingColumns.map(c => c.key), columnWidths: {} }}
+                        onConfigChange={(config) => updateTableConfig('coaching', config)}
+                      />
+                      <div className="flex gap-2">
+                        <DialogTrigger asChild>
                         <Button
                           size="sm"
                           className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
@@ -1904,8 +1948,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                           <Plus className="h-4 w-4 mr-1" />
                           Add Coaching
                         </Button>
-                      </DialogTrigger>
-                      {columnsButton}
+                        </DialogTrigger>
+                        {columnsButton}
+                      </div>
                     </div>
                   )}
                 />
@@ -2108,9 +2153,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                 <SortableTable
                   data={reports}
                   columns={reportColumns}
+                  externalConfig={tableConfigs.reports}
+                  onConfigChange={(config) => updateTableConfig('reports', config)}
                   toolbar={(columnsButton) => (
-                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                      <DialogTrigger asChild>
+                    <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-between">
+                      <TableViewManager 
+                        contentType="reports"
+                        currentConfig={tableConfigs.reports || { visibleColumns: reportColumns.map(c => c.key), columnWidths: {} }}
+                        onConfigChange={(config) => updateTableConfig('reports', config)}
+                      />
+                      <div className="flex gap-2">
+                        <DialogTrigger asChild>
                         <Button
                           size="sm"
                           className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
@@ -2118,8 +2171,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                           <Plus className="h-4 w-4 mr-1" />
                           Add Report
                         </Button>
-                      </DialogTrigger>
-                      {columnsButton}
+                        </DialogTrigger>
+                        {columnsButton}
+                      </div>
                     </div>
                   )}
                 />
@@ -2262,9 +2316,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                 <SortableTable
                 data={faqs}
                 columns={faqColumns}
+                externalConfig={tableConfigs.faqs}
+                onConfigChange={(config) => updateTableConfig('faqs', config)}
                 toolbar={(columnsButton) => (
-                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                    <DialogTrigger asChild>
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-between">
+                    <TableViewManager 
+                      contentType="faqs"
+                      currentConfig={tableConfigs.faqs || { visibleColumns: faqColumns.map(c => c.key), columnWidths: {} }}
+                      onConfigChange={(config) => updateTableConfig('faqs', config)}
+                    />
+                    <div className="flex gap-2">
+                      <DialogTrigger asChild>
                       <Button
                         size="sm"
                         className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
@@ -2272,8 +2334,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                         <Plus className="h-4 w-4 mr-1" />
                         Add FAQ
                       </Button>
-                    </DialogTrigger>
-                    {columnsButton}
+                      </DialogTrigger>
+                      {columnsButton}
+                    </div>
                   </div>
                 )}
               />
@@ -2369,9 +2432,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                 <SortableTable
                 data={aiTools}
                 columns={aiToolColumns}
+                externalConfig={tableConfigs.aiTools}
+                onConfigChange={(config) => updateTableConfig('aiTools', config)}
                 toolbar={(columnsButton) => (
-                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-end">
-                    <DialogTrigger asChild>
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-between">
+                    <TableViewManager 
+                      contentType="aiTools"
+                      currentConfig={tableConfigs.aiTools || { visibleColumns: aiToolColumns.map(c => c.key), columnWidths: {} }}
+                      onConfigChange={(config) => updateTableConfig('aiTools', config)}
+                    />
+                    <div className="flex gap-2">
+                      <DialogTrigger asChild>
                       <Button
                         size="sm"
                         className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
@@ -2379,8 +2450,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                         <Plus className="h-4 w-4 mr-2" />
                         Add AI Tool
                       </Button>
-                    </DialogTrigger>
-                    {columnsButton}
+                      </DialogTrigger>
+                      {columnsButton}
+                    </div>
                   </div>
                 )}
               />

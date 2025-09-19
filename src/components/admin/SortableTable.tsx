@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,13 @@ export interface Column<T> {
   initialWidth?: number;
 }
 
+export interface TableConfig {
+  visibleColumns: string[];
+  columnWidths: Record<string, number>;
+  sortKey?: string;
+  sortAsc?: boolean;
+}
+
 interface SortableTableProps<T> {
   data: T[];
   columns: Column<T>[];
@@ -25,6 +32,8 @@ interface SortableTableProps<T> {
   defaultAsc?: boolean;
   rowClassName?: (item: T) => string;
   scrollAreaClassName?: string;
+  externalConfig?: TableConfig;
+  onConfigChange?: (config: TableConfig) => void;
 }
 
 function get(obj: unknown, path: string) {
@@ -41,6 +50,8 @@ export function SortableTable<T extends { id: string }>({
   defaultAsc = true,
   rowClassName,
   scrollAreaClassName,
+  externalConfig,
+  onConfigChange,
 }: SortableTableProps<T>) {
   const [sortKey, setSortKey] = useState<string>(defaultSortKey || columns[0]?.key);
   const [asc, setAsc] = useState(defaultAsc);
@@ -52,6 +63,29 @@ export function SortableTable<T extends { id: string }>({
     });
     return init;
   });
+
+  // Apply external configuration when it changes
+  useEffect(() => {
+    if (externalConfig) {
+      setVisible(externalConfig.visibleColumns);
+      setWidths(externalConfig.columnWidths);
+      setSortKey(externalConfig.sortKey || columns[0]?.key);
+      setAsc(externalConfig.sortAsc ?? true);
+    }
+  }, [externalConfig, columns]);
+
+  // Emit configuration changes
+  useEffect(() => {
+    if (onConfigChange) {
+      const config: TableConfig = {
+        visibleColumns: visible,
+        columnWidths: widths,
+        sortKey,
+        sortAsc: asc,
+      };
+      onConfigChange(config);
+    }
+  }, [visible, widths, sortKey, asc, onConfigChange]);
 
   const sorted = useMemo(() => {
     const items = [...data];

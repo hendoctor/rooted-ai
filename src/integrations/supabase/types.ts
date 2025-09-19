@@ -64,6 +64,39 @@ export type Database = {
           },
         ]
       }
+      admin_table_views: {
+        Row: {
+          column_config: Json
+          content_type: string
+          created_at: string
+          id: string
+          is_default: boolean
+          updated_at: string
+          user_id: string
+          view_name: string
+        }
+        Insert: {
+          column_config?: Json
+          content_type: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          updated_at?: string
+          user_id: string
+          view_name: string
+        }
+        Update: {
+          column_config?: Json
+          content_type?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          updated_at?: string
+          user_id?: string
+          view_name?: string
+        }
+        Relationships: []
+      }
       adoption_coaching: {
         Row: {
           contact: string | null
@@ -287,6 +320,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          logo_filename: string | null
+          logo_url: string | null
           name: string
           settings: Json | null
           slug: string
@@ -295,6 +330,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          logo_filename?: string | null
+          logo_url?: string | null
           name: string
           settings?: Json | null
           slug: string
@@ -303,6 +340,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          logo_filename?: string | null
+          logo_url?: string | null
           name?: string
           settings?: Json | null
           slug?: string
@@ -1072,6 +1111,7 @@ export type Database = {
           faq_count: number
           kpi_count: number
           last_updated: string
+          logo_url: string
           resource_count: number
           useful_link_count: number
           user_count: number
