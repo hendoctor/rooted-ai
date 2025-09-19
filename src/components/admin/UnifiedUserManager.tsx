@@ -81,7 +81,8 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
     email: '',
     full_name: '',
     role: 'Client',
-    companyId: ''
+    companyId: '',
+    companyRole: 'Member' as 'Admin' | 'Member'
   });
 
   const [editForm, setEditForm] = useState({
@@ -208,7 +209,8 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
           full_name: inviteForm.full_name,
           role: inviteForm.role,
           client_name: clientName,
-          company_id: inviteForm.companyId || undefined
+          company_id: inviteForm.companyId || undefined,
+          company_role: inviteForm.companyId ? inviteForm.companyRole : undefined
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -223,7 +225,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
         description: `Successfully sent invitation to ${inviteForm.email}`,
       });
 
-      setInviteForm({ email: '', full_name: '', role: 'Client', companyId: '' });
+      setInviteForm({ email: '', full_name: '', role: 'Client', companyId: '', companyRole: 'Member' });
       setIsInviteDialogOpen(false);
       fetchUnifiedUsers();
 
@@ -538,7 +540,8 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
         email: user.email,
         full_name: user.name,
         role: user.role === 'Newsletter' ? 'Client' : user.role,
-        companyId: user.companies[0]?.id || ''
+        companyId: user.companies[0]?.id || '',
+        companyRole: 'Member'
       });
       
       await sendInvitation(new Event('submit') as any);
@@ -719,7 +722,8 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                   email: user.email,
                   full_name: user.name,
                   role: 'Client',
-                  companyId: ''
+                  companyId: '',
+                  companyRole: 'Member'
                 });
                 setIsInviteDialogOpen(true);
               }}
@@ -833,7 +837,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                     </Label>
                     <Select
                       value={inviteForm.role}
-                      onValueChange={(value) => setInviteForm({ ...inviteForm, role: value, companyId: value === 'Client' ? inviteForm.companyId : '' })}
+                      onValueChange={(value) => setInviteForm({ ...inviteForm, role: value, companyId: value === 'Client' ? inviteForm.companyId : '', companyRole: 'Member' })}
                       disabled={isLoading}
                     >
                       <SelectTrigger id="role">
@@ -854,7 +858,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                       </Label>
                       <Select
                         value={inviteForm.companyId}
-                        onValueChange={(value) => setInviteForm({ ...inviteForm, companyId: value })}
+                        onValueChange={(value) => setInviteForm({ ...inviteForm, companyId: value, companyRole: 'Member' })}
                         disabled={isLoading}
                       >
                         <SelectTrigger id="company">
@@ -868,6 +872,31 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  )}
+
+                  {inviteForm.role === 'Client' && inviteForm.companyId && (
+                    <div className="space-y-2">
+                      <Label htmlFor="invite_company_role" className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        Company Role
+                      </Label>
+                      <Select
+                        value={inviteForm.companyRole}
+                        onValueChange={(value) => setInviteForm({ ...inviteForm, companyRole: value as 'Admin' | 'Member' })}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger id="invite_company_role">
+                          <SelectValue placeholder="Select company role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Admin">Company Admin</SelectItem>
+                          <SelectItem value="Member">Company Member</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        This sets the user's role within the selected company
+                      </p>
                     </div>
                   )}
 
