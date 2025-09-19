@@ -78,7 +78,8 @@ const EnhancedCoachingCard: React.FC<EnhancedCoachingCardProps> = ({
               if (session.leader_name) return session.leader_name;
               if (session.session_leader_id) {
                 switch (session.session_leader_id) {
-                  case '323c39ab-bb6c-4a14-ac2d-5abd2a9a0e97': return 'James Hennahane';
+                  case '25ecad6a-1bd6-4a1f-a766-bab1bf730166': return 'James Hennahane';
+                  case 'philip-rootedai': return 'Philip Niemerg';
                   default:
                     if (session.session_leader_id.startsWith('company-')) {
                       return 'Company Representative';

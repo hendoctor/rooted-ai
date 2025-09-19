@@ -2002,16 +2002,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="session-leader">Session Leader</Label>
-                          <Select 
-                            value={coachingForm.session_leader_id || ''} 
-                            onValueChange={(value) => setCoachingForm({ ...coachingForm, session_leader_id: value })}
+                           <Select 
+                            value={coachingForm.session_leader_id || 'none'} 
+                            onValueChange={(value) => setCoachingForm({ ...coachingForm, session_leader_id: value === 'none' ? '' : value })}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Select leader" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">No leader assigned</SelectItem>
-                              <SelectItem value="323c39ab-bb6c-4a14-ac2d-5abd2a9a0e97">James Hennahane</SelectItem>
+                              <SelectItem value="none">No leader assigned</SelectItem>
+                              <SelectItem value="25ecad6a-1bd6-4a1f-a766-bab1bf730166">James Hennahane</SelectItem>
+                              <SelectItem value="philip-rootedai">Philip Niemerg</SelectItem>
                               {companies.map((company) => (
                                 <SelectItem key={`company-${company.id}`} value={`company-${company.id}`}>
                                   {company.name}
