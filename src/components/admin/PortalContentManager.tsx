@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Pencil,
   Trash2,
@@ -65,6 +66,11 @@ interface Coaching {
   contact: string;
   steps?: string;
   companies: string[];
+  session_date?: string;
+  session_duration?: number;
+  session_leader_id?: string;
+  meeting_link?: string;
+  session_status?: string;
 }
 
 interface KPI {
@@ -248,6 +254,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       media: item.media || '',
       contact: item.contact || '',
       steps: item.steps || '',
+      session_date: item.session_date || '',
+      session_duration: item.session_duration || 30,
+      session_leader_id: item.session_leader_id || '',
+      meeting_link: item.meeting_link || '',
+      session_status: item.session_status || 'scheduled',
       companies: item.adoption_coaching_companies?.map((acc: any) => acc.company_id) || []
     })) || [];
     
@@ -342,7 +353,20 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   // Coaching state
   const [coachingOpen, setCoachingOpen] = useState(false);
   const [editingCoaching, setEditingCoaching] = useState<Coaching | null>(null);
-  const emptyCoaching: Coaching = { id: '', topic: '', description: '', media: '', contact: '', steps: '', companies: [] };
+  const emptyCoaching: Coaching = { 
+    id: '', 
+    topic: '', 
+    description: '', 
+    media: '', 
+    contact: '', 
+    steps: '', 
+    companies: [],
+    session_date: '',
+    session_duration: 30,
+    session_leader_id: '',
+    meeting_link: '',
+    session_status: 'scheduled'
+  };
   const [coachingForm, setCoachingForm] = useState<Coaching>(emptyCoaching);
 
   // Report state
@@ -580,7 +604,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           description: coachingForm.description,
           media: coachingForm.media || null,
           contact: coachingForm.contact,
-          steps: coachingForm.steps || null
+          steps: coachingForm.steps || null,
+          session_date: coachingForm.session_date || null,
+          session_duration: coachingForm.session_duration || 30,
+          session_leader_id: coachingForm.session_leader_id || null,
+          meeting_link: coachingForm.meeting_link || null,
+          session_status: coachingForm.session_status || 'scheduled'
         }).eq('id', editingCoaching.id);
 
         await supabase.from('adoption_coaching_companies').delete().eq('coaching_id', editingCoaching.id);
@@ -598,7 +627,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           description: coachingForm.description,
           media: coachingForm.media || null,
           contact: coachingForm.contact,
-          steps: coachingForm.steps || null
+          steps: coachingForm.steps || null,
+          session_date: coachingForm.session_date || null,
+          session_duration: coachingForm.session_duration || 30,
+          session_leader_id: coachingForm.session_leader_id || null,
+          meeting_link: coachingForm.meeting_link || null,
+          session_status: coachingForm.session_status || 'scheduled'
         }).select().single();
 
         if (coachingForm.companies.length > 0 && data) {
@@ -1487,6 +1521,83 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                           onChange={(e) => setCoachingForm({ ...coachingForm, steps: e.target.value })}
                         />
                       </div>
+                      
+                      {/* Session Management Fields */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="session-date">Session Date & Time</Label>
+                          <Input
+                            id="session-date"
+                            type="datetime-local"
+                            value={coachingForm.session_date ? new Date(coachingForm.session_date).toISOString().slice(0, 16) : ''}
+                            onChange={(e) => setCoachingForm({ 
+                              ...coachingForm, 
+                              session_date: e.target.value ? new Date(e.target.value).toISOString() : ''
+                            })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="session-duration">Duration (minutes)</Label>
+                          <Input
+                            id="session-duration"
+                            type="number"
+                            min="15"
+                            max="180"
+                            value={coachingForm.session_duration || 30}
+                            onChange={(e) => setCoachingForm({ 
+                              ...coachingForm, 
+                              session_duration: parseInt(e.target.value) || 30
+                            })}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="meeting-link">Meeting Link (optional)</Label>
+                        <Input
+                          id="meeting-link"
+                          type="url"
+                          placeholder="https://zoom.us/j/..."
+                          value={coachingForm.meeting_link || ''}
+                          onChange={(e) => setCoachingForm({ ...coachingForm, meeting_link: e.target.value })}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="session-leader">Session Leader</Label>
+                          <Select 
+                            value={coachingForm.session_leader_id || ''} 
+                            onValueChange={(value) => setCoachingForm({ ...coachingForm, session_leader_id: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select leader" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">No leader assigned</SelectItem>
+                              {/* We'll need to fetch admin users here */}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="session-status">Status</Label>
+                          <Select 
+                            value={coachingForm.session_status || 'scheduled'} 
+                            onValueChange={(value) => setCoachingForm({ ...coachingForm, session_status: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="scheduled">Scheduled</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                              <SelectItem value="rescheduled">Rescheduled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
                       <div>
                         <Label>Assign to Companies</Label>
                         <div className="space-y-2 mt-2 max-h-32 overflow-y-auto">

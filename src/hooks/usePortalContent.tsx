@@ -71,28 +71,31 @@ export const usePortalContent = ({
       }
       setError(null);
 
-      // Fetch from server
-      const { data: contentData, error: contentError } = await supabase
-        .rpc('get_company_portal_content', { p_company_id: companyId });
+      // Fetch enhanced session data along with other content
+      const [contentResult, sessionsResult] = await Promise.all([
+        supabase.rpc('get_company_portal_content', { p_company_id: companyId }),
+        supabase.rpc('get_session_with_leader_info', { company_id_param: companyId })
+      ]);
 
-      if (contentError) {
-        throw contentError;
+      if (contentResult.error) {
+        throw contentResult.error;
       }
 
-      const parsedContent = contentData as any;
+      const parsedContent = contentResult.data as any;
+      const sessionData = sessionsResult.data || [];
       
       if (parsedContent?.error) {
         throw new Error(parsedContent.error);
       }
 
-      // Normalize the content structure
+      // Normalize the content structure with enhanced coaching data
       const normalizedContent: PortalContent = {
         announcements: parsedContent?.announcements || [],
         resources: parsedContent?.resources || [],
         useful_links: parsedContent?.useful_links || [],
         ai_tools: parsedContent?.ai_tools || [],
         faqs: parsedContent?.faqs || [],
-        coaching: parsedContent?.coaching || [],
+        coaching: sessionData.length > 0 ? sessionData : (parsedContent?.coaching || []),
         kpis: parsedContent?.kpis || []
       };
 

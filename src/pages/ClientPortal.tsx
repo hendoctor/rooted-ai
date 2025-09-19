@@ -20,6 +20,7 @@ const AnnouncementCard = React.lazy(() => import('@/components/client-portal/Ann
 const ResourceCard = React.lazy(() => import('@/components/client-portal/ResourceCard'));
 const UsefulLinkCard = React.lazy(() => import('@/components/client-portal/UsefulLinkCard'));
 const CoachingCard = React.lazy(() => import('@/components/client-portal/CoachingCard'));
+const EnhancedCoachingCard = React.lazy(() => import('@/components/client-portal/EnhancedCoachingCard'));
 const KPITile = React.lazy(() => import('@/components/client-portal/KPITile'));
 const EmptyState = React.lazy(() => import('@/components/client-portal/EmptyState'));
 const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCard'));
@@ -494,26 +495,9 @@ const ClientPortal: React.FC = () => {
                 {content.coaching.length > 0 && (
                   <div className="animate-slide-left">
                     <h3 className="text-lg font-semibold text-forest-green mb-4">Upcoming Sessions</h3>
-                    <div className="space-y-3">
-                      {content.coaching.map((session, index) => (
-                        <Card key={session.id} className="interactive-lift bg-gradient-to-r from-sage/5 to-forest-green/5">
-                          <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2 text-base">
-                              <Calendar className="h-4 w-4 text-forest-green" />
-                              {session.topic}
-                            </CardTitle>
-                            {session.description && (
-                              <CardDescription className="text-sm">{session.description}</CardDescription>
-                            )}
-                          </CardHeader>
-                          <CardContent className="pt-0">
-                            <Suspense fallback={<Skeleton className="h-8 w-full" />}>
-                              <CoachingCard nextSession={session.contact} />
-                            </Suspense>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                    <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+                      <EnhancedCoachingCard sessions={content.coaching} />
+                    </Suspense>
                   </div>
                 )}
 

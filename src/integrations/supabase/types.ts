@@ -72,6 +72,12 @@ export type Database = {
           description: string | null
           id: string
           media: string | null
+          meeting_link: string | null
+          session_date: string | null
+          session_duration: number | null
+          session_leader_id: string | null
+          session_notes: string | null
+          session_status: string | null
           steps: string | null
           topic: string
           updated_at: string
@@ -83,6 +89,12 @@ export type Database = {
           description?: string | null
           id?: string
           media?: string | null
+          meeting_link?: string | null
+          session_date?: string | null
+          session_duration?: number | null
+          session_leader_id?: string | null
+          session_notes?: string | null
+          session_status?: string | null
           steps?: string | null
           topic: string
           updated_at?: string
@@ -94,6 +106,12 @@ export type Database = {
           description?: string | null
           id?: string
           media?: string | null
+          meeting_link?: string | null
+          session_date?: string | null
+          session_duration?: number | null
+          session_leader_id?: string | null
+          session_notes?: string | null
+          session_status?: string | null
           steps?: string | null
           topic?: string
           updated_at?: string
@@ -1078,6 +1096,22 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_session_with_leader_info: {
+        Args: { company_id_param: string }
+        Returns: {
+          description: string
+          id: string
+          leader_avatar_url: string
+          leader_email: string
+          leader_name: string
+          meeting_link: string
+          session_date: string
+          session_duration: number
+          session_notes: string
+          session_status: string
+          topic: string
+        }[]
       }
       get_unified_user_data: {
         Args: Record<PropertyKey, never>
