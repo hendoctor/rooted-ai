@@ -24,6 +24,8 @@ export interface UseNotificationsReturn {
   error: string | null;
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  markAsUnread: (notificationId: string) => Promise<void>;
+  markAllAsUnread: () => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -165,6 +167,82 @@ export const useNotifications = (): UseNotificationsReturn => {
     }
   }, [user?.id, fetchNotifications]);
 
+  const markAsUnread = useCallback(async (notificationId: string) => {
+    if (!user?.id) return;
+
+    try {
+      let updatedUnreadCount = 0;
+
+      setNotifications(prev => {
+        const updated = prev.map(notification =>
+          notification.id === notificationId
+            ? { ...notification, is_read: false, read_at: undefined }
+            : notification
+        );
+
+        updatedUnreadCount = updated.filter(notification => !notification.is_read).length;
+        return updated;
+      });
+
+      setUnreadCount(updatedUnreadCount);
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({
+          is_read: false,
+          read_at: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', notificationId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      CacheManager.invalidate(CACHE_KEY);
+      CacheManager.invalidate(COUNT_CACHE_KEY);
+    } catch (err) {
+      console.error('Error marking notification as unread:', err);
+      await fetchNotifications();
+    }
+  }, [user?.id, fetchNotifications]);
+
+  const markAllAsUnread = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      let totalNotifications = 0;
+
+      setNotifications(prev => {
+        totalNotifications = prev.length;
+        return prev.map(notification => ({
+          ...notification,
+          is_read: false,
+          read_at: undefined
+        }));
+      });
+
+      setUnreadCount(totalNotifications);
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({
+          is_read: false,
+          read_at: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+        .eq('is_read', true);
+
+      if (error) throw error;
+
+      CacheManager.invalidate(CACHE_KEY);
+      CacheManager.invalidate(COUNT_CACHE_KEY);
+    } catch (err) {
+      console.error('Error marking all notifications as unread:', err);
+      await fetchNotifications();
+    }
+  }, [user?.id, fetchNotifications]);
+
   const refresh = useCallback(async () => {
     CacheManager.invalidate(CACHE_KEY);
     CacheManager.invalidate(COUNT_CACHE_KEY);
@@ -211,6 +289,8 @@ export const useNotifications = (): UseNotificationsReturn => {
     error,
     markAsRead,
     markAllAsRead,
+    markAsUnread,
+    markAllAsUnread,
     refresh,
   };
 };
