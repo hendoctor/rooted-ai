@@ -1263,7 +1263,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const coachingColumns: Column<Coaching>[] = [
     { key: 'topic', label: 'Topic', initialWidth: 150 },
     { key: 'description', label: 'Description', initialWidth: 200 },
-    { key: 'media', label: 'Media', initialWidth: 120 },
+    { key: 'media', label: 'Details', initialWidth: 120 },
     { key: 'contact', label: 'Contact', initialWidth: 120 },
     { key: 'steps', label: 'Session Phase', initialWidth: 150 },
     { key: 'session_date', label: 'Session Date', initialWidth: 120, render: (item) => item.session_date ? new Date(item.session_date).toLocaleDateString() : 'Not set' },
@@ -1817,11 +1817,13 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                         />
                       </div>
                       <div>
-                        <Label htmlFor="coaching-media">Media (optional)</Label>
-                        <Input
-                          id="coaching-media"
+                        <Label htmlFor="coaching-details">Details (optional)</Label>
+                        <Textarea
+                          id="coaching-details"
                           value={coachingForm.media || ''}
                           onChange={(e) => setCoachingForm({ ...coachingForm, media: e.target.value })}
+                          placeholder="Additional session details, notes, or instructions"
+                          rows={3}
                         />
                       </div>
                       <div>
@@ -1894,7 +1896,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                               <SelectValue placeholder="Select leader" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="">No leader assigned</SelectItem>
+                              <SelectItem value="unassigned">No leader assigned</SelectItem>
                               {/* We'll need to fetch admin users here */}
                             </SelectContent>
                           </Select>

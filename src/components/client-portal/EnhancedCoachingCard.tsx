@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, User, Video } from 'lucide-react';
+import { Calendar, Clock, User, Video, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { getStatusConfig } from '@/utils/sessionStatusConfig';
 import EmptyState from './EmptyState';
+import SessionDetailsDialog from './SessionDetailsDialog';
 
 interface SessionLeader {
   name?: string;
@@ -24,6 +25,7 @@ interface SessionData {
   leader_name?: string;
   leader_email?: string;
   leader_avatar_url?: string;
+  session_notes?: string;
 }
 
 interface EnhancedCoachingCardProps {
@@ -35,6 +37,13 @@ const EnhancedCoachingCard: React.FC<EnhancedCoachingCardProps> = ({
   sessions, 
   nextSession 
 }) => {
+  const [selectedSession, setSelectedSession] = useState<SessionData | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const openSessionDetails = (session: SessionData) => {
+    setSelectedSession(session);
+    setDetailsOpen(true);
+  };
   // If no enhanced sessions data, fall back to old format
   if (!sessions || sessions.length === 0) {
     if (!nextSession) {
@@ -136,24 +145,36 @@ const EnhancedCoachingCard: React.FC<EnhancedCoachingCardProps> = ({
             </div>
           )}
 
-          {/* Action Button */}
+          {/* Action Buttons */}
           <div className="flex gap-2">
             {session.meeting_link ? (
-              <Button 
-                size="sm" 
-                className="flex-1 bg-forest-green text-cream hover:bg-forest-green/90"
-                onClick={() => window.open(session.meeting_link, '_blank')}
-              >
-                <Video className="h-3 w-3 mr-1" />
-                Join Session
-              </Button>
+              <>
+                <Button 
+                  size="sm" 
+                  className="flex-1 bg-forest-green text-cream hover:bg-forest-green/90"
+                  onClick={() => window.open(session.meeting_link, '_blank')}
+                >
+                  <Video className="h-3 w-3 mr-1" />
+                  Join Session
+                </Button>
+                {(session.session_notes || session.description) && (
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => openSessionDetails(session)}
+                  >
+                    <FileText className="h-3 w-3" />
+                  </Button>
+                )}
+              </>
             ) : (
               <Button 
                 size="sm" 
                 variant="outline"
                 className="flex-1"
+                onClick={() => openSessionDetails(session)}
               >
-                <Calendar className="h-3 w-3 mr-1" />
+                <FileText className="h-3 w-3 mr-1" />
                 View Details
               </Button>
             )}
@@ -169,6 +190,12 @@ const EnhancedCoachingCard: React.FC<EnhancedCoachingCardProps> = ({
           </Button>
         </div>
       )}
+
+      <SessionDetailsDialog
+        session={selectedSession}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
     </div>
   );
 };
