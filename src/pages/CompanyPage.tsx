@@ -13,11 +13,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
-import { Lock, AlertCircle, Shield, Users, Settings, RefreshCw, Image } from 'lucide-react';
+import { Lock, AlertCircle, Shield, Users, Settings, RefreshCw } from 'lucide-react';
 import { CompanyUserManager } from '@/components/admin/CompanyUserManager';
 import { CompanyMembersList } from '@/components/admin/CompanyMembersList';
-import { CompanyLogoUploadDialog } from '@/components/CompanyLogoUploadDialog';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Header from '@/components/Header';
 import AccessDenied from './AccessDenied';
 import { generateSlug } from '@/lib/utils';
@@ -37,8 +35,6 @@ interface Company {
   settings: CompanySettings;
   created_at: string;
   updated_at: string;
-  logo_url?: string;
-  logo_filename?: string;
 }
 
 export default function CompanyPage() {
@@ -53,8 +49,6 @@ export default function CompanyPage() {
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isAdminSimulating, setIsAdminSimulating] = useState(false);
-  const [logoUploadOpen, setLogoUploadOpen] = useState(false);
-  const [currentLogoUrl, setCurrentLogoUrl] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -108,7 +102,6 @@ export default function CompanyPage() {
 
       if (foundCompany) {
         setCompany(foundCompany);
-        setCurrentLogoUrl(foundCompany.logo_url || '');
       } else {
         setCompany(null);
         setError('Access denied to this company');
@@ -204,23 +197,6 @@ export default function CompanyPage() {
       });
     }
     setEditing(false);
-  };
-
-  const handleLogoUpdated = (newUrl: string) => {
-    setCurrentLogoUrl(newUrl);
-    if (company) {
-      setCompany(prev => prev ? { ...prev, logo_url: newUrl } : null);
-    }
-  };
-
-  // Helper function to get company initials
-  const getCompanyInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   // Check access and edit permissions
@@ -401,39 +377,6 @@ export default function CompanyPage() {
                     />
                   </div>
 
-                  {/* Company Logo Section - Only for company admins */}
-                  {canEdit && (
-                    <div className="space-y-4 pt-4 border-t border-border">
-                      <div className="space-y-2">
-                        <Label>Company Logo</Label>
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-16 w-16 border-2 border-border">
-                            <AvatarImage src={currentLogoUrl} alt={`${company.name} logo`} />
-                            <AvatarFallback className="text-sm font-semibold bg-muted">
-                              {getCompanyInitials(company.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setLogoUploadOpen(true)}
-                              className="flex items-center gap-2"
-                            >
-                              <Image className="h-4 w-4" />
-                              {currentLogoUrl ? 'Change Logo' : 'Upload Logo'}
-                            </Button>
-                            {currentLogoUrl && (
-                              <p className="text-xs text-muted-foreground">
-                                Click to upload a new logo or remove the current one
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Action Buttons - Only show if user can edit */}
                   {canEdit && (
                     <div className="flex flex-col sm:flex-row gap-2 pt-4">
@@ -522,17 +465,6 @@ export default function CompanyPage() {
           </Card>
         </div>
       </div>
-
-      {/* Company Logo Upload Dialog */}
-      {company && (
-        <CompanyLogoUploadDialog
-          open={logoUploadOpen}
-          onOpenChange={setLogoUploadOpen}
-          onLogoUpdated={handleLogoUpdated}
-          companyId={company.id}
-          companyName={company.name}
-        />
-      )}
     </div>
   );
 }

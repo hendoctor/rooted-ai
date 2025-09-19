@@ -81,8 +81,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
     email: '',
     full_name: '',
     role: 'Client',
-    companyId: '',
-    companyRole: 'Member' as 'Admin' | 'Member'
+    companyId: ''
   });
 
   const [editForm, setEditForm] = useState({
@@ -209,8 +208,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
           full_name: inviteForm.full_name,
           role: inviteForm.role,
           client_name: clientName,
-          company_id: inviteForm.companyId || undefined,
-          company_role: inviteForm.companyId ? inviteForm.companyRole : undefined
+          company_id: inviteForm.companyId || undefined
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -225,7 +223,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
         description: `Successfully sent invitation to ${inviteForm.email}`,
       });
 
-      setInviteForm({ email: '', full_name: '', role: 'Client', companyId: '', companyRole: 'Member' });
+      setInviteForm({ email: '', full_name: '', role: 'Client', companyId: '' });
       setIsInviteDialogOpen(false);
       fetchUnifiedUsers();
 
@@ -379,17 +377,19 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
 
         // Handle company membership assignment/update
         if (editForm.companyId && editingUser.user_id) {
-          // For Client users, enforce single-company membership by removing all existing memberships first
-          if (editForm.role === 'Client') {
-            // Remove all existing company memberships for Client users
-            const { error: deleteError } = await supabase
+          const existingMembership = editingUser.companies?.find(c => c.id === editForm.companyId);
+          
+          if (existingMembership) {
+            // Update existing membership
+            const { error: membershipError } = await supabase
               .from('company_memberships')
-              .delete()
+              .update({ role: editForm.companyRole })
+              .eq('company_id', editForm.companyId)
               .eq('user_id', editingUser.user_id);
             
-            if (deleteError) throw deleteError;
-            
-            // Create new membership for the selected company
+            if (membershipError) throw membershipError;
+          } else {
+            // Create new membership
             const { error: membershipError } = await supabase
               .from('company_memberships')
               .insert({
@@ -399,31 +399,6 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
               });
             
             if (membershipError) throw membershipError;
-          } else {
-            // For Admin users, maintain existing multi-company logic
-            const existingMembership = editingUser.companies?.find(c => c.id === editForm.companyId);
-            
-            if (existingMembership) {
-              // Update existing membership
-              const { error: membershipError } = await supabase
-                .from('company_memberships')
-                .update({ role: editForm.companyRole })
-                .eq('company_id', editForm.companyId)
-                .eq('user_id', editingUser.user_id);
-              
-              if (membershipError) throw membershipError;
-            } else {
-              // Create new membership
-              const { error: membershipError } = await supabase
-                .from('company_memberships')
-                .insert({
-                  company_id: editForm.companyId,
-                  user_id: editingUser.user_id,
-                  role: editForm.companyRole
-                });
-              
-              if (membershipError) throw membershipError;
-            }
           }
         }
       } else if (editingUser.source_table === 'user_invitations') {
@@ -455,7 +430,6 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
             role: editForm.role,
             company_id: nextCompanyId,
             client_name: nextClientName,
-            company_role: editForm.companyRole,
           })
           .eq('id', editingUser.invitation_id);
 
@@ -540,8 +514,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
         email: user.email,
         full_name: user.name,
         role: user.role === 'Newsletter' ? 'Client' : user.role,
-        companyId: user.companies[0]?.id || '',
-        companyRole: 'Member'
+        companyId: user.companies[0]?.id || ''
       });
       
       await sendInvitation(new Event('submit') as any);
@@ -722,8 +695,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                   email: user.email,
                   full_name: user.name,
                   role: 'Client',
-                  companyId: '',
-                  companyRole: 'Member'
+                  companyId: ''
                 });
                 setIsInviteDialogOpen(true);
               }}
@@ -837,7 +809,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                     </Label>
                     <Select
                       value={inviteForm.role}
-                      onValueChange={(value) => setInviteForm({ ...inviteForm, role: value, companyId: value === 'Client' ? inviteForm.companyId : '', companyRole: 'Member' })}
+                      onValueChange={(value) => setInviteForm({ ...inviteForm, role: value, companyId: value === 'Client' ? inviteForm.companyId : '' })}
                       disabled={isLoading}
                     >
                       <SelectTrigger id="role">
@@ -858,7 +830,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                       </Label>
                       <Select
                         value={inviteForm.companyId}
-                        onValueChange={(value) => setInviteForm({ ...inviteForm, companyId: value, companyRole: 'Member' })}
+                        onValueChange={(value) => setInviteForm({ ...inviteForm, companyId: value })}
                         disabled={isLoading}
                       >
                         <SelectTrigger id="company">
@@ -872,31 +844,6 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                  )}
-
-                  {inviteForm.role === 'Client' && inviteForm.companyId && (
-                    <div className="space-y-2">
-                      <Label htmlFor="invite_company_role" className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Company Role
-                      </Label>
-                      <Select
-                        value={inviteForm.companyRole}
-                        onValueChange={(value) => setInviteForm({ ...inviteForm, companyRole: value as 'Admin' | 'Member' })}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger id="invite_company_role">
-                          <SelectValue placeholder="Select company role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Admin">Company Admin</SelectItem>
-                          <SelectItem value="Member">Company Member</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        This sets the user's role within the selected company
-                      </p>
                     </div>
                   )}
 
