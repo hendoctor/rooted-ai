@@ -27,6 +27,7 @@ const Header = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
+  const showPWAInstall = isInstallable || !isInstalled;
   const { toast } = useToast();
 
   let companyName: string | null = null;
@@ -169,26 +170,19 @@ const Header = () => {
 
             {/* CTA Button / Auth */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* Theme toggle and PWA install */}
+              {/* Theme toggle and notifications */}
               <div className="flex items-center space-x-2">
                 <ThemeToggle />
-                {(isInstallable || !isInstalled) && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Install app"
-                    onClick={() => setShowInstallDialog(true)}
-                    className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80"
-                  >
-                    <Download className="w-5 h-5" />
-                  </Button>
-                )}
                 {user && <NotificationCenter />}
               </div>
               
               {/* Auth buttons */}
               {user ? (
-                <ProfileMenu onSignOut={handleSignOut} />
+                <ProfileMenu
+                  onSignOut={handleSignOut}
+                  onInstallClick={() => setShowInstallDialog(true)}
+                  showPWAInstall={showPWAInstall}
+                />
               ) : (
                 <div className="flex items-center space-x-3">
                   <Link to="/auth">
@@ -202,17 +196,6 @@ const Header = () => {
 
             {/* Mobile actions */}
             <div className="md:hidden flex items-center space-x-2">
-              {(isInstallable || !isInstalled) && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Install app"
-                  onClick={() => setShowInstallDialog(true)}
-                  className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80"
-                >
-                  <Download className="w-5 h-5" />
-                </Button>
-              )}
               <ThemeToggle />
               <button
                 className="p-2 text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors"
@@ -258,15 +241,15 @@ const Header = () => {
                 
                 <div className="px-4 pt-2 space-y-2">
                   {user ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-slate-gray dark:text-white text-sm">
-                      <span>
-                        {user.email}
-                        {userRole && ` (${userRole})`}
-                      </span>
-                    </div>
-                     {userRole === 'Client' && (
-                       <>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2 text-slate-gray dark:text-white text-sm">
+                        <span>
+                          {user.email}
+                          {userRole && ` (${userRole})`}
+                        </span>
+                      </div>
+                      {userRole === 'Client' && (
+                        <>
                           {companies && companies.length > 0 && (
                             <Link to={`/${companies[0].slug}`}>
                               <Button
@@ -278,33 +261,46 @@ const Header = () => {
                               </Button>
                             </Link>
                           )}
-                         <Link to="/profile">
-                           <Button 
-                             variant="outline" 
-                             className="w-full border-sage hover:bg-sage/20 mb-2"
-                             onClick={() => setIsMobileMenuOpen(false)}
-                           >
-                             Profile
-                           </Button>
-                         </Link>
-                       </>
-                     )}
-                    <Button
-                      onClick={() => {
-                        handleSignOut();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      variant="outline"
-                      className="w-full border-sage hover:bg-sage/20"
-                    >
-                      Sign Out
-                    </Button>
-                  </div>
+                          <Link to="/profile">
+                            <Button
+                              variant="outline"
+                              className="w-full border-sage hover:bg-sage/20 mb-2"
+                              onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                              Profile
+                            </Button>
+                          </Link>
+                        </>
+                      )}
+                      {showPWAInstall && (
+                        <Button
+                          variant="outline"
+                          className="w-full border-sage hover:bg-sage/20 mb-2 flex items-center justify-center gap-2"
+                          onClick={() => {
+                            setShowInstallDialog(true);
+                            setIsMobileMenuOpen(false);
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
+                          Install RootedAI PWA
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => {
+                          handleSignOut();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        variant="outline"
+                        className="w-full border-sage hover:bg-sage/20"
+                      >
+                        Sign Out
+                      </Button>
+                    </div>
                   ) : (
                     <div className="space-y-2">
                       <Link to="/auth">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="w-full border-sage hover:bg-sage/20 dark:text-white"
                           onClick={() => setIsMobileMenuOpen(false)}
                         >

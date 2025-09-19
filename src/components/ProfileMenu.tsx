@@ -10,14 +10,16 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Building, LogOut, Settings, Mail } from 'lucide-react';
+import { User, Building, LogOut, Settings, Mail, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface ProfileMenuProps {
   onSignOut: () => void;
+  onInstallClick: () => void;
+  showPWAInstall: boolean;
 }
 
-const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
+const ProfileMenu = ({ onSignOut, onInstallClick, showPWAInstall }: ProfileMenuProps) => {
   const { user, userRole, companies, avatarUrl, optimisticAvatarUrl, updateAvatar } = useAuth();
 
   React.useEffect(() => {
@@ -88,32 +90,32 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
         </div>
         <DropdownMenuSeparator />
         {userRole === 'Client' && (
-            <>
-               {companies && companies.length > 0 && (
-                <DropdownMenuItem asChild>
-                  <Link to={`/${companies[0].slug}`} className="cursor-pointer">
-                    <Building className="mr-2 h-4 w-4" />
-                    <span>Client Portal</span>
-                  </Link>
-                </DropdownMenuItem>
-              )}
-              {companies && companies.length > 0 && (
-                <DropdownMenuItem asChild>
-                  <Link to={`/${companies[0].slug}/settings`} className="cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Company Settings</span>
-                  </Link>
-                </DropdownMenuItem>
-              )}
+          <>
+            {companies && companies.length > 0 && (
               <DropdownMenuItem asChild>
-                <Link to="/profile" className="cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
+                <Link to={`/${companies[0].slug}`} className="cursor-pointer">
+                  <Building className="mr-2 h-4 w-4" />
+                  <span>Client Portal</span>
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          )}
+            )}
+            {companies && companies.length > 0 && (
+              <DropdownMenuItem asChild>
+                <Link to={`/${companies[0].slug}/settings`} className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Company Settings</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem asChild>
+              <Link to="/profile" className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         {userRole === 'Admin' && (
           <>
             {/* Admins see RootedAI admin link and their profile */}
@@ -128,6 +130,15 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        {showPWAInstall && (
+          <>
+            <DropdownMenuItem onClick={onInstallClick} className="cursor-pointer">
+              <Download className="mr-2 h-4 w-4" />
+              <span>Install RootedAI PWA</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
