@@ -51,13 +51,18 @@ export const SECURITY_CONFIG = {
     'https://app.lovable.dev'
   ],
 
-  // Content Security Policy
+  // Enhanced Content Security Policy (stricter configuration)
   CSP: {
-    SCRIPT_SRC: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
-    STYLE_SRC: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    SCRIPT_SRC: ["'self'", "https://js.stripe.com"],
+    STYLE_SRC: ["'self'", "https://fonts.googleapis.com"],
     FONT_SRC: ["'self'", "https://fonts.gstatic.com"],
     IMG_SRC: ["'self'", "data:", "https:"],
-    CONNECT_SRC: ["'self'", "https://*.supabase.co"]
+    CONNECT_SRC: ["'self'", "https://*.supabase.co", "https://api.stripe.com"],
+    OBJECT_SRC: ["'none'"],
+    BASE_URI: ["'self'"],
+    FORM_ACTION: ["'self'"],
+    FRAME_ANCESTORS: ["'none'"],
+    UPGRADE_INSECURE_REQUESTS: true
   }
 };
 

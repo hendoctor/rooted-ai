@@ -74,28 +74,66 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
-${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
+  // Create CSS variables using React's style object (XSS-safe)
+  const cssVariables = React.useMemo(() => {
+    const variables: Record<string, string> = {}
+    
+    colorConfig.forEach(([key, itemConfig]) => {
+      const lightColor = itemConfig.theme?.light || itemConfig.color
+      const darkColor = itemConfig.theme?.dark || itemConfig.color
+      
+      if (lightColor) {
+        // Sanitize color values to prevent CSS injection
+        const sanitizedLight = lightColor.replace(/[^a-zA-Z0-9#(),.%\s-]/g, '')
+        variables[`--color-${key}`] = sanitizedLight
+      }
+      
+      if (darkColor && itemConfig.theme) {
+        const sanitizedDark = darkColor.replace(/[^a-zA-Z0-9#(),.%\s-]/g, '')
+        variables[`--color-${key}-dark`] = sanitizedDark
+      }
+    })
+    
+    return variables
+  }, [colorConfig])
+
+  // Apply styles using CSS-in-JS approach (secure)
+  React.useEffect(() => {
+    const styleElement = document.createElement('style')
+    styleElement.id = `chart-style-${id}`
+    
+    const lightStyles = Object.entries(cssVariables)
+      .filter(([key]) => !key.endsWith('-dark'))
+      .map(([key, value]) => `${key}: ${value};`)
+      .join('\n  ')
+    
+    const darkStyles = Object.entries(cssVariables)
+      .filter(([key]) => key.endsWith('-dark'))
+      .map(([key, value]) => `${key.replace('-dark', '')}: ${value};`)
+      .join('\n  ')
+    
+    const css = `
+[data-chart="${id}"] {
+  ${lightStyles}
+}
+
+.dark [data-chart="${id}"] {
+  ${darkStyles}
 }
 `
-          )
-          .join("\n"),
-      }}
-    />
-  )
+    
+    styleElement.textContent = css
+    document.head.appendChild(styleElement)
+    
+    return () => {
+      const existingStyle = document.getElementById(`chart-style-${id}`)
+      if (existingStyle) {
+        document.head.removeChild(existingStyle)
+      }
+    }
+  }, [id, cssVariables])
+
+  return null
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip
