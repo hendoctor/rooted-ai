@@ -266,18 +266,25 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Active invitation already exists for this email");
     }
 
-    // Prepare invitation payload - always Client for global role, company_role for membership
-    const invitationRole = "Client"; // Always Client for global role when inviting to company
+    // Validate and prepare invitation role
+    if (!role || !["Admin", "Client"].includes(role)) {
+      throw new Error("Invalid role specified. Must be 'Admin' or 'Client'");
+    }
+
+    // Only global admins can invite other global admins
+    if (role === "Admin" && authorizationType !== "global_admin") {
+      throw new Error("Only global administrators can invite other global administrators");
+    }
     
     // Normalize company_role: ensure it's only Admin or Member, default to Member
     let companyRole: string | null = null;
     if (targetCompanyId) {
-      const rawCompanyRole = requestBody.company_role || requestBody.role || "Member";
-      // Normalize: if it's "Client" or anything else invalid, default to "Member"
+      const rawCompanyRole = requestBody.company_role || "Member";
+      // Normalize: if it's "Admin", use it; otherwise default to "Member"
       if (rawCompanyRole === "Admin") {
         companyRole = "Admin";
       } else {
-        companyRole = "Member"; // Default for anything else including "Client"
+        companyRole = "Member";
       }
     }
 
@@ -294,7 +301,7 @@ const handler = async (req: Request): Promise<Response> => {
       invited_by: user.id,
       email,
       full_name,
-      role: invitationRole,
+      role: role, // Use the actual role from request body
       client_name: requestedClientName || null,
     };
 
