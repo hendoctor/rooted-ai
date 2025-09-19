@@ -1119,8 +1119,16 @@ export type Database = {
         }[]
       }
       get_company_portal_content: {
-        Args: { p_company_id: string }
-        Returns: Json
+        Args: { company_id_param: string }
+        Returns: {
+          ai_tools: Json
+          announcements: Json
+          coaching: Json
+          faqs: Json
+          kpis: Json
+          resources: Json
+          useful_links: Json
+        }[]
       }
       get_company_user_activity: {
         Args: { p_company_id: string; p_limit?: number }
