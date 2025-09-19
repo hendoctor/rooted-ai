@@ -21,7 +21,9 @@ const ResourceCard = React.lazy(() => import('@/components/client-portal/Resourc
 const UsefulLinkCard = React.lazy(() => import('@/components/client-portal/UsefulLinkCard'));
 const CoachingCard = React.lazy(() => import('@/components/client-portal/CoachingCard'));
 const EnhancedCoachingCard = React.lazy(() => import('@/components/client-portal/EnhancedCoachingCard'));
-const KPITile = React.lazy(() => import('@/components/client-portal/KPITile'));
+const PerformanceMetricCard = React.lazy(
+  () => import('@/components/client-portal/PerformanceMetricCard')
+);
 const EmptyState = React.lazy(() => import('@/components/client-portal/EmptyState'));
 const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCard'));
 
@@ -388,16 +390,14 @@ const ClientPortal: React.FC = () => {
                       <div className="w-2 h-2 bg-forest-green rounded-full animate-pulse"></div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {content.kpis.map((kpi: any, index: number) => (
-                        <div key={index} className="animate-scale-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                          <Suspense fallback={<Skeleton className="h-32 w-full" />}>
-                            <div className="card-energy">
-                              <KPITile 
-                                label={kpi.name || 'KPI'} 
-                                value={kpi.value || '0'} 
-                                target={kpi.target}
-                              />
-                            </div>
+                      {content.kpis.map((report: any, index: number) => (
+                        <div
+                          key={report.id || index}
+                          className="animate-scale-in"
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+                            <PerformanceMetricCard report={report} />
                           </Suspense>
                         </div>
                       ))}
