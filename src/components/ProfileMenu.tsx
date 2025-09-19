@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Building, LogOut, Settings, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -18,6 +19,25 @@ interface ProfileMenuProps {
 
 const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
   const { user, userRole, companies } = useAuth();
+  const [avatarUrl, setAvatarUrl] = React.useState<string>('');
+
+  React.useEffect(() => {
+    const fetchAvatar = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('users')
+        .select('avatar_url')
+        .eq('auth_user_id', user.id)
+        .single();
+      
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
+    };
+
+    fetchAvatar();
+  }, [user]);
 
   if (!user) return null;
 
@@ -31,6 +51,7 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           <Avatar className="h-9 w-9">
+            <AvatarImage src={avatarUrl} alt="Profile" />
             <AvatarFallback className="bg-forest-green text-white">
               {getInitials(user.email || '')}
             </AvatarFallback>

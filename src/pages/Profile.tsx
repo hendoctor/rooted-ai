@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { User, Mail, Building, Save, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
+import { AvatarSection } from '@/components/AvatarSection';
 
 const Profile = () => {
   const { user, userRole, companies } = useAuth();
@@ -19,9 +20,10 @@ const Profile = () => {
     display_name: '',
     email: '',
   });
-  const [profile, setProfile] = useState<{ display_name?: string } | null>(null);
+  const [profile, setProfile] = useState<{ display_name?: string; avatar_url?: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
 
   // Fetch profile on mount
   useEffect(() => {
@@ -29,8 +31,8 @@ const Profile = () => {
       if (user?.email) {
         const { data } = await supabase
           .from('users')
-          .select('display_name')
-          .eq('email', user.email)
+          .select('display_name, avatar_url')
+          .eq('auth_user_id', user.id)
           .maybeSingle();
         
         if (data) {
@@ -39,6 +41,7 @@ const Profile = () => {
             display_name: data.display_name || '',
             email: user.email || '',
           });
+          setAvatarUrl(data.avatar_url || '');
         } else {
           setFormData({
             display_name: '',
@@ -71,7 +74,7 @@ const Profile = () => {
           display_name: formData.display_name,
           updated_at: new Date().toISOString()
         })
-        .eq('email', user.email);
+        .eq('auth_user_id', user.id);
 
       if (userError) throw userError;
 
@@ -139,7 +142,14 @@ const Profile = () => {
                   Profile Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
+                <AvatarSection
+                  avatarUrl={avatarUrl}
+                  displayName={formData.display_name}
+                  email={formData.email}
+                  onAvatarUpdated={setAvatarUrl}
+                />
+                
                 <div className="space-y-2">
                   <Label htmlFor="display_name">Display Name</Label>
                   <Input
