@@ -210,22 +210,57 @@ const AuthSimplified = () => {
           // Navigation will be handled by the auth state change in App.tsx
         }
       } else {
-        // Invitation signup flow
-        console.log('📝 Attempting invitation signup...');
-        const { error } = await authManager.actions.signUp(email, password, {
-          full_name: invitation.full_name,
-          invitation_token: invitation.invitation_token
-        });
+        // Invitation redemption flow
+        console.log('📝 Processing invitation redemption...');
+        
+        try {
+          // Step 1: Accept the invitation using the edge function
+          const { data: invitationResult, error: invitationError } = await supabase.functions.invoke('accept-invitation', {
+            body: {
+              invitation_token: invitation.invitation_token,
+              password: password
+            }
+          });
 
-        if (error) {
-          // Handle existing user case
-          if (error.toLowerCase().includes('already registered')) {
+          if (invitationError) {
+            throw new Error(`Invitation acceptance failed: ${invitationError.message}`);
+          }
+
+          if (!invitationResult?.success) {
+            throw new Error(invitationResult?.error || 'Failed to accept invitation');
+          }
+
+          console.log('✅ Invitation accepted successfully');
+
+          // Step 2: Sign in the user with their new credentials
+          const { error: signInError } = await authManager.actions.signIn(email, password);
+          
+          if (signInError) {
+            // If sign-in fails, try refreshing the auth session
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+              throw new Error(`Sign-in failed after invitation acceptance: ${signInError}`);
+            }
+          }
+
+          toast({
+            title: 'Welcome to RootedAI!',
+            description: `Account setup completed successfully. Welcome ${invitation.full_name}!`,
+          });
+
+          // Navigation will be handled by the auth state change effect
+          
+        } catch (error: any) {
+          console.error('Invitation redemption failed:', error);
+          
+          // Check if user already exists and try sign-in instead
+          if (error.message?.toLowerCase().includes('already') || error.message?.toLowerCase().includes('exists')) {
             const { error: signInError } = await authManager.actions.signIn(email, password);
             
             if (signInError) {
               toast({
                 title: 'Sign In Failed',
-                description: signInError,
+                description: 'Account may exist but password is incorrect. Please try again or reset your password.',
                 variant: 'destructive',
               });
             } else {
@@ -238,14 +273,9 @@ const AuthSimplified = () => {
           }
 
           toast({
-            title: 'Registration Failed', 
-            description: error,
+            title: 'Invitation Setup Failed',
+            description: error.message || 'Failed to complete account setup. Please try again.',
             variant: 'destructive',
-          });
-        } else {
-          toast({
-            title: 'Account Created!',
-            description: 'Please check your email to confirm your account.',
           });
         }
       }
@@ -619,10 +649,10 @@ const AuthSimplified = () => {
                   {authManager.state.loading ? (
                     <>
                       <LoadingIcon size="sm" className="mr-2" />
-                      {invitation ? 'Creating Account...' : (isLogin ? 'Signing In...' : 'Creating Account...')}
+                      {invitation ? 'Setting up account...' : (isLogin ? 'Signing In...' : 'Creating Account...')}
                     </>
                   ) : (
-                    invitation ? 'Complete Setup' : (isLogin ? 'Sign In' : 'Create Account')
+                    invitation ? 'Complete Account Setup' : (isLogin ? 'Sign In' : 'Create Account')
                   )}
                 </Button>
 
