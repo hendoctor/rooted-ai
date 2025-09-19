@@ -38,9 +38,9 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
 
     fetchAvatar();
 
-    // Set up real-time subscription to listen for avatar changes
+    // Set up real-time subscription with enhanced cache busting
     const channel = supabase
-      .channel('user-avatar-changes')
+      .channel(`user-avatar-changes-${user?.id}`)
       .on(
         'postgres_changes',
         {
@@ -50,7 +50,20 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
           filter: `auth_user_id=eq.${user?.id}`
         },
         (payload) => {
-          setAvatarUrl(payload.new.avatar_url || '');
+          const newAvatarUrl = payload.new.avatar_url || '';
+          setAvatarUrl(newAvatarUrl);
+          
+          // Force immediate cache refresh for all avatar images
+          setTimeout(() => {
+            const avatarImages = document.querySelectorAll('img[src*="avatars/"]');
+            avatarImages.forEach((img: any) => {
+              if (img.src !== newAvatarUrl && newAvatarUrl) {
+                img.src = newAvatarUrl;
+              } else if (!newAvatarUrl) {
+                img.src = '';
+              }
+            });
+          }, 100);
         }
       )
       .subscribe();

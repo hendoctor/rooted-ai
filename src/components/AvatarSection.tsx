@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { AvatarUploadDialog } from './AvatarUploadDialog';
@@ -13,6 +13,12 @@ interface AvatarSectionProps {
 
 export const AvatarSection = ({ avatarUrl, displayName, email, onAvatarUpdated }: AvatarSectionProps) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setCurrentAvatarUrl(avatarUrl);
+  }, [avatarUrl]);
 
   const getInitials = () => {
     if (displayName) {
@@ -21,11 +27,20 @@ export const AvatarSection = ({ avatarUrl, displayName, email, onAvatarUpdated }
     return email.charAt(0).toUpperCase();
   };
 
+  const handleAvatarUpdate = (newUrl: string) => {
+    setCurrentAvatarUrl(newUrl);
+    onAvatarUpdated(newUrl);
+  };
+
   return (
     <div className="flex flex-col items-center space-y-4">
       <div className="relative">
         <Avatar className="h-32 w-32">
-          <AvatarImage src={avatarUrl} alt="Profile picture" />
+          <AvatarImage 
+            src={currentAvatarUrl} 
+            alt="Profile picture"
+            key={currentAvatarUrl} // Force re-render when URL changes
+          />
           <AvatarFallback className="text-2xl">{getInitials()}</AvatarFallback>
         </Avatar>
         <Button
@@ -41,7 +56,7 @@ export const AvatarSection = ({ avatarUrl, displayName, email, onAvatarUpdated }
       <AvatarUploadDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
-        onAvatarUpdated={onAvatarUpdated}
+        onAvatarUpdated={handleAvatarUpdate}
       />
     </div>
   );

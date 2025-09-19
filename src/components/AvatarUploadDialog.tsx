@@ -61,54 +61,69 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
     try {
       const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
       
-      // Create unique filename with timestamp to bust cache
+      // Create unique filename with cache-busting timestamp and random suffix
       const timestamp = Date.now();
-      const newFileName = `${user.id}_${timestamp}.jpg`;
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const newFileName = `${user.id}/${timestamp}_${randomSuffix}.jpg`;
 
       // Get current avatar filename for cleanup
       const { data: userData } = await supabase
         .from('users')
-        .select('avatar_filename')
+        .select('avatar_filename, avatar_url')
         .eq('auth_user_id', user.id)
         .single();
 
-      // Upload new image first
+      // Upload new image first with proper cache control
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(newFileName, croppedImage, {
-          contentType: 'image/jpeg'
+          contentType: 'image/jpeg',
+          cacheControl: '3600',
+          upsert: false
         });
 
       if (uploadError) throw uploadError;
 
+      // Get the new public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(newFileName);
+        .getPublicUrl(newFileName, {
+          transform: {
+            width: 300,
+            height: 300,
+            quality: 85
+          }
+        });
+
+      // Add cache-busting parameter to ensure immediate refresh
+      const cachebustedUrl = `${publicUrl}?v=${timestamp}`;
 
       // Update user record with new avatar URL and filename
       const { error: updateError } = await supabase
         .from('users')
         .update({ 
-          avatar_url: publicUrl,
-          avatar_filename: newFileName
+          avatar_url: cachebustedUrl,
+          avatar_filename: newFileName,
+          updated_at: new Date().toISOString()
         })
         .eq('auth_user_id', user.id);
 
       if (updateError) throw updateError;
 
-      // Clean up old file if it exists (ignore errors)
-      if (userData?.avatar_filename) {
+      // Clean up old file AFTER successful update
+      if (userData?.avatar_filename && userData.avatar_filename !== newFileName) {
         try {
           await supabase.storage
             .from('avatars')
             .remove([userData.avatar_filename]);
+          console.log('Successfully cleaned up old avatar file:', userData.avatar_filename);
         } catch (cleanupError) {
           console.warn('Failed to cleanup old avatar file:', cleanupError);
         }
       }
 
-      // Update UI immediately and close dialog
-      onAvatarUpdated(publicUrl);
+      // Update UI immediately with cache-busted URL
+      onAvatarUpdated(cachebustedUrl);
       onOpenChange(false);
       setImageSrc('');
       
@@ -139,28 +154,31 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
         .eq('auth_user_id', user.id)
         .single();
 
-      // Update user record to remove avatar URL and filename
+      // Update user record first to remove avatar URL and filename
       const { error: updateError } = await supabase
         .from('users')
         .update({ 
           avatar_url: null,
-          avatar_filename: null
+          avatar_filename: null,
+          updated_at: new Date().toISOString()
         })
         .eq('auth_user_id', user.id);
 
       if (updateError) throw updateError;
 
-      // Remove file from storage if it exists (ignore errors)
+      // Remove file from storage after successful DB update
       if (userData?.avatar_filename) {
         try {
           await supabase.storage
             .from('avatars')
             .remove([userData.avatar_filename]);
+          console.log('Successfully removed avatar file:', userData.avatar_filename);
         } catch (cleanupError) {
           console.warn('Failed to cleanup avatar file:', cleanupError);
         }
       }
 
+      // Update UI immediately
       onAvatarUpdated('');
       onOpenChange(false);
       setImageSrc('');
