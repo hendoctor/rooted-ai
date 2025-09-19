@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, User, Video } from 'lucide-react';
 import { format } from 'date-fns';
+import { getStatusConfig } from '@/utils/sessionStatusConfig';
 import EmptyState from './EmptyState';
 
 interface SessionLeader {
@@ -70,12 +71,17 @@ const EnhancedCoachingCard: React.FC<EnhancedCoachingCardProps> = ({
                 </p>
               )}
             </div>
-            <Badge 
-              variant="secondary" 
-              className="ml-2 bg-forest-green/10 text-forest-green border-forest-green/20"
-            >
-              {session.session_status || 'Scheduled'}
-            </Badge>
+            {(() => {
+              const statusConfig = getStatusConfig(session.session_status || 'Scheduled');
+              return (
+                <Badge 
+                  variant="secondary" 
+                  className={`ml-2 ${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} ${statusConfig.animate || ''}`}
+                >
+                  {session.session_status || 'Scheduled'}
+                </Badge>
+              );
+            })()}
           </div>
 
           {/* Session Details */}

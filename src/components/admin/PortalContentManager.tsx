@@ -262,7 +262,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       session_duration: item.session_duration || 30,
       session_leader_id: item.session_leader_id || '',
       meeting_link: item.meeting_link || '',
-      session_status: item.session_status || 'scheduled',
+      session_status: item.session_status || 'Scheduled',
       companies: item.adoption_coaching_companies?.map((acc: any) => acc.company_id) || []
     })) || [];
     
@@ -369,7 +369,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     session_duration: 30,
     session_leader_id: '',
     meeting_link: '',
-    session_status: 'scheduled'
+    session_status: 'Scheduled'
   };
   const [coachingForm, setCoachingForm] = useState<Coaching>(emptyCoaching);
 
@@ -751,7 +751,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           session_duration: coachingForm.session_duration || 30,
           session_leader_id: coachingForm.session_leader_id || null,
           meeting_link: coachingForm.meeting_link || null,
-          session_status: coachingForm.session_status || 'scheduled',
+      session_status: coachingForm.session_status || 'Scheduled',
           created_by: user.id
         }).eq('id', editingCoaching.id);
 
@@ -801,7 +801,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           session_duration: coachingForm.session_duration || 30,
           session_leader_id: coachingForm.session_leader_id || null,
           meeting_link: coachingForm.meeting_link || null,
-          session_status: coachingForm.session_status || 'scheduled',
+          session_status: coachingForm.session_status || 'Scheduled',
           created_by: user.id
         }).select().single();
 
@@ -1265,7 +1265,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     { key: 'description', label: 'Description', initialWidth: 200 },
     { key: 'media', label: 'Media', initialWidth: 120 },
     { key: 'contact', label: 'Contact', initialWidth: 120 },
-    { key: 'steps', label: 'Steps', initialWidth: 200 },
+    { key: 'steps', label: 'Session Phase', initialWidth: 150 },
+    { key: 'session_date', label: 'Session Date', initialWidth: 120, render: (item) => item.session_date ? new Date(item.session_date).toLocaleDateString() : 'Not set' },
+    { key: 'session_status', label: 'Status', initialWidth: 120 },
     { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
@@ -1831,11 +1833,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                         />
                       </div>
                       <div>
-                        <Label htmlFor="coaching-steps">Steps (optional)</Label>
-                        <Textarea
+                        <Label htmlFor="coaching-steps">Session Phase (optional)</Label>
+                        <Input
                           id="coaching-steps"
                           value={coachingForm.steps || ''}
                           onChange={(e) => setCoachingForm({ ...coachingForm, steps: e.target.value })}
+                          placeholder="e.g., Initial Discovery, Follow-up Session"
                         />
                       </div>
                       
@@ -1899,17 +1902,27 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                         <div>
                           <Label htmlFor="session-status">Status</Label>
                           <Select 
-                            value={coachingForm.session_status || 'scheduled'} 
+                            value={coachingForm.session_status || 'Scheduled'} 
                             onValueChange={(value) => setCoachingForm({ ...coachingForm, session_status: value })}
                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="scheduled">Scheduled</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                              <SelectItem value="rescheduled">Rescheduled</SelectItem>
+                              <SelectItem value="Canceled">Canceled</SelectItem>
+                              <SelectItem value="Completed">Completed</SelectItem>
+                              <SelectItem value="Confirmed">Confirmed</SelectItem>
+                              <SelectItem value="Draft">Draft</SelectItem>
+                              <SelectItem value="Live Now">Live Now</SelectItem>
+                              <SelectItem value="Missed / No-Show">Missed / No-Show</SelectItem>
+                              <SelectItem value="Not Scheduled">Not Scheduled</SelectItem>
+                              <SelectItem value="Ongoing">Ongoing</SelectItem>
+                              <SelectItem value="Pending Confirmation">Pending Confirmation</SelectItem>
+                              <SelectItem value="Recording Available">Recording Available</SelectItem>
+                              <SelectItem value="Rescheduled">Rescheduled</SelectItem>
+                              <SelectItem value="Scheduled">Scheduled</SelectItem>
+                              <SelectItem value="To Be Scheduled">To Be Scheduled</SelectItem>
+                              <SelectItem value="Upcoming">Upcoming</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
