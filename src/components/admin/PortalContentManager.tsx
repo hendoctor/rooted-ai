@@ -20,7 +20,10 @@ import {
   FileText,
   Bot,
   RefreshCw,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Edit,
+  X
 } from 'lucide-react';
 import SortableTable, { Column } from './SortableTable';
 import { supabase } from '@/integrations/supabase/client';
@@ -836,20 +839,6 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     }
   };
 
-      
-      await fetchCoaching();
-      toast.success(editingCoaching ? 'Coaching session updated successfully' : 'Coaching session created successfully');
-      setCoachingOpen(false);
-      setEditingCoaching(null);
-      setCoachingForm(emptyCoaching);
-    } catch (error) {
-      console.error('Error saving coaching session:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast.error(`Failed to save coaching session: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const saveReport = async () => {
     try {
@@ -1046,46 +1035,6 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     } finally {
       setLoading(false);
     }
-  };
-        }
-      } else {
-        isNewContent = true;
-        const { data, error } = await supabase.from('faqs').insert({
-          question: faqForm.question,
-          answer: faqForm.answer,
-          category: faqForm.category,
-          updated_by: faqForm.updatedBy,
-          goal: faqForm.goal,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        }).select().single();
-
-        if (error) throw error;
-        if (!data) throw new Error('No data returned from FAQ creation');
-        
-        contentId = data.id;
-
-        if (faqForm.companies.length > 0) {
-          const { error: assignError } = await supabase.from('faq_companies').insert(
-            faqForm.companies.map(companyId => ({
-              faq_id: data.id,
-              company_id: companyId
-            }))
-          );
-          if (assignError) throw assignError;
-        }
-      }
-
-      
-      await fetchFaqs();
-      toast.success('FAQ saved successfully');
-      setFaqOpen(false);
-      setEditingFaq(null);
-      setFaqForm(emptyFaq);
-    } catch (error) {
-      console.error('Error saving FAQ:', error);
-      toast.error(`Failed to save FAQ: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-    setLoading(false);
   };
 
   const saveAiTool = async () => {
