@@ -60,17 +60,22 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
     setUploading(true);
     try {
       const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
-      const fileName = `${user.id}.jpg`;
+      
+      // Create unique filename with timestamp to bust cache
+      const timestamp = Date.now();
+      const newFileName = `${user.id}_${timestamp}.jpg`;
 
-      // Remove the existing file first to ensure clean storage
-      await supabase.storage
-        .from('avatars')
-        .remove([fileName]);
+      // Get current avatar filename for cleanup
+      const { data: userData } = await supabase
+        .from('users')
+        .select('avatar_filename')
+        .eq('auth_user_id', user.id)
+        .single();
 
-      // Upload the new image
+      // Upload new image first
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, croppedImage, {
+        .upload(newFileName, croppedImage, {
           contentType: 'image/jpeg'
         });
 
@@ -78,15 +83,29 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
 
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(fileName);
+        .getPublicUrl(newFileName);
 
-      // Update user record with new avatar URL
+      // Update user record with new avatar URL and filename
       const { error: updateError } = await supabase
         .from('users')
-        .update({ avatar_url: publicUrl })
+        .update({ 
+          avatar_url: publicUrl,
+          avatar_filename: newFileName
+        })
         .eq('auth_user_id', user.id);
 
       if (updateError) throw updateError;
+
+      // Clean up old file if it exists (ignore errors)
+      if (userData?.avatar_filename) {
+        try {
+          await supabase.storage
+            .from('avatars')
+            .remove([userData.avatar_filename]);
+        } catch (cleanupError) {
+          console.warn('Failed to cleanup old avatar file:', cleanupError);
+        }
+      }
 
       // Update UI immediately and close dialog
       onAvatarUpdated(publicUrl);
@@ -113,20 +132,34 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
 
     setUploading(true);
     try {
-      const fileName = `${user.id}.jpg`;
+      // Get current avatar filename for cleanup
+      const { data: userData } = await supabase
+        .from('users')
+        .select('avatar_filename')
+        .eq('auth_user_id', user.id)
+        .single();
 
-      // Remove from storage (ignore error if file doesn't exist)
-      await supabase.storage
-        .from('avatars')
-        .remove([fileName]);
-
-      // Update user record to remove avatar_url
+      // Update user record to remove avatar URL and filename
       const { error: updateError } = await supabase
         .from('users')
-        .update({ avatar_url: null })
+        .update({ 
+          avatar_url: null,
+          avatar_filename: null
+        })
         .eq('auth_user_id', user.id);
 
       if (updateError) throw updateError;
+
+      // Remove file from storage if it exists (ignore errors)
+      if (userData?.avatar_filename) {
+        try {
+          await supabase.storage
+            .from('avatars')
+            .remove([userData.avatar_filename]);
+        } catch (cleanupError) {
+          console.warn('Failed to cleanup avatar file:', cleanupError);
+        }
+      }
 
       onAvatarUpdated('');
       onOpenChange(false);
