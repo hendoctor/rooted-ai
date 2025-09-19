@@ -2010,10 +2010,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                               <SelectValue placeholder="Select leader" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="unassigned">No leader assigned</SelectItem>
-                              <SelectItem value="james-hennahane">James Hennahane</SelectItem>
-                              <SelectItem value="philip-niemerg">Philip Niemerg</SelectItem>
-                              <SelectItem value="rootedai-team">RootedAI Team</SelectItem>
+                              <SelectItem value="">No leader assigned</SelectItem>
+                              <SelectItem value="323c39ab-bb6c-4a14-ac2d-5abd2a9a0e97">James Hennahane</SelectItem>
                               {companies.map((company) => (
                                 <SelectItem key={`company-${company.id}`} value={`company-${company.id}`}>
                                   {company.name}

@@ -106,9 +106,7 @@ const SessionDetailsDialog: React.FC<SessionDetailsDialogProps> = ({
               if (session.leader_name) return session.leader_name;
               if (session.session_leader_id) {
                 switch (session.session_leader_id) {
-                  case 'james-hennahane': return 'James Hennahane';
-                  case 'philip-niemerg': return 'Philip Niemerg';
-                  case 'rootedai-team': return 'RootedAI Team';
+                  case '323c39ab-bb6c-4a14-ac2d-5abd2a9a0e97': return 'James Hennahane';
                   default:
                     if (session.session_leader_id.startsWith('company-')) {
                       return 'Company Representative';
