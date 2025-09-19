@@ -7,13 +7,15 @@ import { useToast } from '@/hooks/use-toast';
 
 export const NotificationCenter: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { 
-    notifications, 
-    unreadCount, 
-    loading, 
-    markAsRead, 
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    markAsRead,
     markAllAsRead,
-    error 
+    markAsUnread,
+    markAllAsUnread,
+    error
   } = useNotifications();
   const { toast } = useToast();
 
@@ -49,16 +51,64 @@ export const NotificationCenter: React.FC = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
+      const unreadBefore = unreadCount;
       await markAllAsRead();
       toast({
         title: "All notifications marked as read",
-        description: `${unreadCount} notifications updated`,
+        description: `${unreadBefore} notifications updated`,
       });
     } catch (error) {
       console.error('Error marking all as read:', error);
       toast({
         title: "Error",
         description: "Failed to mark notifications as read",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMarkAllAsUnread = async () => {
+    try {
+      const readCount = notifications.filter(notification => notification.is_read).length;
+      if (readCount === 0) {
+        return;
+      }
+
+      await markAllAsUnread();
+      toast({
+        title: "Notifications moved to unread",
+        description: `${readCount} notifications updated`,
+      });
+    } catch (error) {
+      console.error('Error marking all as unread:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark notifications as unread",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleReadState = async (notification: Notification) => {
+    try {
+      if (notification.is_read) {
+        await markAsUnread(notification.id);
+        toast({
+          title: "Marked as unread",
+          description: notification.title,
+        });
+      } else {
+        await markAsRead(notification.id);
+        toast({
+          title: "Marked as read",
+          description: notification.title,
+        });
+      }
+    } catch (error) {
+      console.error('Error updating notification state:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update notification",
         variant: "destructive",
       });
     }
@@ -100,7 +150,9 @@ export const NotificationCenter: React.FC = () => {
           unreadCount={unreadCount}
           loading={loading}
           onMarkAllAsRead={handleMarkAllAsRead}
+          onMarkAllAsUnread={handleMarkAllAsUnread}
           onNotificationClick={handleNotificationClick}
+          onToggleReadState={handleToggleReadState}
           onClose={handleClose}
         />
       </PopoverContent>
