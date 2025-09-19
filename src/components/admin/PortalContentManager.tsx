@@ -25,6 +25,7 @@ import {
 import SortableTable, { Column } from './SortableTable';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { createNotificationsForCompanies, getNotificationMessage } from '@/utils/notificationService';
 
 interface CompanyOption {
   id: string;
@@ -417,10 +418,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     );
   };
 
-  // Save handlers - Simplified with any types to avoid TypeScript issues
+  // Save handlers - Enhanced with proper error handling and notifications
   const saveAnnouncement = async () => {
     try {
       setLoading(true);
+      let contentId: string;
+      let isNewContent = false;
       
       if (editingAnnouncement) {
         // Update existing announcement
@@ -431,17 +434,28 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             author: announcementForm.author,
             summary: announcementForm.summary,
             content: announcementForm.content,
-            url: announcementForm.url || null
+            url: announcementForm.url || null,
+            created_by: (await supabase.auth.getUser()).data.user?.id
           })
-          .eq('id', editingAnnouncement.id) as any;
+          .eq('id', editingAnnouncement.id);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Announcement update error:', error);
+          throw error;
+        }
+        
+        contentId = editingAnnouncement.id;
         
         // Update company assignments
-        await supabase
+        const { error: deleteError } = await supabase
           .from('announcement_companies')
           .delete()
-          .eq('announcement_id', editingAnnouncement.id) as any;
+          .eq('announcement_id', editingAnnouncement.id);
+          
+        if (deleteError) {
+          console.error('Company assignment deletion error:', deleteError);
+          throw deleteError;
+        }
         
         if (announcementForm.companies.length > 0) {
           const { error: assignError } = await supabase
@@ -450,13 +464,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
               announcementForm.companies.map(companyId => ({
                 announcement_id: editingAnnouncement.id,
                 company_id: companyId
-              })) as any
+              }))
             );
           
-          if (assignError) throw assignError;
+          if (assignError) {
+            console.error('Company assignment error:', assignError);
+            throw assignError;
+          }
         }
       } else {
         // Create new announcement
+        isNewContent = true;
         const { data, error } = await supabase
           .from('announcements')
           .insert({
@@ -464,12 +482,22 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             author: announcementForm.author,
             summary: announcementForm.summary,
             content: announcementForm.content,
-            url: announcementForm.url || null
-          } as any)
+            url: announcementForm.url || null,
+            created_by: (await supabase.auth.getUser()).data.user?.id
+          })
           .select()
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error('Announcement creation error:', error);
+          throw error;
+        }
+        
+        if (!data) {
+          throw new Error('No data returned from announcement creation');
+        }
+        
+        contentId = data.id;
         
         // Create company assignments
         if (announcementForm.companies.length > 0) {
@@ -477,12 +505,33 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             .from('announcement_companies')
             .insert(
               announcementForm.companies.map(companyId => ({
-                announcement_id: (data as any).id,
+                announcement_id: data.id,
                 company_id: companyId
-              })) as any
+              }))
             );
           
-          if (assignError) throw assignError;
+          if (assignError) {
+            console.error('Company assignment error:', assignError);
+            throw assignError;
+          }
+        }
+      }
+      
+      // Create notifications for assigned companies
+      if (announcementForm.companies.length > 0) {
+        try {
+          const notification = getNotificationMessage('announcement', announcementForm.title, isNewContent);
+          await createNotificationsForCompanies({
+            title: notification.title,
+            message: notification.message,
+            notificationType: 'announcement',
+            referenceId: contentId,
+            companyIds: announcementForm.companies,
+            priority: 'medium'
+          });
+        } catch (notificationError) {
+          console.error('Failed to create notifications:', notificationError);
+          // Don't fail the whole operation if notifications fail
         }
       }
       
@@ -494,7 +543,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       setAnnouncementForm(emptyAnnouncement);
     } catch (error) {
       console.error('Error saving announcement:', error);
-      toast.error('Failed to save announcement');
+      toast.error(`Failed to save announcement: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     setLoading(false);
   };
@@ -502,38 +551,73 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const saveResource = async () => {
     try {
       setLoading(true);
+      let contentId: string;
+      let isNewContent = false;
+      
       if (editingResource) {
-        await supabase.from('portal_resources').update({
+        const { error } = await supabase.from('portal_resources').update({
           title: resourceForm.title,
           description: resourceForm.description,
           link: resourceForm.link || null,
-          category: resourceForm.category
+          category: resourceForm.category,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).eq('id', editingResource.id);
 
-        await supabase.from('portal_resource_companies').delete().eq('resource_id', editingResource.id);
+        if (error) throw error;
+        contentId = editingResource.id;
+
+        const { error: deleteError } = await supabase.from('portal_resource_companies').delete().eq('resource_id', editingResource.id);
+        if (deleteError) throw deleteError;
+        
         if (resourceForm.companies.length > 0) {
-          await supabase.from('portal_resource_companies').insert(
+          const { error: assignError } = await supabase.from('portal_resource_companies').insert(
             resourceForm.companies.map(companyId => ({
               resource_id: editingResource.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
         }
       } else {
-        const { data } = await supabase.from('portal_resources').insert({
+        isNewContent = true;
+        const { data, error } = await supabase.from('portal_resources').insert({
           title: resourceForm.title,
           description: resourceForm.description,
           link: resourceForm.link || null,
-          category: resourceForm.category
+          category: resourceForm.category,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).select().single();
 
-        if (resourceForm.companies.length > 0 && data) {
-          await supabase.from('portal_resource_companies').insert(
+        if (error) throw error;
+        if (!data) throw new Error('No data returned from resource creation');
+        
+        contentId = data.id;
+
+        if (resourceForm.companies.length > 0) {
+          const { error: assignError } = await supabase.from('portal_resource_companies').insert(
             resourceForm.companies.map(companyId => ({
               resource_id: data.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
+        }
+      }
+
+      // Create notifications
+      if (resourceForm.companies.length > 0) {
+        try {
+          const notification = getNotificationMessage('resource', resourceForm.title, isNewContent);
+          await createNotificationsForCompanies({
+            title: notification.title,
+            message: notification.message,
+            notificationType: 'resource',
+            referenceId: contentId,
+            companyIds: resourceForm.companies,
+            priority: 'medium'
+          });
+        } catch (notificationError) {
+          console.error('Failed to create notifications:', notificationError);
         }
       }
       
@@ -543,7 +627,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       setEditingResource(null);
       setResourceForm(emptyResource);
     } catch (error) {
-      toast.error('Failed to save resource');
+      console.error('Error saving resource:', error);
+      toast.error(`Failed to save resource: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     setLoading(false);
   };
@@ -551,36 +636,71 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const saveLink = async () => {
     try {
       setLoading(true);
+      let contentId: string;
+      let isNewContent = false;
+      
       if (editingLink) {
-        await supabase.from('useful_links').update({
+        const { error } = await supabase.from('useful_links').update({
           title: linkForm.title,
           url: linkForm.url,
-          description: linkForm.description
+          description: linkForm.description,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).eq('id', editingLink.id);
 
-        await supabase.from('useful_link_companies').delete().eq('link_id', editingLink.id);
+        if (error) throw error;
+        contentId = editingLink.id;
+
+        const { error: deleteError } = await supabase.from('useful_link_companies').delete().eq('link_id', editingLink.id);
+        if (deleteError) throw deleteError;
+        
         if (linkForm.companies.length > 0) {
-          await supabase.from('useful_link_companies').insert(
+          const { error: assignError } = await supabase.from('useful_link_companies').insert(
             linkForm.companies.map(companyId => ({
               link_id: editingLink.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
         }
       } else {
-        const { data } = await supabase.from('useful_links').insert({
+        isNewContent = true;
+        const { data, error } = await supabase.from('useful_links').insert({
           title: linkForm.title,
           url: linkForm.url,
-          description: linkForm.description
+          description: linkForm.description,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).select().single();
 
-        if (linkForm.companies.length > 0 && data) {
-          await supabase.from('useful_link_companies').insert(
+        if (error) throw error;
+        if (!data) throw new Error('No data returned from link creation');
+        
+        contentId = data.id;
+
+        if (linkForm.companies.length > 0) {
+          const { error: assignError } = await supabase.from('useful_link_companies').insert(
             linkForm.companies.map(companyId => ({
               link_id: data.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
+        }
+      }
+
+      // Create notifications
+      if (linkForm.companies.length > 0) {
+        try {
+          const notification = getNotificationMessage('useful_link', linkForm.title, isNewContent);
+          await createNotificationsForCompanies({
+            title: notification.title,
+            message: notification.message,
+            notificationType: 'useful_link',
+            referenceId: contentId,
+            companyIds: linkForm.companies,
+            priority: 'medium'
+          });
+        } catch (notificationError) {
+          console.error('Failed to create notifications:', notificationError);
         }
       }
       
@@ -590,7 +710,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       setEditingLink(null);
       setLinkForm(emptyLink);
     } catch (error) {
-      toast.error('Failed to save link');
+      console.error('Error saving link:', error);
+      toast.error(`Failed to save link: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     setLoading(false);
   };
@@ -598,8 +719,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const saveCoaching = async () => {
     try {
       setLoading(true);
+      let contentId: string;
+      let isNewContent = false;
+      
       if (editingCoaching) {
-        await supabase.from('adoption_coaching').update({
+        const { error } = await supabase.from('adoption_coaching').update({
           topic: coachingForm.topic,
           description: coachingForm.description,
           media: coachingForm.media || null,
@@ -609,20 +733,28 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           session_duration: coachingForm.session_duration || 30,
           session_leader_id: coachingForm.session_leader_id || null,
           meeting_link: coachingForm.meeting_link || null,
-          session_status: coachingForm.session_status || 'scheduled'
+          session_status: coachingForm.session_status || 'scheduled',
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).eq('id', editingCoaching.id);
 
-        await supabase.from('adoption_coaching_companies').delete().eq('coaching_id', editingCoaching.id);
+        if (error) throw error;
+        contentId = editingCoaching.id;
+
+        const { error: deleteError } = await supabase.from('adoption_coaching_companies').delete().eq('coaching_id', editingCoaching.id);
+        if (deleteError) throw deleteError;
+        
         if (coachingForm.companies.length > 0) {
-          await supabase.from('adoption_coaching_companies').insert(
+          const { error: assignError } = await supabase.from('adoption_coaching_companies').insert(
             coachingForm.companies.map(companyId => ({
               coaching_id: editingCoaching.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
         }
       } else {
-        const { data } = await supabase.from('adoption_coaching').insert({
+        isNewContent = true;
+        const { data, error } = await supabase.from('adoption_coaching').insert({
           topic: coachingForm.topic,
           description: coachingForm.description,
           media: coachingForm.media || null,
@@ -632,16 +764,40 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           session_duration: coachingForm.session_duration || 30,
           session_leader_id: coachingForm.session_leader_id || null,
           meeting_link: coachingForm.meeting_link || null,
-          session_status: coachingForm.session_status || 'scheduled'
+          session_status: coachingForm.session_status || 'scheduled',
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).select().single();
 
-        if (coachingForm.companies.length > 0 && data) {
-          await supabase.from('adoption_coaching_companies').insert(
+        if (error) throw error;
+        if (!data) throw new Error('No data returned from coaching creation');
+        
+        contentId = data.id;
+
+        if (coachingForm.companies.length > 0) {
+          const { error: assignError } = await supabase.from('adoption_coaching_companies').insert(
             coachingForm.companies.map(companyId => ({
               coaching_id: data.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
+        }
+      }
+
+      // Create notifications
+      if (coachingForm.companies.length > 0) {
+        try {
+          const notification = getNotificationMessage('coaching', coachingForm.topic, isNewContent);
+          await createNotificationsForCompanies({
+            title: notification.title,
+            message: notification.message,
+            notificationType: 'coaching',
+            referenceId: contentId,
+            companyIds: coachingForm.companies,
+            priority: 'high'
+          });
+        } catch (notificationError) {
+          console.error('Failed to create notifications:', notificationError);
         }
       }
       
@@ -651,7 +807,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       setEditingCoaching(null);
       setCoachingForm(emptyCoaching);
     } catch (error) {
-      toast.error('Failed to save coaching');
+      console.error('Error saving coaching:', error);
+      toast.error(`Failed to save coaching: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     setLoading(false);
   };
@@ -659,40 +816,75 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const saveReport = async () => {
     try {
       setLoading(true);
+      let contentId: string;
+      let isNewContent = false;
+      
       if (editingReport) {
-        await supabase.from('reports').update({
+        const { error } = await supabase.from('reports').update({
           name: reportForm.name,
           kpis: reportForm.kpis as any,
           period: reportForm.period,
           link: reportForm.link || null,
-          notes: reportForm.notes || null
+          notes: reportForm.notes || null,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).eq('id', editingReport.id);
 
-        await supabase.from('report_companies').delete().eq('report_id', editingReport.id);
+        if (error) throw error;
+        contentId = editingReport.id;
+
+        const { error: deleteError } = await supabase.from('report_companies').delete().eq('report_id', editingReport.id);
+        if (deleteError) throw deleteError;
+        
         if (reportForm.companies.length > 0) {
-          await supabase.from('report_companies').insert(
+          const { error: assignError } = await supabase.from('report_companies').insert(
             reportForm.companies.map(companyId => ({
               report_id: editingReport.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
         }
       } else {
-        const { data } = await supabase.from('reports').insert({
+        isNewContent = true;
+        const { data, error } = await supabase.from('reports').insert({
           name: reportForm.name,
           kpis: reportForm.kpis as any,
           period: reportForm.period,
           link: reportForm.link || null,
-          notes: reportForm.notes || null
+          notes: reportForm.notes || null,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).select().single();
 
-        if (reportForm.companies.length > 0 && data) {
-          await supabase.from('report_companies').insert(
+        if (error) throw error;
+        if (!data) throw new Error('No data returned from report creation');
+        
+        contentId = data.id;
+
+        if (reportForm.companies.length > 0) {
+          const { error: assignError } = await supabase.from('report_companies').insert(
             reportForm.companies.map(companyId => ({
               report_id: data.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
+        }
+      }
+
+      // Create notifications
+      if (reportForm.companies.length > 0) {
+        try {
+          const notification = getNotificationMessage('kpi', reportForm.name, isNewContent);
+          await createNotificationsForCompanies({
+            title: notification.title,
+            message: notification.message,
+            notificationType: 'kpi',
+            referenceId: contentId,
+            companyIds: reportForm.companies,
+            priority: 'medium'
+          });
+        } catch (notificationError) {
+          console.error('Failed to create notifications:', notificationError);
         }
       }
       
@@ -702,7 +894,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       setEditingReport(null);
       setReportForm(emptyReport);
     } catch (error) {
-      toast.error('Failed to save report');
+      console.error('Error saving report:', error);
+      toast.error(`Failed to save report: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     setLoading(false);
   };
@@ -710,40 +903,75 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const saveFaq = async () => {
     try {
       setLoading(true);
+      let contentId: string;
+      let isNewContent = false;
+      
       if (editingFaq) {
-        await supabase.from('faqs').update({
+        const { error } = await supabase.from('faqs').update({
           question: faqForm.question,
           answer: faqForm.answer,
           category: faqForm.category,
           updated_by: faqForm.updatedBy,
-          goal: faqForm.goal
+          goal: faqForm.goal,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).eq('id', editingFaq.id);
 
-        await supabase.from('faq_companies').delete().eq('faq_id', editingFaq.id);
+        if (error) throw error;
+        contentId = editingFaq.id;
+
+        const { error: deleteError } = await supabase.from('faq_companies').delete().eq('faq_id', editingFaq.id);
+        if (deleteError) throw deleteError;
+        
         if (faqForm.companies.length > 0) {
-          await supabase.from('faq_companies').insert(
+          const { error: assignError } = await supabase.from('faq_companies').insert(
             faqForm.companies.map(companyId => ({
               faq_id: editingFaq.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
         }
       } else {
-        const { data } = await supabase.from('faqs').insert({
+        isNewContent = true;
+        const { data, error } = await supabase.from('faqs').insert({
           question: faqForm.question,
           answer: faqForm.answer,
           category: faqForm.category,
           updated_by: faqForm.updatedBy,
-          goal: faqForm.goal
+          goal: faqForm.goal,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).select().single();
 
-        if (faqForm.companies.length > 0 && data) {
-          await supabase.from('faq_companies').insert(
+        if (error) throw error;
+        if (!data) throw new Error('No data returned from FAQ creation');
+        
+        contentId = data.id;
+
+        if (faqForm.companies.length > 0) {
+          const { error: assignError } = await supabase.from('faq_companies').insert(
             faqForm.companies.map(companyId => ({
               faq_id: data.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
+        }
+      }
+
+      // Create notifications
+      if (faqForm.companies.length > 0) {
+        try {
+          const notification = getNotificationMessage('faq', faqForm.question, isNewContent);
+          await createNotificationsForCompanies({
+            title: notification.title,
+            message: notification.message,
+            notificationType: 'faq',
+            referenceId: contentId,
+            companyIds: faqForm.companies,
+            priority: 'low'
+          });
+        } catch (notificationError) {
+          console.error('Failed to create notifications:', notificationError);
         }
       }
       
@@ -753,7 +981,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       setEditingFaq(null);
       setFaqForm(emptyFaq);
     } catch (error) {
-      toast.error('Failed to save FAQ');
+      console.error('Error saving FAQ:', error);
+      toast.error(`Failed to save FAQ: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     setLoading(false);
   };
@@ -761,36 +990,71 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const saveAiTool = async () => {
     try {
       setLoading(true);
+      let contentId: string;
+      let isNewContent = false;
+      
       if (editingAiTool) {
-        await supabase.from('ai_tools').update({
+        const { error } = await supabase.from('ai_tools').update({
           ai_tool: aiToolForm.ai_tool,
           url: aiToolForm.url,
-          comments: aiToolForm.comments
+          comments: aiToolForm.comments,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).eq('id', editingAiTool.id);
 
-        await supabase.from('ai_tool_companies').delete().eq('ai_tool_id', editingAiTool.id);
+        if (error) throw error;
+        contentId = editingAiTool.id;
+
+        const { error: deleteError } = await supabase.from('ai_tool_companies').delete().eq('ai_tool_id', editingAiTool.id);
+        if (deleteError) throw deleteError;
+        
         if (aiToolForm.companies.length > 0) {
-          await supabase.from('ai_tool_companies').insert(
+          const { error: assignError } = await supabase.from('ai_tool_companies').insert(
             aiToolForm.companies.map(companyId => ({
               ai_tool_id: editingAiTool.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
         }
       } else {
-        const { data } = await supabase.from('ai_tools').insert({
+        isNewContent = true;
+        const { data, error } = await supabase.from('ai_tools').insert({
           ai_tool: aiToolForm.ai_tool,
           url: aiToolForm.url,
-          comments: aiToolForm.comments
+          comments: aiToolForm.comments,
+          created_by: (await supabase.auth.getUser()).data.user?.id
         }).select().single();
 
-        if (aiToolForm.companies.length > 0 && data) {
-          await supabase.from('ai_tool_companies').insert(
+        if (error) throw error;
+        if (!data) throw new Error('No data returned from AI tool creation');
+        
+        contentId = data.id;
+
+        if (aiToolForm.companies.length > 0) {
+          const { error: assignError } = await supabase.from('ai_tool_companies').insert(
             aiToolForm.companies.map(companyId => ({
               ai_tool_id: data.id,
               company_id: companyId
             }))
           );
+          if (assignError) throw assignError;
+        }
+      }
+
+      // Create notifications
+      if (aiToolForm.companies.length > 0) {
+        try {
+          const notification = getNotificationMessage('ai_tool', aiToolForm.ai_tool, isNewContent);
+          await createNotificationsForCompanies({
+            title: notification.title,
+            message: notification.message,
+            notificationType: 'ai_tool',
+            referenceId: contentId,
+            companyIds: aiToolForm.companies,
+            priority: 'medium'
+          });
+        } catch (notificationError) {
+          console.error('Failed to create notifications:', notificationError);
         }
       }
       
@@ -800,7 +1064,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       setEditingAiTool(null);
       setAiToolForm(emptyAiTool);
     } catch (error) {
-      toast.error('Failed to save AI Tool');
+      console.error('Error saving AI Tool:', error);
+      toast.error(`Failed to save AI Tool: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     setLoading(false);
   };
