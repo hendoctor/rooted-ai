@@ -38,7 +38,7 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
 
     fetchAvatar();
 
-    // Set up real-time subscription with enhanced cache busting
+    // Set up real-time subscription for avatar updates
     const channel = supabase
       .channel(`user-avatar-changes-${user?.id}`)
       .on(
@@ -52,18 +52,6 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
         (payload) => {
           const newAvatarUrl = payload.new.avatar_url || '';
           setAvatarUrl(newAvatarUrl);
-          
-          // Force immediate cache refresh for all avatar images
-          setTimeout(() => {
-            const avatarImages = document.querySelectorAll('img[src*="avatars/"]');
-            avatarImages.forEach((img: any) => {
-              if (img.src !== newAvatarUrl && newAvatarUrl) {
-                img.src = newAvatarUrl;
-              } else if (!newAvatarUrl) {
-                img.src = '';
-              }
-            });
-          }, 100);
         }
       )
       .subscribe();
@@ -85,7 +73,11 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={avatarUrl} alt="Profile" />
+            <AvatarImage 
+              src={avatarUrl} 
+              alt="Profile"
+              key={avatarUrl}
+            />
             <AvatarFallback className="bg-forest-green text-white">
               {getInitials(user.email || '')}
             </AvatarFallback>
