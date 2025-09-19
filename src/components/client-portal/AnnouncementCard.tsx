@@ -39,14 +39,14 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
           <p className="text-xs text-slate-gray dark:text-slate-400">{date}</p>
         </div>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="mt-2 space-y-2">
-          {summary && <p className="text-sm text-slate-gray dark:text-slate-300">{summary}</p>}
+          {summary && <p className="text-sm text-slate-gray dark:text-slate-300 break-words">{summary}</p>}
           {content && (
-            <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap">{content}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap break-words">{content}</p>
           )}
           {url && (
             <Button
