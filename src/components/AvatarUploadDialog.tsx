@@ -62,10 +62,15 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
       const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
       const fileName = `${user.id}.jpg`;
 
+      // Remove the existing file first to ensure clean storage
+      await supabase.storage
+        .from('avatars')
+        .remove([fileName]);
+
+      // Upload the new image
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, croppedImage, {
-          upsert: true,
           contentType: 'image/jpeg'
         });
 
@@ -75,6 +80,7 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
         .from('avatars')
         .getPublicUrl(fileName);
 
+      // Update user record with new avatar URL
       const { error: updateError } = await supabase
         .from('users')
         .update({ avatar_url: publicUrl })
@@ -82,19 +88,20 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
 
       if (updateError) throw updateError;
 
+      // Update UI immediately and close dialog
       onAvatarUpdated(publicUrl);
       onOpenChange(false);
       setImageSrc('');
       
       toast({
         title: "Success",
-        description: "Profile picture updated successfully"
+        description: "Profile picture saved successfully"
       });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Upload failed",
-        description: error.message || "Failed to upload image"
+        title: "Save failed",
+        description: error.message || "Failed to save profile picture"
       });
     } finally {
       setUploading(false);
@@ -215,7 +222,7 @@ export const AvatarUploadDialog = ({ open, onOpenChange, onAvatarUpdated }: Avat
             </Button>
             {imageSrc && (
               <Button onClick={handleUpload} disabled={uploading}>
-                {uploading ? 'Uploading...' : 'Upload'}
+                {uploading ? 'Saving...' : 'Save'}
               </Button>
             )}
           </div>
