@@ -127,9 +127,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   // Table view configurations state
   const [tableConfigs, setTableConfigs] = useState<Record<string, TableViewConfig>>({});
   
-  const updateTableConfig = (contentType: string, config: TableViewConfig) => {
-    setTableConfigs(prev => ({ ...prev, [contentType]: config }));
-  };
+  const updateTableConfig = React.useCallback((contentType: string, config: TableViewConfig) => {
+    setTableConfigs(prev => {
+      // Prevent unnecessary updates if config is the same
+      if (JSON.stringify(prev[contentType]) === JSON.stringify(config)) {
+        return prev;
+      }
+      return { ...prev, [contentType]: config };
+    });
+  }, []);
 
   // Existing state variables
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -6,7 +6,7 @@ import { ViewManagementDialog } from './ViewManagementDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Save, Settings, Eye, Trash2 } from 'lucide-react';
+import { Save, Settings, Eye, Trash2, Loader2 } from 'lucide-react';
 
 export interface TableViewConfig {
   visibleColumns: string[];
@@ -34,6 +34,7 @@ export function TableViewManager({ contentType, currentConfig, onConfigChange, o
   const [currentViewId, setCurrentViewId] = useState<string | null>(null);
   const [showManagementDialog, setShowManagementDialog] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isLoadingView, setIsLoadingView] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -173,36 +174,70 @@ export function TableViewManager({ contentType, currentConfig, onConfigChange, o
     }
   };
 
-  const loadView = (viewId: string) => {
+  const loadView = useCallback(async (viewId: string) => {
+    if (isLoadingView || currentViewId === viewId) return;
+    
     const view = savedViews.find(v => v.id === viewId);
     if (view) {
+      setIsLoadingView(true);
+      
+      // Optimistic update
       setCurrentViewId(viewId);
-      onConfigChange(view.column_config);
-      toast.success(`Loaded view "${view.view_name}"`);
+      
+      try {
+        // Small delay to prevent flickering on fast networks
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        onConfigChange(view.column_config);
+        toast.success(`Loaded view "${view.view_name}"`);
+      } catch (error) {
+        console.error('Error loading view:', error);
+        toast.error('Failed to load view');
+      } finally {
+        setIsLoadingView(false);
+      }
     }
-  };
+  }, [savedViews, onConfigChange, isLoadingView, currentViewId]);
+
+  const selectOptions = useMemo(() => 
+    savedViews.map(view => ({
+      id: view.id,
+      name: view.view_name,
+      isDefault: view.is_default
+    })), [savedViews]
+  );
+
+  const currentView = useMemo(() => 
+    savedViews.find(v => v.id === currentViewId), 
+    [savedViews, currentViewId]
+  );
 
   return (
     <div className="flex items-center gap-2">
-      <Select value={currentViewId || ''} onValueChange={loadView}>
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Select saved view..." />
-        </SelectTrigger>
-        <SelectContent>
-          {savedViews.map(view => (
-            <SelectItem key={view.id} value={view.id}>
-              <div className="flex items-center gap-2">
-                {view.view_name}
-                {view.is_default && <Eye className="h-3 w-3 text-primary" />}
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="relative">
+        <Select value={currentViewId || ''} onValueChange={loadView} disabled={isLoadingView}>
+          <SelectTrigger className="w-48 transition-opacity duration-200">
+            <SelectValue placeholder="Select saved view..." />
+          </SelectTrigger>
+          <SelectContent>
+            {selectOptions.map(view => (
+              <SelectItem key={view.id} value={view.id}>
+                <div className="flex items-center gap-2">
+                  {view.name}
+                  {view.isDefault && <Eye className="h-3 w-3 text-primary" />}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {isLoadingView && (
+          <Loader2 className="h-4 w-4 animate-spin absolute right-8 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        )}
+      </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" disabled={loading}>
+          <Button variant="outline" size="sm" disabled={loading || isLoadingView}>
             <Settings className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -215,6 +250,7 @@ export function TableViewManager({ contentType, currentConfig, onConfigChange, o
             <DropdownMenuItem 
               onClick={() => deleteView(currentViewId)}
               className="text-destructive"
+              disabled={loading}
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete Current View
@@ -228,7 +264,7 @@ export function TableViewManager({ contentType, currentConfig, onConfigChange, o
         onOpenChange={setShowManagementDialog}
         onSave={saveCurrentView}
         onUpdate={currentViewId ? (name, isDefault) => updateView(currentViewId, name, isDefault) : undefined}
-        currentView={savedViews.find(v => v.id === currentViewId)}
+        currentView={currentView}
       />
     </div>
   );

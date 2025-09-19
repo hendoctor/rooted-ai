@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, startTransition } from 'react';
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ function get(obj: unknown, path: string) {
     .reduce<unknown>((o, p) => (typeof o === 'object' && o !== null ? (o as Record<string, unknown>)[p] : undefined), obj) ?? '';
 }
 
-export function SortableTable<T extends { id: string }>({
+export const SortableTable = React.memo(<T extends { id: string }>({
   data,
   columns,
   toolbar,
@@ -52,7 +52,7 @@ export function SortableTable<T extends { id: string }>({
   scrollAreaClassName,
   externalConfig,
   onConfigChange,
-}: SortableTableProps<T>) {
+}: SortableTableProps<T>) => {
   const [sortKey, setSortKey] = useState<string>(defaultSortKey || columns[0]?.key);
   const [asc, setAsc] = useState(defaultAsc);
   const [visible, setVisible] = useState<string[]>(columns.map(c => c.key));
@@ -64,28 +64,59 @@ export function SortableTable<T extends { id: string }>({
     return init;
   });
 
+  // Refs to prevent feedback loops
+  const isApplyingExternalConfig = useRef(false);
+  const configChangeTimeoutRef = useRef<NodeJS.Timeout>();
+
   // Apply external configuration when it changes
   useEffect(() => {
-    if (externalConfig) {
-      setVisible(externalConfig.visibleColumns);
-      setWidths(externalConfig.columnWidths);
-      setSortKey(externalConfig.sortKey || columns[0]?.key);
-      setAsc(externalConfig.sortAsc ?? true);
+    if (externalConfig && !isApplyingExternalConfig.current) {
+      isApplyingExternalConfig.current = true;
+      
+      startTransition(() => {
+        setVisible(externalConfig.visibleColumns);
+        setWidths(externalConfig.columnWidths);
+        setSortKey(externalConfig.sortKey || columns[0]?.key);
+        setAsc(externalConfig.sortAsc ?? true);
+      });
+
+      // Reset flag after state updates are applied
+      const timer = setTimeout(() => {
+        isApplyingExternalConfig.current = false;
+      }, 50);
+
+      return () => clearTimeout(timer);
     }
   }, [externalConfig, columns]);
 
-  // Emit configuration changes
-  useEffect(() => {
-    if (onConfigChange) {
-      const config: TableConfig = {
-        visibleColumns: visible,
-        columnWidths: widths,
-        sortKey,
-        sortAsc: asc,
-      };
-      onConfigChange(config);
+  // Debounced configuration change emission
+  const emitConfigChange = useCallback(() => {
+    if (onConfigChange && !isApplyingExternalConfig.current) {
+      if (configChangeTimeoutRef.current) {
+        clearTimeout(configChangeTimeoutRef.current);
+      }
+      
+      configChangeTimeoutRef.current = setTimeout(() => {
+        const config: TableConfig = {
+          visibleColumns: visible,
+          columnWidths: widths,
+          sortKey,
+          sortAsc: asc,
+        };
+        onConfigChange(config);
+      }, 100); // 100ms debounce
     }
   }, [visible, widths, sortKey, asc, onConfigChange]);
+
+  // Emit configuration changes with debouncing
+  useEffect(() => {
+    emitConfigChange();
+    return () => {
+      if (configChangeTimeoutRef.current) {
+        clearTimeout(configChangeTimeoutRef.current);
+      }
+    };
+  }, [emitConfigChange]);
 
   const sorted = useMemo(() => {
     const items = [...data];
@@ -101,35 +132,54 @@ export function SortableTable<T extends { id: string }>({
     return items;
   }, [data, sortKey, asc]);
 
-  const handleSort = (key: string) => {
-    if (sortKey === key) {
-      setAsc(!asc);
-    } else {
-      setSortKey(key);
-      setAsc(true);
-    }
-  };
+  const visibleCols = useMemo(() => 
+    columns.filter(c => visible.includes(c.key)), 
+    [columns, visible]
+  );
 
-  const startResize = (e: React.MouseEvent, key: string) => {
+  const handleSort = useCallback((key: string) => {
+    startTransition(() => {
+      if (sortKey === key) {
+        setAsc(!asc);
+      } else {
+        setSortKey(key);
+        setAsc(true);
+      }
+    });
+  }, [sortKey, asc]);
+
+  const startResize = useCallback((e: React.MouseEvent, key: string) => {
     e.preventDefault();
     e.stopPropagation();
     const startX = e.clientX;
     const startWidth = widths[key];
+    
     const onMouseMove = (eMove: MouseEvent) => {
       const newWidth = Math.max(50, startWidth + (eMove.clientX - startX));
-      setWidths(w => ({ ...w, [key]: newWidth }));
+      // Batch width updates to prevent excessive re-renders
+      startTransition(() => {
+        setWidths(w => ({ ...w, [key]: newWidth }));
+      });
     };
+    
     const onMouseUp = () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
+    
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
-  };
+  }, [widths]);
 
-  const visibleCols = columns.filter(c => visible.includes(c.key));
+  const handleColumnToggle = useCallback((colKey: string, checked: boolean) => {
+    startTransition(() => {
+      setVisible(v =>
+        checked ? [...v, colKey] : v.filter(k => k !== colKey)
+      );
+    });
+  }, []);
 
-  const columnsButton = (
+  const columnsButton = useMemo(() => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
@@ -145,21 +195,17 @@ export function SortableTable<T extends { id: string }>({
           <DropdownMenuCheckboxItem
             key={col.key}
             checked={visible.includes(col.key)}
-            onCheckedChange={(checked) =>
-              setVisible(v =>
-                checked ? [...v, col.key] : v.filter(k => k !== col.key)
-              )
-            }
+            onCheckedChange={(checked) => handleColumnToggle(col.key, checked)}
           >
             {col.label}
           </DropdownMenuCheckboxItem>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  ), [columns, visible, handleColumnToggle]);
 
   return (
-    <div>
+    <div className="transition-opacity duration-200">
       {toolbar ? (
         toolbar(columnsButton)
       ) : (
@@ -175,13 +221,16 @@ export function SortableTable<T extends { id: string }>({
                   onClick={() => col.sortable !== false && handleSort(col.key)}
                   className={
                     (col.sortable === false ? '' : 'cursor-pointer select-none relative') +
-                    ' border border-border'
+                    ' border border-border transition-all duration-200'
                   }
-                  style={{ width: widths[col.key] }}
+                  style={{ 
+                    width: widths[col.key], 
+                    transition: 'width 0.2s ease-out' 
+                  }}
                 >
                   {col.label}{sortKey === col.key && (asc ? ' ▲' : ' ▼')}
                   <span
-                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize"
+                    className="absolute right-0 top-0 h-full w-1 cursor-col-resize opacity-0 hover:opacity-100 transition-opacity"
                     onMouseDown={(e) => startResize(e, col.key)}
                   />
                 </TableHead>
@@ -190,9 +239,19 @@ export function SortableTable<T extends { id: string }>({
           </TableHeader>
           <TableBody>
             {sorted.map(item => (
-              <TableRow key={item.id} className={`h-12 ${rowClassName ? rowClassName(item) : ''}`}>
+              <TableRow 
+                key={item.id} 
+                className={`h-12 transition-colors duration-150 ${rowClassName ? rowClassName(item) : ''}`}
+              >
                 {visibleCols.map(col => (
-                  <TableCell key={col.key} style={{ width: widths[col.key] }} className="border border-border py-2 px-3">
+                  <TableCell 
+                    key={col.key} 
+                    style={{ 
+                      width: widths[col.key], 
+                      transition: 'width 0.2s ease-out' 
+                    }} 
+                    className="border border-border py-2 px-3"
+                  >
                     {col.render ? col.render(item) : String(get(item, col.key))}
                   </TableCell>
                 ))}
@@ -203,6 +262,6 @@ export function SortableTable<T extends { id: string }>({
       </ScrollArea>
     </div>
   );
-}
+}) as <T extends { id: string }>(props: SortableTableProps<T>) => React.ReactElement;
 
 export default SortableTable;
