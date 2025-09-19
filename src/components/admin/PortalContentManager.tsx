@@ -1897,7 +1897,14 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="unassigned">No leader assigned</SelectItem>
-                              {/* We'll need to fetch admin users here */}
+                              <SelectItem value="james-hennahane">James Hennahane</SelectItem>
+                              <SelectItem value="philip-niemerg">Philip Niemerg</SelectItem>
+                              <SelectItem value="rootedai-team">RootedAI Team</SelectItem>
+                              {companies.map((company) => (
+                                <SelectItem key={`company-${company.id}`} value={`company-${company.id}`}>
+                                  {company.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>

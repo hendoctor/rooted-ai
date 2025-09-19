@@ -26,6 +26,10 @@ interface SessionData {
   leader_email?: string;
   leader_avatar_url?: string;
   session_notes?: string;
+  media?: string;
+  contact?: string;
+  steps?: string;
+  session_leader_id?: string;
 }
 
 interface EnhancedCoachingCardProps {
@@ -68,29 +72,58 @@ const EnhancedCoachingCard: React.FC<EnhancedCoachingCardProps> = ({
           key={session.id}
           className="p-4 rounded-lg border bg-gradient-to-r from-sage/5 to-forest-green/5 hover:from-sage/10 hover:to-forest-green/10 transition-colors"
         >
+          {/* Session Leader - Prominent Display */}
+          {(() => {
+            const getLeaderDisplayName = (session: SessionData): string => {
+              if (session.leader_name) return session.leader_name;
+              if (session.session_leader_id) {
+                switch (session.session_leader_id) {
+                  case 'james-hennahane': return 'James Hennahane';
+                  case 'philip-niemerg': return 'Philip Niemerg';
+                  case 'rootedai-team': return 'RootedAI Team';
+                  default:
+                    if (session.session_leader_id.startsWith('company-')) {
+                      return 'Company Representative';
+                    }
+                    return 'Session Leader';
+                }
+              }
+              return 'TBD';
+            };
+
+            return (
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-forest-green" />
+                  <span className="text-sm font-medium text-forest-green">
+                    {getLeaderDisplayName(session)}
+                  </span>
+                </div>
+                {(() => {
+                  const statusConfig = getStatusConfig(session.session_status || 'Scheduled');
+                  return (
+                    <Badge 
+                      variant="secondary" 
+                      className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} ${statusConfig.animate || ''}`}
+                    >
+                      {session.session_status || 'Scheduled'}
+                    </Badge>
+                  );
+                })()}
+              </div>
+            );
+          })()}
+
           {/* Session Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
-              <h4 className="font-medium text-sm text-foreground mb-1">
-                {session.topic}
-              </h4>
-              {session.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {session.description}
-                </p>
-              )}
-            </div>
-            {(() => {
-              const statusConfig = getStatusConfig(session.session_status || 'Scheduled');
-              return (
-                <Badge 
-                  variant="secondary" 
-                  className={`ml-2 ${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} ${statusConfig.animate || ''}`}
-                >
-                  {session.session_status || 'Scheduled'}
-                </Badge>
-              );
-            })()}
+          <div className="mb-3">
+            <h4 className="font-medium text-foreground mb-1">
+              {session.topic}
+            </h4>
+            {session.description && (
+              <p className="text-xs text-muted-foreground line-clamp-2">
+                {session.description}
+              </p>
+            )}
           </div>
 
           {/* Session Details */}
@@ -114,36 +147,6 @@ const EnhancedCoachingCard: React.FC<EnhancedCoachingCardProps> = ({
             )}
           </div>
 
-          {/* Session Leader */}
-          {(session.leader_name || session.leader_email) && (
-            <div className="flex items-center gap-3 mb-3 p-2 rounded bg-background/50">
-              <Avatar className="h-8 w-8">
-                <AvatarImage 
-                  src={session.leader_avatar_url || ''} 
-                  alt={session.leader_name || session.leader_email || 'Session leader'}
-                />
-                <AvatarFallback className="bg-forest-green text-white text-xs">
-                  {(session.leader_name || session.leader_email || 'SL')
-                    .split(' ')
-                    .map(n => n[0])
-                    .join('')
-                    .toUpperCase()
-                    .slice(0, 2)
-                  }
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-foreground">
-                  {session.leader_name || 'Session Leader'}
-                </p>
-                {session.leader_email && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    {session.leader_email}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Action Buttons */}
           <div className="flex gap-2">
@@ -157,7 +160,7 @@ const EnhancedCoachingCard: React.FC<EnhancedCoachingCardProps> = ({
                   <Video className="h-3 w-3 mr-1" />
                   Join Session
                 </Button>
-                {(session.session_notes || session.description) && (
+                {(session.session_notes || session.media || session.contact || session.steps) && (
                   <Button 
                     size="sm" 
                     variant="outline"

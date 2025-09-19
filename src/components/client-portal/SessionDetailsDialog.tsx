@@ -18,6 +18,10 @@ interface SessionData {
   leader_email?: string;
   leader_avatar_url?: string;
   session_notes?: string;
+  media?: string;
+  contact?: string;
+  steps?: string;
+  session_leader_id?: string;
 }
 
 interface SessionDetailsDialogProps {
@@ -97,41 +101,61 @@ const SessionDetailsDialog: React.FC<SessionDetailsDialogProps> = ({
           </div>
 
           {/* Session Leader */}
-          {(session.leader_name || session.leader_email) && (
-            <div className="p-4 rounded-lg border bg-gradient-to-r from-sage/5 to-forest-green/5">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage 
-                    src={session.leader_avatar_url || ''} 
-                    alt={session.leader_name || session.leader_email || 'Session leader'}
-                  />
-                  <AvatarFallback className="bg-forest-green text-white">
-                    {(session.leader_name || session.leader_email || 'SL')
-                      .split(' ')
-                      .map(n => n[0])
-                      .join('')
-                      .toUpperCase()
-                      .slice(0, 2)
+          {(() => {
+            const getLeaderDisplayName = (session: SessionData): string => {
+              if (session.leader_name) return session.leader_name;
+              if (session.session_leader_id) {
+                switch (session.session_leader_id) {
+                  case 'james-hennahane': return 'James Hennahane';
+                  case 'philip-niemerg': return 'Philip Niemerg';
+                  case 'rootedai-team': return 'RootedAI Team';
+                  default:
+                    if (session.session_leader_id.startsWith('company-')) {
+                      return 'Company Representative';
                     }
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <p className="font-medium text-foreground">
-                    {session.leader_name || 'Session Leader'}
-                  </p>
-                  {session.leader_email && (
-                    <p className="text-sm text-muted-foreground">
-                      {session.leader_email}
+                    return 'Session Leader';
+                }
+              }
+              return null;
+            };
+
+            const leaderName = getLeaderDisplayName(session);
+            return (leaderName || session.leader_email) ? (
+              <div className="p-4 rounded-lg border bg-gradient-to-r from-sage/5 to-forest-green/5">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage 
+                      src={session.leader_avatar_url || ''} 
+                      alt={leaderName || session.leader_email || 'Session leader'}
+                    />
+                    <AvatarFallback className="bg-forest-green text-white">
+                      {(leaderName || session.leader_email || 'SL')
+                        .split(' ')
+                        .map(n => n[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)
+                      }
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">
+                      {leaderName || 'Session Leader'}
                     </p>
-                  )}
+                    {session.leader_email && (
+                      <p className="text-sm text-muted-foreground">
+                        {session.leader_email}
+                      </p>
+                    )}
+                  </div>
+                  <User className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <User className="h-4 w-4 text-muted-foreground" />
               </div>
-            </div>
-          )}
+            ) : null;
+          })()}
 
           {/* Session Details/Notes */}
-          {session.session_notes && (
+          {(session.session_notes || session.media) && (
             <div className="space-y-3">
               <h4 className="font-medium text-foreground flex items-center gap-2">
                 <FileText className="h-4 w-4 text-forest-green" />
@@ -139,7 +163,37 @@ const SessionDetailsDialog: React.FC<SessionDetailsDialogProps> = ({
               </h4>
               <div className="p-4 rounded-lg bg-background/50 border">
                 <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                  {session.session_notes}
+                  {session.media || session.session_notes}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Contact Information */}
+          {session.contact && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-foreground flex items-center gap-2">
+                <User className="h-4 w-4 text-forest-green" />
+                Contact Information
+              </h4>
+              <div className="p-4 rounded-lg bg-background/50 border">
+                <p className="text-sm text-foreground leading-relaxed">
+                  {session.contact}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Session Process/Steps */}
+          {session.steps && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-foreground flex items-center gap-2">
+                <FileText className="h-4 w-4 text-forest-green" />
+                Session Process
+              </h4>
+              <div className="p-4 rounded-lg bg-background/50 border">
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                  {session.steps}
                 </p>
               </div>
             </div>
