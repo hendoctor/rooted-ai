@@ -425,8 +425,17 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const saveAnnouncement = async () => {
     try {
       setLoading(true);
-      let contentId: string;
-      let isNewContent = false;
+      
+      // Validate required fields
+      if (!announcementForm.title || !announcementForm.author) {
+        throw new Error('Title and author are required');
+      }
+      
+      // Get authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Authentication required');
+      }
       
       if (editingAnnouncement) {
         // Update existing announcement
@@ -438,16 +447,13 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             summary: announcementForm.summary,
             content: announcementForm.content,
             url: announcementForm.url || null,
-            created_by: (await supabase.auth.getUser()).data.user?.id
+            created_by: user.id
           })
           .eq('id', editingAnnouncement.id);
         
         if (error) {
-          console.error('Announcement update error:', error);
-          throw error;
+          throw new Error(`Failed to update announcement: ${error.message}`);
         }
-        
-        contentId = editingAnnouncement.id;
         
         // Update company assignments
         const { error: deleteError } = await supabase
@@ -456,8 +462,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           .eq('announcement_id', editingAnnouncement.id);
           
         if (deleteError) {
-          console.error('Company assignment deletion error:', deleteError);
-          throw deleteError;
+          throw new Error(`Failed to clear company assignments: ${deleteError.message}`);
         }
         
         if (announcementForm.companies.length > 0) {
@@ -471,13 +476,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             );
           
           if (assignError) {
-            console.error('Company assignment error:', assignError);
-            throw assignError;
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
           }
         }
       } else {
         // Create new announcement
-        isNewContent = true;
         const { data, error } = await supabase
           .from('announcements')
           .insert({
@@ -486,21 +489,18 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             summary: announcementForm.summary,
             content: announcementForm.content,
             url: announcementForm.url || null,
-            created_by: (await supabase.auth.getUser()).data.user?.id
+            created_by: user.id
           })
           .select()
           .single();
         
         if (error) {
-          console.error('Announcement creation error:', error);
-          throw error;
+          throw new Error(`Failed to create announcement: ${error.message}`);
         }
         
         if (!data) {
           throw new Error('No data returned from announcement creation');
         }
-        
-        contentId = data.id;
         
         // Create company assignments
         if (announcementForm.companies.length > 0) {
@@ -514,24 +514,24 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             );
           
           if (assignError) {
-            console.error('Company assignment error:', assignError);
-            throw assignError;
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
           }
         }
       }
       
-      
       await fetchAnnouncements();
-      toast.success('Announcement saved successfully');
+      toast.success(editingAnnouncement ? 'Announcement updated successfully' : 'Announcement created successfully');
       
       setAnnouncementOpen(false);
       setEditingAnnouncement(null);
       setAnnouncementForm(emptyAnnouncement);
     } catch (error) {
       console.error('Error saving announcement:', error);
-      toast.error(`Failed to save announcement: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save announcement: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const saveResource = async () => {
@@ -1040,22 +1040,34 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const saveAiTool = async () => {
     try {
       setLoading(true);
-      let contentId: string;
-      let isNewContent = false;
+      
+      // Validate required fields
+      if (!aiToolForm.ai_tool) {
+        throw new Error('AI Tool name is required');
+      }
+      
+      // Get authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Authentication required');
+      }
       
       if (editingAiTool) {
         const { error } = await supabase.from('ai_tools').update({
           ai_tool: aiToolForm.ai_tool,
           url: aiToolForm.url,
           comments: aiToolForm.comments,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.id
         }).eq('id', editingAiTool.id);
 
-        if (error) throw error;
-        contentId = editingAiTool.id;
+        if (error) {
+          throw new Error(`Failed to update AI tool: ${error.message}`);
+        }
 
         const { error: deleteError } = await supabase.from('ai_tool_companies').delete().eq('ai_tool_id', editingAiTool.id);
-        if (deleteError) throw deleteError;
+        if (deleteError) {
+          throw new Error(`Failed to clear company assignments: ${deleteError.message}`);
+        }
         
         if (aiToolForm.companies.length > 0) {
           const { error: assignError } = await supabase.from('ai_tool_companies').insert(
@@ -1064,21 +1076,24 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
               company_id: companyId
             }))
           );
-          if (assignError) throw assignError;
+          if (assignError) {
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
+          }
         }
       } else {
-        isNewContent = true;
         const { data, error } = await supabase.from('ai_tools').insert({
           ai_tool: aiToolForm.ai_tool,
           url: aiToolForm.url,
           comments: aiToolForm.comments,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.id
         }).select().single();
 
-        if (error) throw error;
-        if (!data) throw new Error('No data returned from AI tool creation');
-        
-        contentId = data.id;
+        if (error) {
+          throw new Error(`Failed to create AI tool: ${error.message}`);
+        }
+        if (!data) {
+          throw new Error('No data returned from AI tool creation');
+        }
 
         if (aiToolForm.companies.length > 0) {
           const { error: assignError } = await supabase.from('ai_tool_companies').insert(
@@ -1087,21 +1102,24 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
               company_id: companyId
             }))
           );
-          if (assignError) throw assignError;
+          if (assignError) {
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
+          }
         }
       }
 
-      
       await fetchAiTools();
-      toast.success('AI Tool saved successfully');
+      toast.success(editingAiTool ? 'AI Tool updated successfully' : 'AI Tool created successfully');
       setAiToolOpen(false);
       setEditingAiTool(null);
       setAiToolForm(emptyAiTool);
     } catch (error) {
       console.error('Error saving AI Tool:', error);
-      toast.error(`Failed to save AI Tool: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save AI Tool: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Table helpers and column definitions
