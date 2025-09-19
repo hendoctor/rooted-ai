@@ -56,17 +56,16 @@ export const useNotifications = (): UseNotificationsReturn => {
         setLoading(false);
       }
 
-      // Fetch notifications directly from table since functions may not exist yet
+      // Use the enhanced get_user_notifications function for richer data
       const { data: notificationData, error: notificationError } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .rpc('get_user_notifications', { 
+          p_user_id: user.id,
+          p_limit: 50 
+        });
 
       if (notificationError) throw notificationError;
 
-      const count = notificationData?.filter(n => !n.is_read).length || 0;
+      const count = notificationData?.filter((n: any) => !n.is_read).length || 0;
 
       const formattedNotifications: Notification[] = (notificationData || []).map((item: any) => ({
         id: item.id,
@@ -78,8 +77,8 @@ export const useNotifications = (): UseNotificationsReturn => {
         priority: item.priority,
         created_at: item.created_at,
         read_at: item.read_at,
-        content_title: item.title, // Fallback to notification title
-        content_url: null, // Will be enhanced later
+        content_title: item.content_title || item.title, // Use enhanced content title
+        content_url: item.content_url, // Use enhanced content URL
       }));
 
       setNotifications(formattedNotifications);

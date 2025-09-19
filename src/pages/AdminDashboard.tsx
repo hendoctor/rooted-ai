@@ -13,6 +13,7 @@ import { LoadingIcon } from '@/components/LoadingSpinner';
 import PortalContentManager from '@/components/admin/PortalContentManager';
 import UnifiedUserManager from '@/components/admin/UnifiedUserManager';
 import AdminPermissionDebugger from '@/components/admin/AdminPermissionDebugger';
+import { NotificationDiagnostics } from '@/components/admin/NotificationDiagnostics';
 import { activityLogger } from '@/utils/activityLogger';
 import AccessDenied from './AccessDenied';
 import ActivityLogsTable from '@/components/admin/ActivityLogsTable';
@@ -269,6 +270,9 @@ const AdminDashboard: React.FC = () => {
 
         {/* Portal Content Management */}
         <PortalContentManager companies={allCompanies.map(c => ({ id: c.id, name: c.name, slug: c.slug }))} />
+
+        {/* Notification System Diagnostics */}
+        <NotificationDiagnostics />
 
         {/* Activity Logs */}
         <ActivityLogsTable />

@@ -1008,6 +1008,14 @@ export type Database = {
         Args: { token_input: string }
         Returns: Json
       }
+      backfill_missing_notifications: {
+        Args: { p_company_id?: string; p_hours_back?: number }
+        Returns: {
+          content_assignments: number
+          content_type: string
+          notifications_created: number
+        }[]
+      }
       can_access_full_user_profile: {
         Args: { target_user_id: string }
         Returns: boolean
@@ -1183,6 +1191,17 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_notification_diagnostics: {
+        Args: { p_company_id?: string }
+        Returns: {
+          company_id: string
+          company_name: string
+          notification_errors: number
+          recent_content_assignments: number
+          recent_notifications: number
+          total_members: number
+        }[]
       }
       get_session_with_leader_info: {
         Args: { company_id_param: string }
