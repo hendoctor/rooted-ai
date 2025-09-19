@@ -1326,11 +1326,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const coachingColumns: Column<Coaching>[] = [
     { key: 'topic', label: 'Topic', initialWidth: 150, render: (item) => <TruncatedText text={item.topic} maxLength={30} /> },
     { key: 'description', label: 'Description', initialWidth: 200, render: (item) => <TruncatedText text={item.description} maxLength={50} /> },
-    { key: 'media', label: 'Details', initialWidth: 120 },
-    { key: 'contact', label: 'Contact', initialWidth: 120 },
+    { key: 'media', label: 'Details', initialWidth: 100, render: (item) => <TruncatedText text={item.media || ''} maxLength={25} /> },
+    { key: 'contact', label: 'Contact', initialWidth: 100, render: (item) => <TruncatedText text={item.contact} maxLength={20} /> },
     { key: 'steps', label: 'Session Phase', initialWidth: 150, render: (item) => <TruncatedText text={item.steps || ''} maxLength={30} /> },
-    { key: 'session_date', label: 'Session Date', initialWidth: 120, render: (item) => item.session_date ? new Date(item.session_date).toLocaleDateString() : 'Not set' },
-    { key: 'session_status', label: 'Status', initialWidth: 120 },
+    { key: 'session_date', label: 'Date', initialWidth: 100, render: (item) => item.session_date ? new Date(item.session_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Not set' },
+    { key: 'session_status', label: 'Status', initialWidth: 100, render: (item) => <TruncatedText text={item.session_status || ''} maxLength={15} /> },
     { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
