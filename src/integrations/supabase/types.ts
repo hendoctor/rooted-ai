@@ -1361,6 +1361,10 @@ export type Database = {
         Args: { target_auth_id: string }
         Returns: boolean
       }
+      test_notification_creation: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       update_company_user_role: {
         Args: { p_company_id: string; p_new_role: string; p_user_id: string }
         Returns: Json
