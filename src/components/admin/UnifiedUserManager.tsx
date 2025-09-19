@@ -377,19 +377,17 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
 
         // Handle company membership assignment/update
         if (editForm.companyId && editingUser.user_id) {
-          const existingMembership = editingUser.companies?.find(c => c.id === editForm.companyId);
-          
-          if (existingMembership) {
-            // Update existing membership
-            const { error: membershipError } = await supabase
+          // For Client users, enforce single-company membership by removing all existing memberships first
+          if (editForm.role === 'Client') {
+            // Remove all existing company memberships for Client users
+            const { error: deleteError } = await supabase
               .from('company_memberships')
-              .update({ role: editForm.companyRole })
-              .eq('company_id', editForm.companyId)
+              .delete()
               .eq('user_id', editingUser.user_id);
             
-            if (membershipError) throw membershipError;
-          } else {
-            // Create new membership
+            if (deleteError) throw deleteError;
+            
+            // Create new membership for the selected company
             const { error: membershipError } = await supabase
               .from('company_memberships')
               .insert({
@@ -399,6 +397,31 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
               });
             
             if (membershipError) throw membershipError;
+          } else {
+            // For Admin users, maintain existing multi-company logic
+            const existingMembership = editingUser.companies?.find(c => c.id === editForm.companyId);
+            
+            if (existingMembership) {
+              // Update existing membership
+              const { error: membershipError } = await supabase
+                .from('company_memberships')
+                .update({ role: editForm.companyRole })
+                .eq('company_id', editForm.companyId)
+                .eq('user_id', editingUser.user_id);
+              
+              if (membershipError) throw membershipError;
+            } else {
+              // Create new membership
+              const { error: membershipError } = await supabase
+                .from('company_memberships')
+                .insert({
+                  company_id: editForm.companyId,
+                  user_id: editingUser.user_id,
+                  role: editForm.companyRole
+                });
+              
+              if (membershipError) throw membershipError;
+            }
           }
         }
       } else if (editingUser.source_table === 'user_invitations') {
