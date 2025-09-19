@@ -25,7 +25,7 @@ const Profile = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>('');
 
-  // Fetch profile on mount
+  // Fetch profile on mount and set up real-time updates
   useEffect(() => {
     const fetchProfile = async () => {
       if (user?.email) {
@@ -52,7 +52,46 @@ const Profile = () => {
     };
     
     fetchProfile();
-  }, [user]);
+
+    // Set up real-time subscription for profile updates
+    if (user?.id) {
+      const channel = supabase
+        .channel(`profile-updates-${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'users',
+            filter: `auth_user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Profile update received:', payload);
+            if (payload.new) {
+              const newData = payload.new;
+              setProfile({
+                display_name: newData.display_name,
+                avatar_url: newData.avatar_url
+              });
+              setAvatarUrl(newData.avatar_url || '');
+              
+              // Update form data only if user hasn't made local changes
+              if (!hasChanges) {
+                setFormData({
+                  display_name: newData.display_name || '',
+                  email: user.email || '',
+                });
+              }
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [user, hasChanges]);
 
   useEffect(() => {
     if (profile && user) {
