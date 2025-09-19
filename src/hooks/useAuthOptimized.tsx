@@ -94,18 +94,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [updateAuthState]);
 
-  const fetchContextFromServer = useCallback(async (userId: string, updateLoading = true) => {
+  const fetchContextFromServer = useCallback(async (userId: string, updateLoading = true, retryCount = 0) => {
     try {
       if (updateLoading) {
         updateAuthState({ loading: true, error: null });
       }
 
-      // Parallel calls for better performance
-      const [membershipResult, contextResult, avatarResult] = await Promise.all([
-        supabase.rpc('ensure_membership_for_current_user'),
-        supabase.rpc('get_user_context_optimized', { p_user_id: userId }),
-        supabase.from('users').select('avatar_url').eq('auth_user_id', userId).single()
-      ]);
+      // Sequential approach during initial user setup to avoid race conditions
+      let membershipResult, contextResult, avatarResult;
+      
+      try {
+        // First ensure membership (may fail during account creation)
+        membershipResult = await supabase.rpc('ensure_membership_for_current_user');
+      } catch (membershipError: any) {
+        console.warn('Membership ensure failed (may be transient):', membershipError.message);
+        // Continue anyway - this is not critical for auth context
+      }
+
+      try {
+        // Get user context
+        contextResult = await supabase.rpc('get_user_context_optimized', { p_user_id: userId });
+      } catch (contextError: any) {
+        console.warn('Context fetch failed:', contextError.message);
+        
+        // If this fails during initial setup, retry once after a delay
+        if (retryCount === 0 && contextError.message?.includes('400')) {
+          console.log('Retrying context fetch after account setup delay...');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return fetchContextFromServer(userId, updateLoading, 1);
+        }
+        throw contextError;
+      }
+
+      try {
+        // Get avatar (least critical)
+        avatarResult = await supabase.from('users').select('avatar_url').eq('auth_user_id', userId).maybeSingle();
+      } catch (avatarError: any) {
+        console.warn('Avatar fetch failed (non-critical):', avatarError.message);
+        avatarResult = { data: null, error: null }; // Provide fallback
+      }
 
       if (contextResult.error) throw contextResult.error;
 
@@ -144,15 +171,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading: false,
         error: null,
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Server fetch failed:', err);
+      
+      // Handle account creation delays gracefully 
+      const isAccountCreationError = err.message?.includes('400') || err.message?.includes('406');
+      
       if (updateLoading) {
         updateAuthState({
           userRole: null,
           companies: [],
           authReady: true,
           loading: false,
-          error: err instanceof Error ? err.message : 'Failed to load user data',
+          // Don't show error toast for transient account creation issues
+          error: isAccountCreationError ? null : (err instanceof Error ? err.message : 'Failed to load user data'),
         });
       }
     }
@@ -185,11 +217,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       CacheManager.setCurrentUser(sess.user.id);
       
       // Defer context fetch to avoid blocking auth state change
+      // Add longer delay for newly created accounts to avoid database timing issues
+      const delay = Date.now() - (sess.user.created_at ? new Date(sess.user.created_at).getTime() : 0) < 30000 ? 2000 : 0;
       setTimeout(() => {
         fetchContext(sess.user.id).catch(err => {
-          console.error('Deferred context fetch failed:', err);
+          console.error('Deferred context fetch failed (may be transient during account creation):', err);
         });
-      }, 0);
+      }, delay);
     } else {
       // User signed out - clear everything in one update
       CacheManager.setCurrentUser(null);

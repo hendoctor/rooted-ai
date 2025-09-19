@@ -96,6 +96,12 @@ const AuthSimplified = () => {
   }, [searchParams]);
 
   const loadInvitation = async (token: string) => {
+    // Prevent re-validation if user is already authenticated (token was already consumed)
+    if (user) {
+      console.log('User already authenticated, skipping invitation validation');
+      return;
+    }
+
     setLoadingInvitation(true);
     setInvitationError(null);
     
@@ -107,20 +113,27 @@ const AuthSimplified = () => {
       });
 
       if (error) {
-        throw new Error(`Database error: ${error.message}`);
+        console.warn('Invitation validation error (may be already consumed):', error.message);
+        // Don't show error toast if user might be authenticated - this could be a consumed token
+        setLoadingInvitation(false);
+        return;
       }
 
       const validationResult = data as { valid: boolean; error?: string; invitation?: any };
 
       if (!validationResult?.valid) {
         const errorMsg = validationResult?.error || "This invitation link is invalid or has expired.";
-        setInvitationError(errorMsg);
+        console.warn('Invitation validation failed:', errorMsg);
         
-        toast({
-          title: "Invalid Invitation",
-          description: errorMsg,
-          variant: "destructive",
-        });
+        // Only show error if user is not authenticated (avoid false positives)
+        if (!user) {
+          setInvitationError(errorMsg);
+          toast({
+            title: "Invalid Invitation",
+            description: errorMsg,
+            variant: "destructive",
+          });
+        }
         return;
       }
 
@@ -137,13 +150,16 @@ const AuthSimplified = () => {
       
     } catch (error: any) {
       console.error('Failed to load invitation:', error);
-      setInvitationError(error.message || "Failed to load invitation details.");
       
-      toast({
-        title: "Error",
-        description: "Failed to load invitation details. Please check the link and try again.",
-        variant: "destructive",
-      });
+      // Only show error toast if user is not authenticated
+      if (!user) {
+        setInvitationError(error.message || "Failed to load invitation details.");
+        toast({
+          title: "Error",
+          description: "Failed to load invitation details. Please check the link and try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoadingInvitation(false);
     }
