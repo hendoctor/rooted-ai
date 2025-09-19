@@ -9,8 +9,11 @@ import { SimpleMenuManager } from '@/utils/simpleMenuUtils';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
@@ -77,6 +80,31 @@ const Header = () => {
       return `/${href}`;
     }
     return href;
+  };
+
+  const handleNotificationNavigate = (notification: any) => {
+    // Navigate based on notification type and content
+    if (notification.content_url) {
+      window.open(notification.content_url, '_blank');
+    } else {
+      // Navigate to relevant page based on notification type
+      switch (notification.notification_type) {
+        case 'announcement':
+        case 'resource':
+        case 'ai_tool':
+        case 'useful_link':
+        case 'faq':
+        case 'coaching':
+        case 'kpi':
+          // Navigate to client portal if user has companies
+          if (companies && companies.length > 0) {
+            navigate(`/${companies[0].slug}`);
+          }
+          break;
+        default:
+          break;
+      }
+    }
   };
 
   return (
@@ -155,6 +183,9 @@ const Header = () => {
                   >
                     <Download className="w-5 h-5" />
                   </Button>
+                )}
+                {user && (
+                  <NotificationCenter onNavigate={handleNotificationNavigate} />
                 )}
               </div>
               

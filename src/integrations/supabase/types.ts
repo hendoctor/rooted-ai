@@ -616,6 +616,59 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          notification_type: string
+          priority: string
+          read_at: string | null
+          reference_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          notification_type: string
+          priority?: string
+          read_at?: string | null
+          reference_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          notification_type?: string
+          priority?: string
+          read_at?: string | null
+          reference_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portal_resource_companies: {
         Row: {
           company_id: string
@@ -979,6 +1032,17 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_content_notification: {
+        Args: {
+          p_company_ids: string[]
+          p_content_id: string
+          p_content_type: string
+          p_message?: string
+          p_priority?: string
+          p_title: string
+        }
+        Returns: undefined
+      }
       delete_user_completely: {
         Args: { user_email: string }
         Returns: undefined
@@ -1133,6 +1197,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_unread_notification_count: {
+        Args: { p_user_id?: string }
+        Returns: number
+      }
       get_user_companies: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1161,6 +1229,22 @@ export type Database = {
           id: string
           status: string
           updated_at: string
+        }[]
+      }
+      get_user_notifications: {
+        Args: { p_limit?: number; p_user_id?: string }
+        Returns: {
+          content_title: string
+          content_url: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          notification_type: string
+          priority: string
+          read_at: string
+          reference_id: string
+          title: string
         }[]
       }
       get_user_profile: {
@@ -1222,6 +1306,10 @@ export type Database = {
           p_user_email: string
           p_user_id: string
         }
+        Returns: undefined
+      }
+      mark_notifications_as_read: {
+        Args: { p_notification_ids?: string[]; p_user_id?: string }
         Returns: undefined
       }
       remove_user_from_company: {
