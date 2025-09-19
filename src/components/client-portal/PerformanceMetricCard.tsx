@@ -190,9 +190,9 @@ const PerformanceMetricCard = ({ report }: PerformanceMetricCardProps) => {
         </Card>
       </DialogTrigger>
 
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between gap-2 text-forest-green">
+          <DialogTitle className="flex flex-wrap items-center justify-between gap-2 text-forest-green">
             <span>{report?.name || 'Performance Report'}</span>
             <Badge variant="outline" className="bg-forest-green/10 text-forest-green">
               {kpis.length} KPI{kpis.length === 1 ? '' : 's'}
