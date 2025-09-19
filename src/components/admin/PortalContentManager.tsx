@@ -25,7 +25,7 @@ import {
 import SortableTable, { Column } from './SortableTable';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { createNotificationsForCompanies, getNotificationMessage } from '@/utils/notificationService';
+
 
 interface CompanyOption {
   id: string;
@@ -517,23 +517,6 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         }
       }
       
-      // Create notifications for assigned companies
-      if (announcementForm.companies.length > 0) {
-        try {
-          const notification = getNotificationMessage('announcement', announcementForm.title, isNewContent);
-          await createNotificationsForCompanies({
-            title: notification.title,
-            message: notification.message,
-            notificationType: 'announcement',
-            referenceId: contentId,
-            companyIds: announcementForm.companies,
-            priority: 'medium'
-          });
-        } catch (notificationError) {
-          console.error('Failed to create notifications:', notificationError);
-          // Don't fail the whole operation if notifications fail
-        }
-      }
       
       await fetchAnnouncements();
       toast.success('Announcement saved successfully');
@@ -552,7 +535,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     try {
       setLoading(true);
       let contentId: string;
-      let isNewContent = false;
+      
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Authentication required');
+      }
       
       if (editingResource) {
         const { error } = await supabase.from('portal_resources').update({
@@ -560,37 +548,60 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           description: resourceForm.description,
           link: resourceForm.link || null,
           category: resourceForm.category,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.id
         }).eq('id', editingResource.id);
 
-        if (error) throw error;
+        if (error) {
+          throw new Error(`Failed to update resource: ${error.message}`);
+        }
         contentId = editingResource.id;
 
-        const { error: deleteError } = await supabase.from('portal_resource_companies').delete().eq('resource_id', editingResource.id);
-        if (deleteError) throw deleteError;
+        // Get current company assignments to compare
+        const { data: currentAssignments } = await supabase
+          .from('portal_resource_companies')
+          .select('company_id')
+          .eq('resource_id', editingResource.id);
         
-        if (resourceForm.companies.length > 0) {
-          const { error: assignError } = await supabase.from('portal_resource_companies').insert(
-            resourceForm.companies.map(companyId => ({
-              resource_id: editingResource.id,
-              company_id: companyId
-            }))
-          );
-          if (assignError) throw assignError;
+        const currentCompanyIds = new Set(currentAssignments?.map(a => a.company_id) || []);
+        const newCompanyIds = new Set(resourceForm.companies);
+        
+        // Only update assignments if they changed
+        const assignmentsChanged = currentCompanyIds.size !== newCompanyIds.size || 
+          [...currentCompanyIds].some(id => !newCompanyIds.has(id));
+        
+        if (assignmentsChanged) {
+          const { error: deleteError } = await supabase.from('portal_resource_companies').delete().eq('resource_id', editingResource.id);
+          if (deleteError) {
+            throw new Error(`Failed to update company assignments: ${deleteError.message}`);
+          }
+          
+          if (resourceForm.companies.length > 0) {
+            const { error: assignError } = await supabase.from('portal_resource_companies').insert(
+              resourceForm.companies.map(companyId => ({
+                resource_id: editingResource.id,
+                company_id: companyId
+              }))
+            );
+            if (assignError) {
+              throw new Error(`Failed to assign to companies: ${assignError.message}`);
+            }
+          }
         }
       } else {
-        isNewContent = true;
         const { data, error } = await supabase.from('portal_resources').insert({
           title: resourceForm.title,
           description: resourceForm.description,
           link: resourceForm.link || null,
           category: resourceForm.category,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.id
         }).select().single();
 
-        if (error) throw error;
-        if (!data) throw new Error('No data returned from resource creation');
-        
+        if (error) {
+          throw new Error(`Failed to create resource: ${error.message}`);
+        }
+        if (!data) {
+          throw new Error('No data returned from resource creation');
+        }
         contentId = data.id;
 
         if (resourceForm.companies.length > 0) {
@@ -600,81 +611,93 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
               company_id: companyId
             }))
           );
-          if (assignError) throw assignError;
+          if (assignError) {
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
+          }
         }
       }
 
-      // Create notifications
-      if (resourceForm.companies.length > 0) {
-        try {
-          const notification = getNotificationMessage('resource', resourceForm.title, isNewContent);
-          await createNotificationsForCompanies({
-            title: notification.title,
-            message: notification.message,
-            notificationType: 'resource',
-            referenceId: contentId,
-            companyIds: resourceForm.companies,
-            priority: 'medium'
-          });
-        } catch (notificationError) {
-          console.error('Failed to create notifications:', notificationError);
-        }
-      }
-      
       await fetchResources();
-      toast.success('Resource saved successfully');
+      toast.success(editingResource ? 'Resource updated successfully' : 'Resource created successfully');
       setResourceOpen(false);
       setEditingResource(null);
       setResourceForm(emptyResource);
     } catch (error) {
       console.error('Error saving resource:', error);
-      toast.error(`Failed to save resource: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save resource: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const saveLink = async () => {
     try {
       setLoading(true);
-      let contentId: string;
-      let isNewContent = false;
+      
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Authentication required');
+      }
       
       if (editingLink) {
         const { error } = await supabase.from('useful_links').update({
           title: linkForm.title,
-          url: linkForm.url,
           description: linkForm.description,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          url: linkForm.url,
+          created_by: user.id
         }).eq('id', editingLink.id);
 
-        if (error) throw error;
-        contentId = editingLink.id;
+        if (error) {
+          throw new Error(`Failed to update link: ${error.message}`);
+        }
 
-        const { error: deleteError } = await supabase.from('useful_link_companies').delete().eq('link_id', editingLink.id);
-        if (deleteError) throw deleteError;
+        // Get current company assignments to compare
+        const { data: currentAssignments } = await supabase
+          .from('useful_link_companies')
+          .select('company_id')
+          .eq('link_id', editingLink.id);
         
-        if (linkForm.companies.length > 0) {
-          const { error: assignError } = await supabase.from('useful_link_companies').insert(
-            linkForm.companies.map(companyId => ({
-              link_id: editingLink.id,
-              company_id: companyId
-            }))
-          );
-          if (assignError) throw assignError;
+        const currentCompanyIds = new Set(currentAssignments?.map(a => a.company_id) || []);
+        const newCompanyIds = new Set(linkForm.companies);
+        
+        // Only update assignments if they changed
+        const assignmentsChanged = currentCompanyIds.size !== newCompanyIds.size || 
+          [...currentCompanyIds].some(id => !newCompanyIds.has(id));
+        
+        if (assignmentsChanged) {
+          const { error: deleteError } = await supabase.from('useful_link_companies').delete().eq('link_id', editingLink.id);
+          if (deleteError) {
+            throw new Error(`Failed to update company assignments: ${deleteError.message}`);
+          }
+          
+          if (linkForm.companies.length > 0) {
+            const { error: assignError } = await supabase.from('useful_link_companies').insert(
+              linkForm.companies.map(companyId => ({
+                link_id: editingLink.id,
+                company_id: companyId
+              }))
+            );
+            if (assignError) {
+              throw new Error(`Failed to assign to companies: ${assignError.message}`);
+            }
+          }
         }
       } else {
-        isNewContent = true;
         const { data, error } = await supabase.from('useful_links').insert({
           title: linkForm.title,
-          url: linkForm.url,
           description: linkForm.description,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          url: linkForm.url,
+          created_by: user.id
         }).select().single();
 
-        if (error) throw error;
-        if (!data) throw new Error('No data returned from link creation');
-        
-        contentId = data.id;
+        if (error) {
+          throw new Error(`Failed to create link: ${error.message}`);
+        }
+        if (!data) {
+          throw new Error('No data returned from link creation');
+        }
 
         if (linkForm.companies.length > 0) {
           const { error: assignError } = await supabase.from('useful_link_companies').insert(
@@ -683,44 +706,36 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
               company_id: companyId
             }))
           );
-          if (assignError) throw assignError;
+          if (assignError) {
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
+          }
         }
       }
 
-      // Create notifications
-      if (linkForm.companies.length > 0) {
-        try {
-          const notification = getNotificationMessage('useful_link', linkForm.title, isNewContent);
-          await createNotificationsForCompanies({
-            title: notification.title,
-            message: notification.message,
-            notificationType: 'useful_link',
-            referenceId: contentId,
-            companyIds: linkForm.companies,
-            priority: 'medium'
-          });
-        } catch (notificationError) {
-          console.error('Failed to create notifications:', notificationError);
-        }
-      }
-      
       await fetchUsefulLinks();
-      toast.success('Link saved successfully');
+      toast.success(editingLink ? 'Link updated successfully' : 'Link created successfully');
       setLinkOpen(false);
       setEditingLink(null);
       setLinkForm(emptyLink);
     } catch (error) {
       console.error('Error saving link:', error);
-      toast.error(`Failed to save link: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save link: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
+
 
   const saveCoaching = async () => {
     try {
       setLoading(true);
-      let contentId: string;
-      let isNewContent = false;
+      
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Authentication required');
+      }
       
       if (editingCoaching) {
         const { error } = await supabase.from('adoption_coaching').update({
@@ -734,26 +749,45 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           session_leader_id: coachingForm.session_leader_id || null,
           meeting_link: coachingForm.meeting_link || null,
           session_status: coachingForm.session_status || 'scheduled',
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.id
         }).eq('id', editingCoaching.id);
 
-        if (error) throw error;
-        contentId = editingCoaching.id;
+        if (error) {
+          throw new Error(`Failed to update coaching session: ${error.message}`);
+        }
 
-        const { error: deleteError } = await supabase.from('adoption_coaching_companies').delete().eq('coaching_id', editingCoaching.id);
-        if (deleteError) throw deleteError;
+        // Get current company assignments to compare
+        const { data: currentAssignments } = await supabase
+          .from('adoption_coaching_companies')
+          .select('company_id')
+          .eq('coaching_id', editingCoaching.id);
         
-        if (coachingForm.companies.length > 0) {
-          const { error: assignError } = await supabase.from('adoption_coaching_companies').insert(
-            coachingForm.companies.map(companyId => ({
-              coaching_id: editingCoaching.id,
-              company_id: companyId
-            }))
-          );
-          if (assignError) throw assignError;
+        const currentCompanyIds = new Set(currentAssignments?.map(a => a.company_id) || []);
+        const newCompanyIds = new Set(coachingForm.companies);
+        
+        // Only update assignments if they changed
+        const assignmentsChanged = currentCompanyIds.size !== newCompanyIds.size || 
+          [...currentCompanyIds].some(id => !newCompanyIds.has(id));
+        
+        if (assignmentsChanged) {
+          const { error: deleteError } = await supabase.from('adoption_coaching_companies').delete().eq('coaching_id', editingCoaching.id);
+          if (deleteError) {
+            throw new Error(`Failed to update company assignments: ${deleteError.message}`);
+          }
+          
+          if (coachingForm.companies.length > 0) {
+            const { error: assignError } = await supabase.from('adoption_coaching_companies').insert(
+              coachingForm.companies.map(companyId => ({
+                coaching_id: editingCoaching.id,
+                company_id: companyId
+              }))
+            );
+            if (assignError) {
+              throw new Error(`Failed to assign to companies: ${assignError.message}`);
+            }
+          }
         }
       } else {
-        isNewContent = true;
         const { data, error } = await supabase.from('adoption_coaching').insert({
           topic: coachingForm.topic,
           description: coachingForm.description,
@@ -765,13 +799,15 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           session_leader_id: coachingForm.session_leader_id || null,
           meeting_link: coachingForm.meeting_link || null,
           session_status: coachingForm.session_status || 'scheduled',
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.id
         }).select().single();
 
-        if (error) throw error;
-        if (!data) throw new Error('No data returned from coaching creation');
-        
-        contentId = data.id;
+        if (error) {
+          throw new Error(`Failed to create coaching session: ${error.message}`);
+        }
+        if (!data) {
+          throw new Error('No data returned from coaching session creation');
+        }
 
         if (coachingForm.companies.length > 0) {
           const { error: assignError } = await supabase.from('adoption_coaching_companies').insert(
@@ -780,44 +816,50 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
               company_id: companyId
             }))
           );
-          if (assignError) throw assignError;
+          if (assignError) {
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
+          }
         }
       }
 
-      // Create notifications
-      if (coachingForm.companies.length > 0) {
-        try {
-          const notification = getNotificationMessage('coaching', coachingForm.topic, isNewContent);
-          await createNotificationsForCompanies({
-            title: notification.title,
-            message: notification.message,
-            notificationType: 'coaching',
-            referenceId: contentId,
-            companyIds: coachingForm.companies,
-            priority: 'high'
-          });
-        } catch (notificationError) {
-          console.error('Failed to create notifications:', notificationError);
-        }
-      }
-      
       await fetchCoaching();
-      toast.success('Coaching saved successfully');
+      toast.success(editingCoaching ? 'Coaching session updated successfully' : 'Coaching session created successfully');
       setCoachingOpen(false);
       setEditingCoaching(null);
       setCoachingForm(emptyCoaching);
     } catch (error) {
-      console.error('Error saving coaching:', error);
-      toast.error(`Failed to save coaching: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('Error saving coaching session:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save coaching session: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+      
+      await fetchCoaching();
+      toast.success(editingCoaching ? 'Coaching session updated successfully' : 'Coaching session created successfully');
+      setCoachingOpen(false);
+      setEditingCoaching(null);
+      setCoachingForm(emptyCoaching);
+    } catch (error) {
+      console.error('Error saving coaching session:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save coaching session: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const saveReport = async () => {
     try {
       setLoading(true);
-      let contentId: string;
-      let isNewContent = false;
+      
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Authentication required');
+      }
       
       if (editingReport) {
         const { error } = await supabase.from('reports').update({
@@ -826,39 +868,60 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           period: reportForm.period,
           link: reportForm.link || null,
           notes: reportForm.notes || null,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.id
         }).eq('id', editingReport.id);
 
-        if (error) throw error;
-        contentId = editingReport.id;
+        if (error) {
+          throw new Error(`Failed to update report: ${error.message}`);
+        }
 
-        const { error: deleteError } = await supabase.from('report_companies').delete().eq('report_id', editingReport.id);
-        if (deleteError) throw deleteError;
+        // Get current company assignments to compare
+        const { data: currentAssignments } = await supabase
+          .from('report_companies')
+          .select('company_id')
+          .eq('report_id', editingReport.id);
         
-        if (reportForm.companies.length > 0) {
-          const { error: assignError } = await supabase.from('report_companies').insert(
-            reportForm.companies.map(companyId => ({
-              report_id: editingReport.id,
-              company_id: companyId
-            }))
-          );
-          if (assignError) throw assignError;
+        const currentCompanyIds = new Set(currentAssignments?.map(a => a.company_id) || []);
+        const newCompanyIds = new Set(reportForm.companies);
+        
+        // Only update assignments if they changed
+        const assignmentsChanged = currentCompanyIds.size !== newCompanyIds.size || 
+          [...currentCompanyIds].some(id => !newCompanyIds.has(id));
+        
+        if (assignmentsChanged) {
+          const { error: deleteError } = await supabase.from('report_companies').delete().eq('report_id', editingReport.id);
+          if (deleteError) {
+            throw new Error(`Failed to update company assignments: ${deleteError.message}`);
+          }
+          
+          if (reportForm.companies.length > 0) {
+            const { error: assignError } = await supabase.from('report_companies').insert(
+              reportForm.companies.map(companyId => ({
+                report_id: editingReport.id,
+                company_id: companyId
+              }))
+            );
+            if (assignError) {
+              throw new Error(`Failed to assign to companies: ${assignError.message}`);
+            }
+          }
         }
       } else {
-        isNewContent = true;
         const { data, error } = await supabase.from('reports').insert({
           name: reportForm.name,
           kpis: reportForm.kpis as any,
           period: reportForm.period,
           link: reportForm.link || null,
           notes: reportForm.notes || null,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.id
         }).select().single();
 
-        if (error) throw error;
-        if (!data) throw new Error('No data returned from report creation');
-        
-        contentId = data.id;
+        if (error) {
+          throw new Error(`Failed to create report: ${error.message}`);
+        }
+        if (!data) {
+          throw new Error('No data returned from report creation');
+        }
 
         if (reportForm.companies.length > 0) {
           const { error: assignError } = await supabase.from('report_companies').insert(
@@ -867,44 +930,35 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
               company_id: companyId
             }))
           );
-          if (assignError) throw assignError;
+          if (assignError) {
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
+          }
         }
       }
 
-      // Create notifications
-      if (reportForm.companies.length > 0) {
-        try {
-          const notification = getNotificationMessage('kpi', reportForm.name, isNewContent);
-          await createNotificationsForCompanies({
-            title: notification.title,
-            message: notification.message,
-            notificationType: 'kpi',
-            referenceId: contentId,
-            companyIds: reportForm.companies,
-            priority: 'medium'
-          });
-        } catch (notificationError) {
-          console.error('Failed to create notifications:', notificationError);
-        }
-      }
-      
       await fetchReports();
-      toast.success('Report saved successfully');
+      toast.success(editingReport ? 'Report updated successfully' : 'Report created successfully');
       setReportOpen(false);
       setEditingReport(null);
       setReportForm(emptyReport);
     } catch (error) {
       console.error('Error saving report:', error);
-      toast.error(`Failed to save report: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save report: ${errorMessage}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const saveFaq = async () => {
     try {
       setLoading(true);
-      let contentId: string;
-      let isNewContent = false;
+      
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Authentication required');
+      }
       
       if (editingFaq) {
         const { error } = await supabase.from('faqs').update({
@@ -913,23 +967,86 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
           category: faqForm.category,
           updated_by: faqForm.updatedBy,
           goal: faqForm.goal,
-          created_by: (await supabase.auth.getUser()).data.user?.id
+          created_by: user.id
         }).eq('id', editingFaq.id);
 
-        if (error) throw error;
-        contentId = editingFaq.id;
+        if (error) {
+          throw new Error(`Failed to update FAQ: ${error.message}`);
+        }
 
-        const { error: deleteError } = await supabase.from('faq_companies').delete().eq('faq_id', editingFaq.id);
-        if (deleteError) throw deleteError;
+        // Only update assignments if they changed
+        const { data: currentAssignments } = await supabase
+          .from('faq_companies')
+          .select('company_id')
+          .eq('faq_id', editingFaq.id);
         
+        const currentCompanyIds = new Set(currentAssignments?.map(a => a.company_id) || []);
+        const newCompanyIds = new Set(faqForm.companies);
+        
+        const assignmentsChanged = currentCompanyIds.size !== newCompanyIds.size || 
+          [...currentCompanyIds].some(id => !newCompanyIds.has(id));
+        
+        if (assignmentsChanged) {
+          const { error: deleteError } = await supabase.from('faq_companies').delete().eq('faq_id', editingFaq.id);
+          if (deleteError) {
+            throw new Error(`Failed to update company assignments: ${deleteError.message}`);
+          }
+          
+          if (faqForm.companies.length > 0) {
+            const { error: assignError } = await supabase.from('faq_companies').insert(
+              faqForm.companies.map(companyId => ({
+                faq_id: editingFaq.id,
+                company_id: companyId
+              }))
+            );
+            if (assignError) {
+              throw new Error(`Failed to assign to companies: ${assignError.message}`);
+            }
+          }
+        }
+      } else {
+        const { data, error } = await supabase.from('faqs').insert({
+          question: faqForm.question,
+          answer: faqForm.answer,
+          category: faqForm.category,
+          updated_by: faqForm.updatedBy,
+          goal: faqForm.goal,
+          created_by: user.id
+        }).select().single();
+
+        if (error) {
+          throw new Error(`Failed to create FAQ: ${error.message}`);
+        }
+        if (!data) {
+          throw new Error('No data returned from FAQ creation');
+        }
+
         if (faqForm.companies.length > 0) {
           const { error: assignError } = await supabase.from('faq_companies').insert(
             faqForm.companies.map(companyId => ({
-              faq_id: editingFaq.id,
+              faq_id: data.id,
               company_id: companyId
             }))
           );
-          if (assignError) throw assignError;
+          if (assignError) {
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
+          }
+        }
+      }
+
+      await fetchFaqs();
+      toast.success(editingFaq ? 'FAQ updated successfully' : 'FAQ created successfully');
+      setFaqOpen(false);
+      setEditingFaq(null);
+      setFaqForm(emptyFaq);
+    } catch (error) {
+      console.error('Error saving FAQ:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save FAQ: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
         }
       } else {
         isNewContent = true;
@@ -958,22 +1075,6 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         }
       }
 
-      // Create notifications
-      if (faqForm.companies.length > 0) {
-        try {
-          const notification = getNotificationMessage('faq', faqForm.question, isNewContent);
-          await createNotificationsForCompanies({
-            title: notification.title,
-            message: notification.message,
-            notificationType: 'faq',
-            referenceId: contentId,
-            companyIds: faqForm.companies,
-            priority: 'low'
-          });
-        } catch (notificationError) {
-          console.error('Failed to create notifications:', notificationError);
-        }
-      }
       
       await fetchFaqs();
       toast.success('FAQ saved successfully');
@@ -1041,22 +1142,6 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         }
       }
 
-      // Create notifications
-      if (aiToolForm.companies.length > 0) {
-        try {
-          const notification = getNotificationMessage('ai_tool', aiToolForm.ai_tool, isNewContent);
-          await createNotificationsForCompanies({
-            title: notification.title,
-            message: notification.message,
-            notificationType: 'ai_tool',
-            referenceId: contentId,
-            companyIds: aiToolForm.companies,
-            priority: 'medium'
-          });
-        } catch (notificationError) {
-          console.error('Failed to create notifications:', notificationError);
-        }
-      }
       
       await fetchAiTools();
       toast.success('AI Tool saved successfully');
