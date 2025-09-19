@@ -23,7 +23,8 @@ import {
   ChevronRight,
   ChevronDown,
   Edit,
-  X
+  X,
+  Copy
 } from 'lucide-react';
 import SortableTable, { Column } from './SortableTable';
 import { supabase } from '@/integrations/supabase/client';
@@ -1129,6 +1130,19 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setAnnouncementOpen(true);
   };
 
+  const duplicateAnnouncement = (item: Announcement) => {
+    const duplicatedItem = {
+      ...item,
+      id: '',
+      title: `${item.title} (Copy)`,
+      companies: []
+    };
+    setEditingAnnouncement(null);
+    setAnnouncementForm(duplicatedItem);
+    setAnnouncementOpen(true);
+    toast.success('Announcement duplicated - ready for editing');
+  };
+
   const deleteAnnouncement = async (id: string) => {
     if (!confirm('Delete this announcement?')) return;
     await supabase.from('announcement_companies').delete().eq('announcement_id', id);
@@ -1150,11 +1164,14 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       sortable: false,
       initialWidth: 80,
       render: (item) => (
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => handleEditAnnouncement(item)}>
+        <div className="flex items-center space-x-1">
+          <Button variant="outline" size="sm" onClick={() => handleEditAnnouncement(item)} title="Edit">
             <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => deleteAnnouncement(item.id)}>
+          <Button variant="outline" size="sm" onClick={() => duplicateAnnouncement(item)} title="Duplicate">
+            <Copy className="h-3 w-3" />
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteAnnouncement(item.id)} title="Delete">
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
@@ -1166,6 +1183,19 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setEditingResource(item);
     setResourceForm(item);
     setResourceOpen(true);
+  };
+
+  const duplicateResource = (item: Resource) => {
+    const duplicatedItem = {
+      ...item,
+      id: '',
+      title: `${item.title} (Copy)`,
+      companies: []
+    };
+    setEditingResource(null);
+    setResourceForm(duplicatedItem);
+    setResourceOpen(true);
+    toast.success('Resource duplicated - ready for editing');
   };
 
   const deleteResource = async (id: string) => {
@@ -1188,11 +1218,14 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       sortable: false,
       initialWidth: 80,
       render: (item) => (
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => handleEditResource(item)}>
+        <div className="flex items-center space-x-1">
+          <Button variant="outline" size="sm" onClick={() => handleEditResource(item)} title="Edit">
             <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => deleteResource(item.id)}>
+          <Button variant="outline" size="sm" onClick={() => duplicateResource(item)} title="Duplicate">
+            <Copy className="h-3 w-3" />
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteResource(item.id)} title="Delete">
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
@@ -1204,6 +1237,19 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setEditingLink(item);
     setLinkForm(item);
     setLinkOpen(true);
+  };
+
+  const duplicateUsefulLink = (item: UsefulLink) => {
+    const duplicatedItem = {
+      ...item,
+      id: '',
+      title: `${item.title} (Copy)`,
+      companies: []
+    };
+    setEditingLink(null);
+    setLinkForm(duplicatedItem);
+    setLinkOpen(true);
+    toast.success('Useful link duplicated - ready for editing');
   };
 
   const deleteLink = async (id: string) => {
@@ -1234,11 +1280,14 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       sortable: false,
       initialWidth: 80,
       render: (item) => (
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => handleEditLink(item)}>
+        <div className="flex items-center space-x-1">
+          <Button variant="outline" size="sm" onClick={() => handleEditLink(item)} title="Edit">
             <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => deleteLink(item.id)}>
+          <Button variant="outline" size="sm" onClick={() => duplicateUsefulLink(item)} title="Duplicate">
+            <Copy className="h-3 w-3" />
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteLink(item.id)} title="Delete">
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
@@ -1250,6 +1299,19 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setEditingCoaching(item);
     setCoachingForm(item);
     setCoachingOpen(true);
+  };
+
+  const duplicateCoaching = (item: Coaching) => {
+    const duplicatedItem = {
+      ...item,
+      id: '',
+      topic: `${item.topic} (Copy)`,
+      companies: []
+    };
+    setEditingCoaching(null);
+    setCoachingForm(duplicatedItem);
+    setCoachingOpen(true);
+    toast.success('Coaching session duplicated - ready for editing');
   };
 
   const deleteCoaching = async (id: string) => {
@@ -1275,11 +1337,14 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       sortable: false,
       initialWidth: 80,
       render: (item) => (
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => handleEditCoaching(item)}>
+        <div className="flex items-center space-x-1">
+          <Button variant="outline" size="sm" onClick={() => handleEditCoaching(item)} title="Edit">
             <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => deleteCoaching(item.id)}>
+          <Button variant="outline" size="sm" onClick={() => duplicateCoaching(item)} title="Duplicate">
+            <Copy className="h-3 w-3" />
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteCoaching(item.id)} title="Delete">
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
@@ -1291,6 +1356,19 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setEditingReport(item);
     setReportForm(item);
     setReportOpen(true);
+  };
+
+  const duplicateReport = (item: Report) => {
+    const duplicatedItem = {
+      ...item,
+      id: '',
+      name: `${item.name} (Copy)`,
+      companies: []
+    };
+    setEditingReport(null);
+    setReportForm(duplicatedItem);
+    setReportOpen(true);
+    toast.success('Report duplicated - ready for editing');
   };
 
   const deleteReport = async (id: string) => {
@@ -1314,11 +1392,14 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       sortable: false,
       initialWidth: 80,
       render: (item) => (
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => handleEditReport(item)}>
+        <div className="flex items-center space-x-1">
+          <Button variant="outline" size="sm" onClick={() => handleEditReport(item)} title="Edit">
             <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => deleteReport(item.id)}>
+          <Button variant="outline" size="sm" onClick={() => duplicateReport(item)} title="Duplicate">
+            <Copy className="h-3 w-3" />
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteReport(item.id)} title="Delete">
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
@@ -1330,6 +1411,19 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setEditingFaq(item);
     setFaqForm(item);
     setFaqOpen(true);
+  };
+
+  const duplicateFaq = (item: Faq) => {
+    const duplicatedItem = {
+      ...item,
+      id: '',
+      question: `${item.question} (Copy)`,
+      companies: []
+    };
+    setEditingFaq(null);
+    setFaqForm(duplicatedItem);
+    setFaqOpen(true);
+    toast.success('FAQ duplicated - ready for editing');
   };
 
   const deleteFaq = async (id: string) => {
@@ -1344,6 +1438,19 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setEditingAiTool(item);
     setAiToolForm(item);
     setAiToolOpen(true);
+  };
+
+  const duplicateAiTool = (item: AiTool) => {
+    const duplicatedItem = {
+      ...item,
+      id: '',
+      ai_tool: `${item.ai_tool} (Copy)`,
+      companies: []
+    };
+    setEditingAiTool(null);
+    setAiToolForm(duplicatedItem);
+    setAiToolOpen(true);
+    toast.success('AI Tool duplicated - ready for editing');
   };
 
   const deleteAiTool = async (id: string) => {
@@ -1367,11 +1474,14 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       sortable: false,
       initialWidth: 80,
       render: (item) => (
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => handleEditFaq(item)}>
+        <div className="flex items-center space-x-1">
+          <Button variant="outline" size="sm" onClick={() => handleEditFaq(item)} title="Edit">
             <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => deleteFaq(item.id)}>
+          <Button variant="outline" size="sm" onClick={() => duplicateFaq(item)} title="Duplicate">
+            <Copy className="h-3 w-3" />
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteFaq(item.id)} title="Delete">
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
@@ -1390,11 +1500,14 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
       sortable: false,
       initialWidth: 80,
       render: (item) => (
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => handleEditAiTool(item)}>
+        <div className="flex items-center space-x-1">
+          <Button variant="outline" size="sm" onClick={() => handleEditAiTool(item)} title="Edit">
             <Pencil className="h-3 w-3" />
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => deleteAiTool(item.id)}>
+          <Button variant="outline" size="sm" onClick={() => duplicateAiTool(item)} title="Duplicate">
+            <Copy className="h-3 w-3" />
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteAiTool(item.id)} title="Delete">
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
