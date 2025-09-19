@@ -19,12 +19,16 @@ interface AuthState {
   loading: boolean;
   authReady: boolean;
   error: string | null;
+  avatarUrl: string | null;
+  optimisticAvatarUrl: string | null;
 }
 
 interface AuthContextType extends AuthState {
   signOut: () => Promise<void>;
   refreshAuth: () => Promise<void>;
   clearError: () => void;
+  setOptimisticAvatar: (url: string | null) => void;
+  updateAvatar: (url: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,6 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading: true,
     authReady: false,
     error: null,
+    avatarUrl: null,
+    optimisticAvatarUrl: null,
   });
 
   // Batch all auth updates into a single state change
@@ -95,9 +101,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Parallel calls for better performance
-      const [membershipResult, contextResult] = await Promise.all([
+      const [membershipResult, contextResult, avatarResult] = await Promise.all([
         supabase.rpc('ensure_membership_for_current_user'),
-        supabase.rpc('get_user_context_optimized', { p_user_id: userId })
+        supabase.rpc('get_user_context_optimized', { p_user_id: userId }),
+        supabase.from('users').select('avatar_url').eq('auth_user_id', userId).single()
       ]);
 
       if (contextResult.error) throw contextResult.error;
@@ -132,6 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateAuthState({
         userRole: role,
         companies: companiesData,
+        avatarUrl: avatarResult.data?.avatar_url || null,
         authReady: true,
         loading: false,
         error: null,
@@ -190,6 +198,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user: null,
         userRole: null,
         companies: [],
+        avatarUrl: null,
+        optimisticAvatarUrl: null,
         authReady: true,
         loading: false,
         error: null,
@@ -225,6 +235,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         session: null,
         userRole: null,
         companies: [],
+        avatarUrl: null,
+        optimisticAvatarUrl: null,
         authReady: false,
         loading: false,
         error: null,
@@ -236,11 +248,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateAuthState({ error: null });
   }, [updateAuthState]);
 
+  const setOptimisticAvatar = useCallback((url: string | null) => {
+    updateAuthState({ optimisticAvatarUrl: url });
+  }, [updateAuthState]);
+
+  const updateAvatar = useCallback((url: string | null) => {
+    updateAuthState({ 
+      avatarUrl: url, 
+      optimisticAvatarUrl: null // Clear optimistic when real URL is set
+    });
+  }, [updateAuthState]);
+
   const contextValue: AuthContextType = {
     ...authState,
     signOut,
     refreshAuth,
     clearError,
+    setOptimisticAvatar,
+    updateAvatar,
   };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;

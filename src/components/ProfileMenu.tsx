@@ -18,40 +18,25 @@ interface ProfileMenuProps {
 }
 
 const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
-  const { user, userRole, companies } = useAuth();
-  const [avatarUrl, setAvatarUrl] = React.useState<string>('');
+  const { user, userRole, companies, avatarUrl, optimisticAvatarUrl, updateAvatar } = useAuth();
 
   React.useEffect(() => {
-    const fetchAvatar = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('users')
-        .select('avatar_url')
-        .eq('auth_user_id', user.id)
-        .single();
-      
-      if (data?.avatar_url) {
-        setAvatarUrl(data.avatar_url);
-      }
-    };
-
-    fetchAvatar();
-
     // Set up real-time subscription for avatar updates
+    if (!user?.id) return;
+
     const channel = supabase
-      .channel(`user-avatar-changes-${user?.id}`)
+      .channel(`user-avatar-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
           table: 'users',
-          filter: `auth_user_id=eq.${user?.id}`
+          filter: `auth_user_id=eq.${user.id}`
         },
         (payload) => {
           const newAvatarUrl = payload.new.avatar_url || '';
-          setAvatarUrl(newAvatarUrl);
+          updateAvatar(newAvatarUrl);
         }
       )
       .subscribe();
@@ -59,13 +44,16 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user?.id, updateAvatar]);
 
   if (!user) return null;
 
   const getInitials = (email: string) => {
     return email.charAt(0).toUpperCase();
   };
+
+  // Use optimistic avatar if available, otherwise use real avatar
+  const displayAvatarUrl = optimisticAvatarUrl || avatarUrl;
 
 
   return (
@@ -74,9 +62,9 @@ const ProfileMenu = ({ onSignOut }: ProfileMenuProps) => {
         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           <Avatar className="h-9 w-9">
             <AvatarImage 
-              src={avatarUrl} 
+              src={displayAvatarUrl || ''} 
               alt="Profile"
-              key={avatarUrl}
+              key={displayAvatarUrl}
             />
             <AvatarFallback className="bg-forest-green text-white">
               {getInitials(user.email || '')}

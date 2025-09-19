@@ -1,31 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { AvatarUploadDialog } from './AvatarUploadDialog';
+import { useAuth } from '@/hooks/useAuth';
 import { Camera, Loader2 } from 'lucide-react';
 
 interface AvatarSectionProps {
-  avatarUrl?: string;
   displayName?: string;
   email: string;
-  onAvatarUpdated: (url: string) => void;
 }
 
-export const AvatarSection = ({ avatarUrl, displayName, email, onAvatarUpdated }: AvatarSectionProps) => {
+export const AvatarSection = ({ displayName, email }: AvatarSectionProps) => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [currentAvatarUrl, setCurrentAvatarUrl] = useState(avatarUrl);
-  const [optimisticUrl, setOptimisticUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // Update local state when prop changes
-  useEffect(() => {
-    setCurrentAvatarUrl(avatarUrl);
-    // Clear optimistic preview when real URL is available
-    if (avatarUrl && optimisticUrl) {
-      URL.revokeObjectURL(optimisticUrl);
-      setOptimisticUrl('');
-    }
-  }, [avatarUrl, optimisticUrl]);
+  const { avatarUrl, optimisticAvatarUrl, setOptimisticAvatar, updateAvatar } = useAuth();
 
   const getInitials = () => {
     if (displayName) {
@@ -35,18 +23,16 @@ export const AvatarSection = ({ avatarUrl, displayName, email, onAvatarUpdated }
   };
 
   const handleAvatarUpdate = (newUrl: string) => {
-    setCurrentAvatarUrl(newUrl);
-    setOptimisticUrl(''); // Clear optimistic preview
+    updateAvatar(newUrl);
     setIsLoading(false);
-    onAvatarUpdated(newUrl);
   };
 
   const handleOptimisticUpdate = (blobUrl: string) => {
-    setOptimisticUrl(blobUrl);
+    setOptimisticAvatar(blobUrl);
     setIsLoading(true);
   };
 
-  const displayUrl = optimisticUrl || currentAvatarUrl;
+  const displayUrl = optimisticAvatarUrl || avatarUrl;
 
   return (
     <div className="flex flex-col items-center space-y-4">
@@ -63,7 +49,7 @@ export const AvatarSection = ({ avatarUrl, displayName, email, onAvatarUpdated }
             key={displayUrl}
             className="transition-opacity duration-200"
             onLoad={() => {
-              if (currentAvatarUrl) {
+              if (avatarUrl) {
                 setIsLoading(false);
               }
             }}

@@ -183,10 +183,8 @@ const Profile = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <AvatarSection
-                  avatarUrl={avatarUrl}
                   displayName={formData.display_name}
                   email={formData.email}
-                  onAvatarUpdated={setAvatarUrl}
                 />
                 
                 <div className="space-y-2">
