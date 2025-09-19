@@ -131,7 +131,7 @@ export function SortableTable<T extends { id: string }>({
       ) : (
         <div className="flex justify-end mb-2">{columnsButton}</div>
       )}
-      <ScrollArea className={scrollAreaClassName || "h-52"}>
+      <ScrollArea className={scrollAreaClassName || "h-80"}>
         <Table className="min-w-max">
           <TableHeader>
             <TableRow>
@@ -156,9 +156,9 @@ export function SortableTable<T extends { id: string }>({
           </TableHeader>
           <TableBody>
             {sorted.map(item => (
-              <TableRow key={item.id} className={rowClassName ? rowClassName(item) : undefined}>
+              <TableRow key={item.id} className={`h-12 ${rowClassName ? rowClassName(item) : ''}`}>
                 {visibleCols.map(col => (
-                  <TableCell key={col.key} style={{ width: widths[col.key] }} className="border border-border">
+                  <TableCell key={col.key} style={{ width: widths[col.key] }} className="border border-border py-2 px-3">
                     {col.render ? col.render(item) : String(get(item, col.key))}
                   </TableCell>
                 ))}

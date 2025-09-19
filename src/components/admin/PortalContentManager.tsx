@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TruncatedText } from '@/components/ui/truncated-text';
 import {
   Pencil,
   Trash2,
@@ -1152,11 +1153,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const announcementColumns: Column<Announcement>[] = [
-    { key: 'title', label: 'Title', initialWidth: 150 },
+    { key: 'title', label: 'Title', initialWidth: 150, render: (item) => <TruncatedText text={item.title} maxLength={30} /> },
     { key: 'author', label: 'Author', initialWidth: 120 },
-    { key: 'summary', label: 'Summary', initialWidth: 200 },
-    { key: 'content', label: 'Content', initialWidth: 200 },
-    { key: 'url', label: 'URL', initialWidth: 150 },
+    { key: 'summary', label: 'Summary', initialWidth: 200, render: (item) => <TruncatedText text={item.summary} maxLength={50} /> },
+    { key: 'content', label: 'Content', initialWidth: 200, render: (item) => <TruncatedText text={item.content} maxLength={40} /> },
+    { key: 'url', label: 'URL', initialWidth: 150, render: (item) => item.url ? <TruncatedText text={item.url} maxLength={30} /> : '' },
     { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
@@ -1207,9 +1208,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const resourceColumns: Column<Resource>[] = [
-    { key: 'title', label: 'Title', initialWidth: 150 },
-    { key: 'description', label: 'Description', initialWidth: 200 },
-    { key: 'link', label: 'Link', initialWidth: 150 },
+    { key: 'title', label: 'Title', initialWidth: 150, render: (item) => <TruncatedText text={item.title} maxLength={30} /> },
+    { key: 'description', label: 'Description', initialWidth: 200, render: (item) => <TruncatedText text={item.description} maxLength={50} /> },
+    { key: 'link', label: 'Link', initialWidth: 150, render: (item) => item.link ? <TruncatedText text={item.link} maxLength={30} /> : '' },
     { key: 'category', label: 'Category', initialWidth: 120 },
     { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
@@ -1261,18 +1262,18 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const linkColumns: Column<UsefulLink>[] = [
-    { key: 'title', label: 'Title', initialWidth: 150 },
+    { key: 'title', label: 'Title', initialWidth: 150, render: (item) => <TruncatedText text={item.title} maxLength={30} /> },
     {
       key: 'url',
       label: 'URL',
       initialWidth: 150,
       render: (item) => (
         <a href={item.url} className="text-blue-600" target="_blank" rel="noreferrer">
-          {item.url}
+          <TruncatedText text={item.url} maxLength={40} />
         </a>
       )
     },
-    { key: 'description', label: 'Description', initialWidth: 200 },
+    { key: 'description', label: 'Description', initialWidth: 200, render: (item) => <TruncatedText text={item.description} maxLength={40} /> },
     { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
@@ -1323,11 +1324,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const coachingColumns: Column<Coaching>[] = [
-    { key: 'topic', label: 'Topic', initialWidth: 150 },
-    { key: 'description', label: 'Description', initialWidth: 200 },
+    { key: 'topic', label: 'Topic', initialWidth: 150, render: (item) => <TruncatedText text={item.topic} maxLength={30} /> },
+    { key: 'description', label: 'Description', initialWidth: 200, render: (item) => <TruncatedText text={item.description} maxLength={50} /> },
     { key: 'media', label: 'Details', initialWidth: 120 },
     { key: 'contact', label: 'Contact', initialWidth: 120 },
-    { key: 'steps', label: 'Session Phase', initialWidth: 150 },
+    { key: 'steps', label: 'Session Phase', initialWidth: 150, render: (item) => <TruncatedText text={item.steps || ''} maxLength={30} /> },
     { key: 'session_date', label: 'Session Date', initialWidth: 120, render: (item) => item.session_date ? new Date(item.session_date).toLocaleDateString() : 'Not set' },
     { key: 'session_status', label: 'Status', initialWidth: 120 },
     { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
@@ -1380,11 +1381,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const reportColumns: Column<Report>[] = [
-    { key: 'name', label: 'Name', initialWidth: 150 },
+    { key: 'name', label: 'Name', initialWidth: 150, render: (item) => <TruncatedText text={item.name} maxLength={30} /> },
     { key: 'period', label: 'Period', initialWidth: 120 },
-    { key: 'kpis', label: 'KPIs', initialWidth: 200, render: (item) => item.kpis.map(k => `${k.name}:${k.value}`).join(', ') },
-    { key: 'link', label: 'Link', initialWidth: 150 },
-    { key: 'notes', label: 'Notes', initialWidth: 200 },
+    { key: 'kpis', label: 'KPIs', initialWidth: 200, render: (item) => <TruncatedText text={item.kpis.map(k => `${k.name}:${k.value}`).join(', ')} maxLength={40} /> },
+    { key: 'link', label: 'Link', initialWidth: 150, render: (item) => item.link ? <TruncatedText text={item.link} maxLength={30} /> : '' },
+    { key: 'notes', label: 'Notes', initialWidth: 200, render: (item) => <TruncatedText text={item.notes || ''} maxLength={40} /> },
     { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
@@ -1462,11 +1463,11 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   };
 
   const faqColumns: Column<Faq>[] = [
-    { key: 'question', label: 'Question', initialWidth: 200 },
-    { key: 'answer', label: 'Answer', initialWidth: 200 },
+    { key: 'question', label: 'Question', initialWidth: 200, render: (item) => <TruncatedText text={item.question} maxLength={40} /> },
+    { key: 'answer', label: 'Answer', initialWidth: 200, render: (item) => <TruncatedText text={item.answer} maxLength={50} /> },
     { key: 'category', label: 'Category', initialWidth: 120 },
     { key: 'updatedBy', label: 'Updated By', initialWidth: 120 },
-    { key: 'goal', label: 'Goal', initialWidth: 150 },
+    { key: 'goal', label: 'Goal', initialWidth: 150, render: (item) => <TruncatedText text={item.goal} maxLength={30} /> },
     { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
@@ -1490,9 +1491,9 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   ];
 
   const aiToolColumns: Column<AiTool>[] = [
-    { key: 'ai_tool', label: 'AI Tool', initialWidth: 200 },
-    { key: 'url', label: 'URL', initialWidth: 200 },
-    { key: 'comments', label: 'Comments', initialWidth: 200 },
+    { key: 'ai_tool', label: 'AI Tool', initialWidth: 200, render: (item) => <TruncatedText text={item.ai_tool} maxLength={30} /> },
+    { key: 'url', label: 'URL', initialWidth: 200, render: (item) => item.url ? <TruncatedText text={item.url} maxLength={40} /> : '' },
+    { key: 'comments', label: 'Comments', initialWidth: 200, render: (item) => <TruncatedText text={item.comments || ''} maxLength={40} /> },
     { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
     {
       key: 'actions',
@@ -1581,7 +1582,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                     </div>
                   )}
                 />
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>{editingAnnouncement ? 'Edit Announcement' : 'Add Announcement'}</DialogTitle>
                     </DialogHeader>
@@ -1699,7 +1700,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                     </div>
                   )}
                 />
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingResource ? 'Edit Resource' : 'Add Training & Resource'}</DialogTitle>
                   </DialogHeader>
@@ -1806,7 +1807,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                     </div>
                   )}
                 />
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingLink ? 'Edit Useful Link' : 'Add Useful Link'}</DialogTitle>
                   </DialogHeader>
@@ -1908,7 +1909,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                     </div>
                   )}
                 />
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingCoaching ? 'Edit Coaching' : 'Add Adoption Coaching'}</DialogTitle>
                   </DialogHeader>
@@ -2123,7 +2124,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                     </div>
                   )}
                 />
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingReport ? 'Edit Report' : 'Add Report & KPIs'}</DialogTitle>
                   </DialogHeader>
@@ -2277,7 +2278,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </div>
                 )}
               />
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editingFaq ? 'Edit FAQ' : 'Add FAQ'}</DialogTitle>
                 </DialogHeader>
@@ -2384,7 +2385,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                   </div>
                 )}
               />
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editingAiTool ? 'Edit AI Tool' : 'Add AI Tool'}</DialogTitle>
                 </DialogHeader>
