@@ -19,16 +19,25 @@ export class SimpleMenuManager {
     ];
   }
 
-  // Rule 2: Clients (authenticated) - Show public menu items at all times
+  // Rule 2: Clients (authenticated) - Show public menu items but exclude Hub Experience
   static getClientMenuItems(): SimpleMenuRoute[] {
-    // Authenticated clients should see the same main navigation as public users including Client Experience
-    return this.getPublicMenuItems();
+    return [
+      { label: 'About', path: '#about', isActive: false, isExternal: false },
+      { label: 'Services', path: '#services', isActive: false, isExternal: false },
+      { label: 'Reviews', path: '#reviews', isActive: false, isExternal: false },
+      { label: 'Team', path: '#team', isActive: false, isExternal: false },
+      { label: 'Contact', path: '#contact', isActive: false, isExternal: false }
+    ];
   }
 
-  // Rule 3: Admins - Show public menu items including Client Experience + Admin menu item
+  // Rule 3: Admins - Show public menu items but exclude Hub Experience + Admin menu item
   static getAdminMenuItems(currentPath: string): SimpleMenuRoute[] {
     return [
-      ...this.getPublicMenuItems(),
+      { label: 'About', path: '#about', isActive: false, isExternal: false },
+      { label: 'Services', path: '#services', isActive: false, isExternal: false },
+      { label: 'Reviews', path: '#reviews', isActive: false, isExternal: false },
+      { label: 'Team', path: '#team', isActive: false, isExternal: false },
+      { label: 'Contact', path: '#contact', isActive: false, isExternal: false },
       { 
         label: 'Admin', 
         path: '/admin', 

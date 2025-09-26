@@ -14,6 +14,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoadingIcon } from "@/components/LoadingSpinner";
 
 import AuthGuard from "@/components/AuthGuard";
+import PublicOnlyGuard from "@/components/PublicOnlyGuard";
 import PermissionGuard from "@/components/PermissionGuard";
 import RBACGuard from "@/components/RBACGuard";
 
@@ -143,7 +144,14 @@ const AppContent = () => {
       {/* Public routes */}
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
-      <Route path="/client-demo" element={<ClientDemoPortal />} />
+      <Route 
+        path="/client-demo" 
+        element={
+          <PublicOnlyGuard>
+            <ClientDemoPortal />
+          </PublicOnlyGuard>
+        } 
+      />
       
       {/* Protected routes with role requirements */}
       <Route
