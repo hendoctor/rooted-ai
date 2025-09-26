@@ -13,14 +13,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { toast } from 'sonner';
-import { Lock, AlertCircle, Shield, Users, Settings, RefreshCw, HelpCircle } from 'lucide-react';
+import { Lock, AlertCircle, Shield, Users, Settings, RefreshCw } from 'lucide-react';
 import { CompanyUserManager } from '@/components/admin/CompanyUserManager';
 import { CompanyMembersList } from '@/components/admin/CompanyMembersList';
 import Header from '@/components/Header';
 import AccessDenied from './AccessDenied';
 import { generateSlug } from '@/lib/utils';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface CompanySettings {
   description?: string;
@@ -39,13 +37,6 @@ interface Company {
   updated_at: string;
 }
 
-interface CompanyFaq {
-  id: string;
-  question: string;
-  answer: string;
-  updated_at?: string | null;
-}
-
 export default function CompanyPage() {
   const { slug } = useParams<{ slug: string }>();
   const { user, userRole, companies } = useAuth();
@@ -58,10 +49,6 @@ export default function CompanyPage() {
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [isAdminSimulating, setIsAdminSimulating] = useState(false);
-  const [faqs, setFaqs] = useState<CompanyFaq[]>([]);
-  const [faqLoading, setFaqLoading] = useState(false);
-  const [faqError, setFaqError] = useState<string | null>(null);
-  const [openFaqs, setOpenFaqs] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -71,41 +58,8 @@ export default function CompanyPage() {
     address: ''
   });
 
-  const loadFaqs = useCallback(async (companyId: string) => {
-    setFaqLoading(true);
-    setFaqError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from('faqs')
-        .select('id, question, answer, updated_at, faq_companies!inner(company_id)')
-        .eq('faq_companies.company_id', companyId)
-        .order('updated_at', { ascending: false })
-        .limit(20);
-
-      if (error) throw error;
-
-      const sanitizedFaqs: CompanyFaq[] = (data || []).map((faq: any) => ({
-        id: faq.id,
-        question: faq.question || 'Untitled question',
-        answer: faq.answer || 'No answer provided yet.',
-        updated_at: faq.updated_at ?? null
-      }));
-
-      setFaqs(sanitizedFaqs);
-      setOpenFaqs(prev => prev.filter(id => sanitizedFaqs.some(faq => faq.id === id)));
-    } catch (err) {
-      console.error('Failed to load FAQs:', err);
-      setFaqError(err instanceof Error ? err.message : 'Failed to load FAQs');
-      setFaqs([]);
-      setOpenFaqs([]);
-    } finally {
-      setFaqLoading(false);
-    }
-  }, []);
-
-  const fetchCompany = useCallback(async (showFullLoading = false): Promise<Company | null> => {
-    if (!user || !slug) return null;
+  const fetchCompany = useCallback(async (showFullLoading = false) => {
+    if (!user || !slug) return;
 
     if (showFullLoading) {
       setLoading(true);
@@ -113,13 +67,12 @@ export default function CompanyPage() {
       setRefreshing(true);
     }
 
-    let foundCompany: Company | null = null;
-
     try {
       setError(null);
       setIsAdminSimulating(false);
 
       const userCompany = companies.find(c => c.slug === slug);
+      let foundCompany: Company | null = null;
 
       if (userCompany) {
         const { data, error } = await supabase
@@ -163,21 +116,14 @@ export default function CompanyPage() {
         setRefreshing(false);
       }
     }
-
-    return foundCompany;
   }, [user, slug, companies, userRole]);
 
   useEffect(() => {
     fetchCompany(true);
   }, [fetchCompany]);
 
-  const handleRefresh = async () => {
-    const refreshedCompany = await fetchCompany(false);
-    const companyIdToRefresh = refreshedCompany?.id || company?.id;
-
-    if (companyIdToRefresh) {
-      loadFaqs(companyIdToRefresh);
-    }
+  const handleRefresh = () => {
+    fetchCompany(false);
   };
 
   // Update form data when company loads
@@ -252,18 +198,6 @@ export default function CompanyPage() {
     }
     setEditing(false);
   };
-
-  // Load FAQs when the company context changes
-  useEffect(() => {
-    if (!company?.id) {
-      setFaqs([]);
-      setOpenFaqs([]);
-      setFaqError(null);
-      return;
-    }
-
-    loadFaqs(company.id);
-  }, [company?.id, loadFaqs]);
 
   // Check access and edit permissions
   const hasAccess = company?.id && (userRole === 'Admin' || isMemberOfCompany(company.id));
@@ -527,79 +461,6 @@ export default function CompanyPage() {
                   </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* FAQ Section */}
-          <Card className="border-none bg-gradient-to-br from-primary/10 via-background to-background shadow-lg">
-            <CardHeader className="space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-primary">
-                  <HelpCircle className="h-5 w-5" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl">Frequently Asked Questions</CardTitle>
-                  <CardDescription>
-                    Answers curated in the admin dashboard and shared with your company.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {faqLoading ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-12 w-full rounded-xl" />
-                  <Skeleton className="h-12 w-full rounded-xl" />
-                  <Skeleton className="h-12 w-full rounded-xl" />
-                </div>
-              ) : faqError ? (
-                <Alert variant="destructive" className="border-destructive/20">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Unable to load FAQs right now. Please try refreshing the page.
-                  </AlertDescription>
-                </Alert>
-              ) : faqs.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-primary/30 bg-background/60 p-6 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Your administrator hasn&apos;t shared any FAQs yet. Check back soon for quick answers tailored to your team.
-                  </p>
-                </div>
-              ) : (
-                <Accordion
-                  type="multiple"
-                  value={openFaqs}
-                  onValueChange={value => setOpenFaqs(Array.isArray(value) ? value : [value])}
-                  className="space-y-3"
-                >
-                  {faqs.map(faq => (
-                    <AccordionItem
-                      key={faq.id}
-                      value={faq.id}
-                      className="overflow-hidden rounded-xl border border-border/60 bg-background/80 px-4"
-                    >
-                      <AccordionTrigger className="text-left text-base font-semibold text-foreground">
-                        <span className="flex items-center gap-3">
-                          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-                            <HelpCircle className="h-4 w-4" />
-                          </span>
-                          <span className="flex-1 leading-snug">{faq.question}</span>
-                        </span>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="pl-12 text-sm leading-relaxed text-muted-foreground">
-                          {faq.answer}
-                          {faq.updated_at && (
-                            <p className="mt-4 text-xs text-muted-foreground/80">
-                              Updated {new Date(faq.updated_at).toLocaleDateString()}
-                            </p>
-                          )}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              )}
             </CardContent>
           </Card>
         </div>
