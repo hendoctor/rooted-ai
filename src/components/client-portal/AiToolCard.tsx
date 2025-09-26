@@ -13,7 +13,7 @@ const AiToolCard: React.FC<AiToolCardProps> = ({ title, url, comments }) => {
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-forest-green dark:text-sage" />
-          <span className="text-sm font-medium text-black dark:text-sage">{title}</span>
+          <span className="text-sm font-medium text-forest-green dark:text-sage">{title}</span>
         </div>
         {url && <ExternalLink className="h-3 w-3 text-slate-gray dark:text-slate-300" />}
       </div>

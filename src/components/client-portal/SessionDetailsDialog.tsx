@@ -53,10 +53,10 @@ const SessionDetailsDialog: React.FC<SessionDetailsDialogProps> = ({
           {/* Session Header */}
           <div className="space-y-3">
             <div className="flex items-start justify-between">
-              <h3 className="text-xl font-semibold text-foreground">
+              <h3 className="text-xl font-semibold text-forest-green dark:text-sage">
                 {session.topic}
               </h3>
-              <Badge 
+              <Badge
                 variant="secondary" 
                 className={`${statusConfig.bgColor} ${statusConfig.textColor} ${statusConfig.borderColor} ${statusConfig.animate || ''}`}
               >
@@ -138,7 +138,7 @@ const SessionDetailsDialog: React.FC<SessionDetailsDialogProps> = ({
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">
+                    <p className="font-medium text-forest-green dark:text-sage">
                       {leaderName || 'Session Leader'}
                     </p>
                     {session.leader_email && (
