@@ -148,13 +148,23 @@ const Header = () => {
             <nav className="hidden md:flex items-center space-x-8">
               {menuItems.map((item) => {
                 const targetHref = handleNavClick(item.path);
+                const isHubLink = item.label.trim() === 'HUB »';
+                const content = isHubLink ? (
+                  <span className="inline-flex items-center gap-1">
+                    <span>HUB</span>
+                    <span className="text-forest-green animate-pulse">»</span>
+                  </span>
+                ) : (
+                  item.label
+                );
+
                 return item.path.startsWith('/') || targetHref.startsWith('/') ? (
                   <Link
                     key={item.label}
                     to={targetHref}
                     className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
                   >
-                    {item.label}
+                    {content}
                   </Link>
                 ) : (
                   <a
@@ -162,7 +172,7 @@ const Header = () => {
                     href={item.path}
                     className="text-slate-gray dark:text-white hover:text-forest-green transition-colors duration-200 font-medium"
                   >
-                    {item.label}
+                    {content}
                   </a>
                 );
               })}
