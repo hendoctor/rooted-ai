@@ -52,49 +52,54 @@ const FAQSection: React.FC<FAQSectionProps> = ({ faqs, isDemo = false }) => {
       </div>
 
       <Card className={`${isDemo ? 'border-primary/20' : 'border-forest-green/20'} animate-fade-in`}>
-        <CardHeader>
-          <CardTitle className={`flex items-center gap-2 ${isDemo ? 'text-primary' : 'text-forest-green'}`}>
-            <HelpCircle className="h-5 w-5" />
-            Help & Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="multiple" className="w-full space-y-2">
+        <CardContent className="pt-6">
+          <Accordion type="multiple" className="w-full space-y-4">
             {categories.map((category) => (
               <div key={category} className="space-y-2">
-                {categories.length > 1 && (
-                  <div className="pt-4 first:pt-0">
-                    <Badge 
-                      variant="secondary" 
-                      className={themeClasses}
-                    >
-                      {category}
-                    </Badge>
-                  </div>
-                )}
-                {groupedFAQs[category].map((faq, index) => (
-                  <AccordionItem 
-                    key={faq.id || `${category}-${index}`} 
-                    value={`faq-${category}-${index}`}
-                    className="border rounded-lg px-4 hover:shadow-sm transition-shadow"
-                  >
-                    <AccordionTrigger className={`text-left hover:no-underline ${isDemo ? 'hover:text-primary' : 'hover:text-forest-green'}`}>
-                      <div className="flex-1 pr-4">
-                        <div className="font-medium text-base">{faq.question}</div>
-                        {faq.goal && (
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Goal: {faq.goal}
-                          </div>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-0 pb-4">
-                      <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                        {faq.answer}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
+                <AccordionItem 
+                  value={`category-${category}`}
+                  className="border rounded-lg"
+                >
+                  <AccordionTrigger className={`px-4 hover:no-underline ${isDemo ? 'hover:text-primary' : 'hover:text-forest-green'}`}>
+                    <div className={`flex items-center gap-2 ${isDemo ? 'text-primary' : 'text-forest-green'}`}>
+                      <HelpCircle className="h-5 w-5" />
+                      <span className="font-semibold text-lg">{category}</span>
+                      <Badge 
+                        variant="secondary" 
+                        className={`ml-2 ${themeClasses}`}
+                      >
+                        {groupedFAQs[category].length}
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <Accordion type="multiple" className="w-full space-y-2">
+                      {groupedFAQs[category].map((faq, index) => (
+                        <AccordionItem 
+                          key={faq.id || `${category}-${index}`} 
+                          value={`faq-${category}-${index}`}
+                          className="border rounded-lg px-4 hover:shadow-sm transition-shadow"
+                        >
+                          <AccordionTrigger className={`text-left hover:no-underline ${isDemo ? 'hover:text-primary' : 'hover:text-forest-green'}`}>
+                            <div className="flex-1 pr-4">
+                              <div className="font-medium text-base">{faq.question}</div>
+                              {faq.goal && (
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  Goal: {faq.goal}
+                                </div>
+                              )}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-0 pb-4">
+                            <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                              {faq.answer}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </AccordionContent>
+                </AccordionItem>
               </div>
             ))}
           </Accordion>
