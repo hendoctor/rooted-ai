@@ -162,7 +162,7 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
       <CardHeader>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
-            <CardTitle className="flex items-center gap-2 text-forest-green">
+            <CardTitle className="flex items-center gap-2 text-black">
               <BarChart3 className="h-5 w-5 text-forest-green" />
               User Analytics
             </CardTitle>
@@ -336,7 +336,7 @@ export const UserAnalyticsCard = ({ companyId }: UserAnalyticsCardProps) => {
                 {/* Member Management Section */}
                 <div className="space-y-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <h3 className="text-lg font-semibold text-forest-green">Member Management</h3>
+                    <h3 className="text-lg font-semibold text-black">Member Management</h3>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end w-full sm:w-auto">
                       <Button
                         variant="outline"

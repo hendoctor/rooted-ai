@@ -29,9 +29,9 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <div className="py-2 border-b last:border-b-0 cursor-pointer">
+        <div className="py-2 border-b last:border-b-0 cursor-pointer transition-transform duration-200 ease-out hover:translate-x-1">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{title}</p>
+            <p className="text-sm font-medium text-black dark:text-slate-200">{title}</p>
             {status && (
               <Badge className="bg-forest-green/10 text-forest-green">{status}</Badge>
             )}
@@ -41,7 +41,7 @@ const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle className="text-black">{title}</DialogTitle>
         </DialogHeader>
         <div className="mt-2 space-y-2">
           {summary && <p className="text-sm text-slate-gray dark:text-slate-300 break-words">{summary}</p>}
