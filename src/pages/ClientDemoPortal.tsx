@@ -31,14 +31,14 @@ const ClientDemoPortal: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-destructive" />
-                Demo Content Error
+                Hub Content Error
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-muted-foreground">{error}</p>
               <Button onClick={refresh} className="w-full">
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Reload Demo
+                Reload Hub Preview
               </Button>
             </CardContent>
           </Card>
@@ -59,15 +59,15 @@ const ClientDemoPortal: React.FC = () => {
     <div className="min-h-screen bg-background pt-16 lg:pt-20">
       <Header />
       
-      {/* Demo Badge Banner */}
+      {/* Hub Badge Banner */}
       <div className="border-b border-primary/20 bg-primary/5">
         <div className="container mx-auto py-4">
           <Alert className="border-primary/30 bg-primary/10">
             <Eye className="h-4 w-4 text-primary" />
             <AlertDescription className="flex items-center justify-between flex-wrap gap-4">
               <div className="text-primary">
-                <strong>🚀 Live Demo Experience:</strong> You're viewing a sample client portal. 
-                This showcases what RootedAI clients see in their personalized dashboards.
+                <strong>🚀 Live Hub Experience:</strong> You're previewing the RootedAI client hub.
+                This showcases how prospects gain guided visibility into personalized growth dashboards.
               </div>
               <div className="flex gap-2">
                 <Button
@@ -92,15 +92,15 @@ const ClientDemoPortal: React.FC = () => {
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-              Demo Portal
+              Hub Portal Preview
             </Badge>
           </div>
           <h1 className="text-4xl font-bold tracking-tight">
-            Client Experience Demo
+            Client Hub Experience
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Explore what it's like to be a RootedAI client with this interactive demo portal. 
-            See real content, tools, and resources in action.
+            Immerse yourself in the RootedAI Hub to understand how prospects and clients activate a
+            centralized, branded workspace tailored to their growth journey.
           </p>
         </div>
 
@@ -145,10 +145,10 @@ const ClientDemoPortal: React.FC = () => {
               <div className="lg:col-span-8 space-y-6">
                 
                 {/* At-a-Glance Summary */}
-                <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 animate-fade-in">
+                <Card className="bg-gradient-to-br from-primary/10 via-background to-primary/5 border-primary/20 animate-fade-in">
                   <CardHeader>
-                    <CardTitle className="text-primary">Demo Dashboard Overview</CardTitle>
-                    <CardDescription>Sample content from our client portal system</CardDescription>
+                    <CardTitle className="text-primary">Hub Dashboard Overview</CardTitle>
+                    <CardDescription>Sample intelligence from the RootedAI client hub ecosystem</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -177,7 +177,7 @@ const ClientDemoPortal: React.FC = () => {
                   <div className="animate-slide-up">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-2xl font-semibold text-primary">Performance Metrics</h2>
-                      <Badge variant="outline" className="text-primary border-primary/20">Demo Data</Badge>
+                      <Badge variant="outline" className="text-primary border-primary/20">Sample Hub Data</Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {content.kpis.map((report: any, index: number) => (
@@ -201,7 +201,7 @@ const ClientDemoPortal: React.FC = () => {
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-2xl font-semibold text-primary">Latest Updates</h2>
                       <Badge variant="outline" className="text-primary border-primary/20">
-                        {content.announcements.length} demo updates
+                        {content.announcements.length} hub updates
                       </Badge>
                     </div>
                     <div className="space-y-3">
@@ -231,11 +231,12 @@ const ClientDemoPortal: React.FC = () => {
               <div className="lg:col-span-4 space-y-6">
 
                 {/* Call to Action Card */}
-                <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 sticky top-4">
+                <Card className="bg-gradient-to-br from-primary/15 to-primary/5 border-primary/20 sticky top-4">
                   <CardHeader>
-                    <CardTitle className="text-primary">Ready to Get Started?</CardTitle>
+                    <CardTitle className="text-primary">Ready to Activate Your Hub?</CardTitle>
                     <CardDescription>
-                      Experience the full RootedAI client portal with your own personalized content.
+                      Experience the full RootedAI client hub with personalized insights engineered for
+                      your team.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -253,7 +254,7 @@ const ClientDemoPortal: React.FC = () => {
                   <div className="animate-slide-up-delayed-2">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-primary">Sample Resources</h3>
-                      <Badge variant="outline" className="text-primary border-primary/20">Demo</Badge>
+                      <Badge variant="outline" className="text-primary border-primary/20">Hub Preview</Badge>
                     </div>
                     <div className="space-y-3">
                       {content.resources.slice(0, 3).map((resource: any, index: number) => (
@@ -277,7 +278,7 @@ const ClientDemoPortal: React.FC = () => {
                 {content.ai_tools.length > 0 && (
                   <div className="animate-slide-up-delayed-3">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-primary">Demo AI Tools</h3>
+                      <h3 className="text-lg font-semibold text-primary">Hub AI Tools</h3>
                       <Badge variant="outline" className="text-primary border-primary/20">Sample</Badge>
                     </div>
                     <div className="space-y-3">
@@ -302,7 +303,7 @@ const ClientDemoPortal: React.FC = () => {
                 {content.useful_links.length > 0 && (
                   <div className="animate-slide-up-delayed-4">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-primary">Demo Quick Links</h3>
+                      <h3 className="text-lg font-semibold text-primary">Hub Quick Links</h3>
                       <Badge variant="outline" className="text-primary border-primary/20">Sample</Badge>
                     </div>
                     <div className="space-y-3">
@@ -332,15 +333,16 @@ const ClientDemoPortal: React.FC = () => {
           <Card className="max-w-2xl mx-auto text-center">
             <CardContent className="py-12">
               <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Demo Content Loading</h3>
+              <h3 className="text-lg font-semibold mb-2">Hub Content Loading</h3>
               <p className="text-muted-foreground mb-6">
-                The demo content is being prepared. In a real client portal, you'd see personalized 
-                announcements, resources, and tools curated specifically for your organization.
+                The hub content is being prepared. In a live RootedAI environment, you'd see
+                personalized announcements, resources, and tools curated specifically for your
+                organization.
               </p>
               <div className="flex gap-3 justify-center">
                 <Button onClick={refresh}>
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Demo
+                  Refresh Hub Preview
                 </Button>
                 <Button variant="outline" asChild>
                   <a href="/auth">
@@ -360,14 +362,15 @@ const ClientDemoPortal: React.FC = () => {
               Ready to Transform Your Business?
             </h3>
             <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-              This demo showcases just a glimpse of what RootedAI can offer. Get your own 
-              personalized client portal with content tailored to your business needs.
+              This hub preview highlights how RootedAI curates intelligence, automation, and client
+              collaboration in one place. Launch your own branded hub with content tailored to your
+              business needs.
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <Button variant="outline" size="lg" asChild>
                 <a href="https://rootedai.tech/#contact">
                   <ExternalLink className="w-5 h-5 mr-2" />
-                  Schedule a Demo
+                  Book a Hub Tour
                 </a>
               </Button>
             </div>
