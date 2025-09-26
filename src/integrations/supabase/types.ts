@@ -316,6 +316,72 @@ export type Database = {
         }
         Relationships: []
       }
+      app_companies: {
+        Row: {
+          app_id: string
+          company_id: string
+          created_at: string
+        }
+        Insert: {
+          app_id: string
+          company_id: string
+          created_at?: string
+        }
+        Update: {
+          app_id?: string
+          company_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_companies_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "apps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_companies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apps: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          demo_preview: boolean
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          demo_preview?: boolean
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          demo_preview?: boolean
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           created_at: string

@@ -7,6 +7,7 @@ interface PortalContent {
   resources: any[];
   useful_links: any[];
   ai_tools: any[];
+  apps: any[];
   faqs: any[];
   coaching: any[];
   kpis: any[];
@@ -29,6 +30,7 @@ const EMPTY_CONTENT: PortalContent = {
   resources: [],
   useful_links: [],
   ai_tools: [],
+  apps: [],
   faqs: [],
   coaching: [],
   kpis: []
@@ -95,6 +97,7 @@ export const usePortalContent = ({
         resources: parsedContent?.resources || [],
         useful_links: parsedContent?.useful_links || [],
         ai_tools: parsedContent?.ai_tools || [],
+        apps: parsedContent?.apps || [],
         faqs: parsedContent?.faqs || [],
         coaching: sessionData.length > 0 ? sessionData : (parsedContent?.coaching || []),
         kpis: parsedContent?.kpis || []

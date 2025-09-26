@@ -6,6 +6,7 @@ interface PortalContent {
   resources: any[];
   useful_links: any[];
   ai_tools: any[];
+  apps: any[];
   faqs: any[];
   coaching: any[];
   kpis: any[];
@@ -23,6 +24,7 @@ const EMPTY_CONTENT: PortalContent = {
   resources: [],
   useful_links: [],
   ai_tools: [],
+  apps: [],
   faqs: [],
   coaching: [],
   kpis: []
@@ -60,6 +62,7 @@ export const usePublicPortalContent = (): UsePublicPortalContentReturn => {
         resources: Array.isArray(contentRow.resources) ? contentRow.resources : [],
         useful_links: Array.isArray(contentRow.useful_links) ? contentRow.useful_links : [],
         ai_tools: Array.isArray(contentRow.ai_tools) ? contentRow.ai_tools : [],
+        apps: Array.isArray(contentRow.apps) ? contentRow.apps : [],
         faqs: Array.isArray(contentRow.faqs) ? contentRow.faqs : [],
         coaching: Array.isArray(contentRow.coaching) ? contentRow.coaching : [],
         kpis: Array.isArray(contentRow.kpis) ? contentRow.kpis : []
