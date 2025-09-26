@@ -7,24 +7,25 @@ export interface SimpleMenuRoute {
 }
 
 export class SimpleMenuManager {
-  // Rule 1: Public Users (not authenticated) - Show only About, Services, Reviews, Team, Contact
+  // Rule 1: Public Users (not authenticated) - Show only About, Services, Reviews, Team, Contact, Client Experience
   static getPublicMenuItems(): SimpleMenuRoute[] {
     return [
       { label: 'About', path: '#about', isActive: false, isExternal: false },
       { label: 'Services', path: '#services', isActive: false, isExternal: false },
       { label: 'Reviews', path: '#reviews', isActive: false, isExternal: false },
       { label: 'Team', path: '#team', isActive: false, isExternal: false },
-      { label: 'Contact', path: '#contact', isActive: false, isExternal: false }
+      { label: 'Contact', path: '#contact', isActive: false, isExternal: false },
+      { label: 'Client Experience', path: '/client-demo', isActive: false, isExternal: false }
     ];
   }
 
   // Rule 2: Clients (authenticated) - Show public menu items at all times
   static getClientMenuItems(): SimpleMenuRoute[] {
-    // Authenticated clients should see the same main navigation as public users
+    // Authenticated clients should see the same main navigation as public users including Client Experience
     return this.getPublicMenuItems();
   }
 
-  // Rule 3: Admins - Show public menu items + Admin menu item, never client portals
+  // Rule 3: Admins - Show public menu items including Client Experience + Admin menu item
   static getAdminMenuItems(currentPath: string): SimpleMenuRoute[] {
     return [
       ...this.getPublicMenuItems(),

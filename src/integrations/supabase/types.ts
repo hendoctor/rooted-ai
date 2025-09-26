@@ -1117,6 +1117,10 @@ export type Database = {
           user_count: number
         }[]
       }
+      get_client_demo_portal_content: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_company_member_profiles: {
         Args: { company_id_param: string }
         Returns: {
@@ -1342,6 +1346,10 @@ export type Database = {
       }
       is_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_client_demo_content: {
+        Args: { company_id_param: string }
         Returns: boolean
       }
       is_company_admin: {

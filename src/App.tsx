@@ -22,6 +22,7 @@ import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
 import Profile from "./pages/Profile";
 import ClientPortal from "./pages/ClientPortal";
+import ClientDemoPortal from "./pages/ClientDemoPortal";
 import CompanyPage from "./pages/CompanyPage";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
@@ -142,6 +143,7 @@ const AppContent = () => {
       {/* Public routes */}
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/client-demo" element={<ClientDemoPortal />} />
       
       {/* Protected routes with role requirements */}
       <Route
