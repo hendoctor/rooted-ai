@@ -17,6 +17,7 @@ const PerformanceMetricCard = React.lazy(
   () => import('@/components/client-portal/PerformanceMetricCard')
 );
 const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCard'));
+const FAQSection = React.lazy(() => import('@/components/client-portal/FAQSection'));
 
 const ClientDemoPortal: React.FC = () => {
   const { content, loading, error, refresh } = usePublicPortalContent();
@@ -223,6 +224,13 @@ const ClientDemoPortal: React.FC = () => {
                       ))}
                     </div>
                   </div>
+                )}
+
+                {/* FAQ Section */}
+                {content.faqs.length > 0 && (
+                  <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+                    <FAQSection faqs={content.faqs} isDemo={true} />
+                  </Suspense>
                 )}
 
               </div>

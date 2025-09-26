@@ -26,6 +26,7 @@ const PerformanceMetricCard = React.lazy(
 );
 const EmptyState = React.lazy(() => import('@/components/client-portal/EmptyState'));
 const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCard'));
+const FAQSection = React.lazy(() => import('@/components/client-portal/FAQSection'));
 
 // User Analytics component
 import { UserAnalyticsCard } from '@/components/client-portal/UserAnalyticsCard';
@@ -485,6 +486,13 @@ const ClientPortal: React.FC = () => {
                   <div className="animate-slide-up-delayed">
                     <UserAnalyticsCard companyId={currentCompany.id} />
                   </div>
+                )}
+
+                {/* FAQ Section */}
+                {content.faqs.length > 0 && (
+                  <Suspense fallback={<Skeleton className="h-40 w-full" />}>
+                    <FAQSection faqs={content.faqs} />
+                  </Suspense>
                 )}
               </div>
 
