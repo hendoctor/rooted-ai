@@ -28,6 +28,7 @@ import CompanyPage from "./pages/CompanyPage";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
 import RBACDemo from "./pages/RBACDemo";
+import Artifacts from "./pages/Artifacts";
 
 // Enhanced loading wrapper with mobile optimizations
 const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -144,6 +145,7 @@ const AppContent = () => {
       {/* Public routes */}
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/artifacts" element={<Artifacts />} />
       <Route 
         path="/client-demo" 
         element={

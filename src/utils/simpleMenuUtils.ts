@@ -7,7 +7,7 @@ export interface SimpleMenuRoute {
 }
 
 export class SimpleMenuManager {
-  // Rule 1: Public Users (not authenticated) - Show only About, Services, Reviews, Team, Contact, Client Experience
+  // Rule 1: Public Users (not authenticated) - Show only About, Services, Reviews, Team, Contact, Artifacts, Client Experience
   static getPublicMenuItems(): SimpleMenuRoute[] {
     return [
       { label: 'About', path: '#about', isActive: false, isExternal: false },
@@ -15,6 +15,7 @@ export class SimpleMenuManager {
       { label: 'Reviews', path: '#reviews', isActive: false, isExternal: false },
       { label: 'Team', path: '#team', isActive: false, isExternal: false },
       { label: 'Contact', path: '#contact', isActive: false, isExternal: false },
+      { label: 'Artifacts', path: '/artifacts', isActive: false, isExternal: false },
       { label: 'Hub Experience', path: '/client-demo', isActive: false, isExternal: false }
     ];
   }
@@ -26,7 +27,8 @@ export class SimpleMenuManager {
       { label: 'Services', path: '#services', isActive: false, isExternal: false },
       { label: 'Reviews', path: '#reviews', isActive: false, isExternal: false },
       { label: 'Team', path: '#team', isActive: false, isExternal: false },
-      { label: 'Contact', path: '#contact', isActive: false, isExternal: false }
+      { label: 'Contact', path: '#contact', isActive: false, isExternal: false },
+      { label: 'Artifacts', path: '/artifacts', isActive: false, isExternal: false }
     ];
   }
 
@@ -38,6 +40,7 @@ export class SimpleMenuManager {
       { label: 'Reviews', path: '#reviews', isActive: false, isExternal: false },
       { label: 'Team', path: '#team', isActive: false, isExternal: false },
       { label: 'Contact', path: '#contact', isActive: false, isExternal: false },
+      { label: 'Artifacts', path: '/artifacts', isActive: false, isExternal: false },
       { 
         label: 'Admin', 
         path: '/admin', 
