@@ -67,23 +67,10 @@ const ClientDemoPortal: React.FC = () => {
         <div className="container mx-auto py-4">
           <Alert className="border-primary/30 bg-primary/10">
             <Eye className="h-4 w-4 text-primary" />
-            <AlertDescription className="flex items-center justify-between flex-wrap gap-4">
+            <AlertDescription className="flex items-center flex-wrap gap-4">
               <div className="text-primary">
                 <strong>🚀 Live Hub Experience:</strong> You're previewing the RootedAI client hub.
                 This showcases how prospects gain guided visibility into personalized growth dashboards.
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  asChild
-                  className="border-primary/30 text-primary hover:bg-primary/20"
-                >
-                  <a href="https://rootedai.tech/#contact">
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Contact Us
-                  </a>
-                </Button>
               </div>
             </AlertDescription>
           </Alert>
