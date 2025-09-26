@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, AlertCircle, Eye, ExternalLink, User, ArrowRight } from 'lucide-react';
+import { RefreshCw, AlertCircle, Eye, ExternalLink, ArrowRight } from 'lucide-react';
 import { usePublicPortalContent } from '@/hooks/usePublicPortalContent';
 import Header from '@/components/Header';
 import { LoadingIcon } from '@/components/LoadingSpinner';
@@ -70,24 +70,13 @@ const ClientDemoPortal: React.FC = () => {
                 This showcases what RootedAI clients see in their personalized dashboards.
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   asChild
                   className="border-primary/30 text-primary hover:bg-primary/20"
                 >
-                  <a href="/auth">
-                    <User className="w-4 h-4 mr-2" />
-                    Get Started
-                  </a>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  asChild
-                  className="border-primary/30 text-primary hover:bg-primary/20"
-                >
-                  <a href="#contact">
+                  <a href="https://rootedai.tech/#contact">
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Contact Us
                   </a>
@@ -250,14 +239,8 @@ const ClientDemoPortal: React.FC = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button asChild className="w-full">
-                      <a href="/auth">
-                        <User className="w-4 h-4 mr-2" />
-                        Create Your Account
-                      </a>
-                    </Button>
                     <Button variant="outline" asChild className="w-full">
-                      <a href="#contact">
+                      <a href="https://rootedai.tech/#contact">
                         <ExternalLink className="w-4 h-4 mr-2" />
                         Contact Sales
                       </a>
@@ -381,14 +364,8 @@ const ClientDemoPortal: React.FC = () => {
               personalized client portal with content tailored to your business needs.
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
-              <Button asChild size="lg">
-                <a href="/auth">
-                  <User className="w-5 h-5 mr-2" />
-                  Start Your Journey
-                </a>
-              </Button>
               <Button variant="outline" size="lg" asChild>
-                <a href="#contact">
+                <a href="https://rootedai.tech/#contact">
                   <ExternalLink className="w-5 h-5 mr-2" />
                   Schedule a Demo
                 </a>
