@@ -270,10 +270,10 @@ const ClientDemoPortal: React.FC = () => {
               </div>
               
               {/* Right Sidebar */}
-              <div className="lg:col-span-4 space-y-6">
+              <div className="lg:col-span-4 space-y-6 flex flex-col">
 
                 {/* Call to Action Card */}
-                <Card className="bg-gradient-to-br from-forest-green/15 to-forest-green/5 border-forest-green/20">
+                <Card className="order-last lg:order-first bg-gradient-to-br from-forest-green/15 to-forest-green/5 border-forest-green/20">
                   <CardHeader>
                     <CardTitle className="text-black">Ready to Activate Your Hub?</CardTitle>
                     <CardDescription>
