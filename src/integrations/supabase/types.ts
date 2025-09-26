@@ -1119,7 +1119,15 @@ export type Database = {
       }
       get_client_demo_portal_content: {
         Args: Record<PropertyKey, never>
-        Returns: Json
+        Returns: {
+          ai_tools: Json
+          announcements: Json
+          coaching: Json
+          faqs: Json
+          kpis: Json
+          resources: Json
+          useful_links: Json
+        }[]
       }
       get_company_member_profiles: {
         Args: { company_id_param: string }

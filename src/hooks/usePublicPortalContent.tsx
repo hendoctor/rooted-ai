@@ -47,19 +47,22 @@ export const usePublicPortalContent = (): UsePublicPortalContentReturn => {
         throw fetchError;
       }
 
-      if (data?.error) {
-        throw new Error(data.error);
+      // The function returns an array with a single row containing the columns
+      const contentRow = data?.[0];
+      
+      if (!contentRow) {
+        throw new Error('No demo content available');
       }
 
-      // Normalize the content structure
+      // Normalize the content structure from the row data
       const normalizedContent: PortalContent = {
-        announcements: data?.announcements || [],
-        resources: data?.resources || [],
-        useful_links: data?.useful_links || [],
-        ai_tools: data?.ai_tools || [],
-        faqs: data?.faqs || [],
-        coaching: data?.coaching || [],
-        kpis: data?.kpis || []
+        announcements: Array.isArray(contentRow.announcements) ? contentRow.announcements : [],
+        resources: Array.isArray(contentRow.resources) ? contentRow.resources : [],
+        useful_links: Array.isArray(contentRow.useful_links) ? contentRow.useful_links : [],
+        ai_tools: Array.isArray(contentRow.ai_tools) ? contentRow.ai_tools : [],
+        faqs: Array.isArray(contentRow.faqs) ? contentRow.faqs : [],
+        coaching: Array.isArray(contentRow.coaching) ? contentRow.coaching : [],
+        kpis: Array.isArray(contentRow.kpis) ? contentRow.kpis : []
       };
 
       setContent(normalizedContent);

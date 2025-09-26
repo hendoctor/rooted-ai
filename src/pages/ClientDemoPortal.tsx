@@ -226,7 +226,7 @@ const ClientDemoPortal: React.FC = () => {
                                 summary={announcement.summary}
                                 content={announcement.content}
                                 url={announcement.url}
-                                status="Demo"
+                                status="New"
                               />
                             </div>
                           </Suspense>
@@ -279,9 +279,8 @@ const ClientDemoPortal: React.FC = () => {
                             <div className="interactive-scale">
                               <ResourceCard 
                                 title={resource.title}
-                                category={resource.category}
-                                description={resource.description}
-                                link={resource.link}
+                                type={resource.category === 'Video' ? 'Video' : resource.category === 'Slide' ? 'Slide' : 'Guide'}
+                                href={resource.link}
                               />
                             </div>
                           </Suspense>
@@ -304,7 +303,7 @@ const ClientDemoPortal: React.FC = () => {
                           <Suspense fallback={<Skeleton className="h-20 w-full" />}>
                             <div className="interactive-scale">
                               <AiToolCard 
-                                aiTool={tool.ai_tool}
+                                title={tool.ai_tool}
                                 comments={tool.comments}
                                 url={tool.url}
                               />
@@ -331,7 +330,6 @@ const ClientDemoPortal: React.FC = () => {
                               <UsefulLinkCard 
                                 title={link.title}
                                 url={link.url}
-                                description={link.description}
                               />
                             </div>
                           </Suspense>
