@@ -15,7 +15,7 @@ export class SimpleMenuManager {
       { label: 'Reviews', path: '#reviews', isActive: false, isExternal: false },
       { label: 'Team', path: '#team', isActive: false, isExternal: false },
       { label: 'Contact', path: '#contact', isActive: false, isExternal: false },
-      { label: 'Hub Experience', path: '/client-demo', isActive: false, isExternal: false }
+      { label: 'HUB »', path: '/client-demo', isActive: false, isExternal: false }
     ];
   }
 
