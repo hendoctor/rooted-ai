@@ -119,7 +119,7 @@ const PerformanceMetricCard = ({ report }: PerformanceMetricCardProps) => {
         <Card className="group relative h-full cursor-pointer border-forest-green/30 bg-gradient-to-br from-background to-muted/30 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-forest-green/60 hover:shadow-lg hover:shadow-forest-green/20 focus:outline-none focus:ring-2 focus:ring-forest-green/40">
           <CardHeader className="space-y-1">
             <div className="flex items-start justify-between gap-2">
-              <CardTitle className="text-lg font-semibold text-black">
+              <CardTitle className="text-lg font-semibold text-forest-green dark:text-sage">
                 {report?.name || 'Performance Report'}
               </CardTitle>
               <Badge variant="outline" className="bg-forest-green/10 text-forest-green">
@@ -138,7 +138,7 @@ const PerformanceMetricCard = ({ report }: PerformanceMetricCardProps) => {
                   return (
                     <div key={`${kpi.name}-${index}`} className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">
+                        <span className="text-forest-green dark:text-sage">
                           {kpi.name || `Metric ${index + 1}`}
                         </span>
                         <span className="font-semibold text-forest-green">
@@ -192,7 +192,7 @@ const PerformanceMetricCard = ({ report }: PerformanceMetricCardProps) => {
 
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex flex-wrap items-center justify-between gap-2 text-black">
+          <DialogTitle className="flex flex-wrap items-center justify-between gap-2 text-forest-green dark:text-sage">
             <span>{report?.name || 'Performance Report'}</span>
             <Badge variant="outline" className="bg-forest-green/10 text-forest-green">
               {kpis.length} KPI{kpis.length === 1 ? '' : 's'}

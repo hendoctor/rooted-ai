@@ -31,7 +31,7 @@ const AppCard: React.FC<AppCardProps> = ({ app, isDemo = false }) => {
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <Smartphone className="h-5 w-5 text-forest-green" />
-            <CardTitle className="text-lg text-black group-hover:text-forest-green transition-colors">
+            <CardTitle className="text-lg text-forest-green dark:text-sage transition-colors">
               {app.name}
             </CardTitle>
           </div>

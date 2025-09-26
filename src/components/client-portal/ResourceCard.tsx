@@ -17,7 +17,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ title, type, href }) => {
       className="block p-3 rounded-lg border border-sage/20 dark:border-sage/30 hover:shadow-lg hover:-translate-y-0.5 dark:hover:bg-sage/10 focus:outline-none focus:ring-2 focus:ring-forest-green transition-all duration-200"
     >
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium text-black dark:text-sage">{title}</p>
+        <p className="text-sm font-medium text-forest-green dark:text-sage">{title}</p>
         <Badge className="bg-sage/20 dark:bg-sage/30 text-forest-green dark:text-sage">{type}</Badge>
       </div>
       <div className="text-sm text-forest-green dark:text-sage inline-flex items-center">

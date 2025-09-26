@@ -115,7 +115,7 @@ const EnhancedCoachingCard: React.FC<EnhancedCoachingCardProps> = ({
 
           {/* Session Header */}
           <div className="mb-3">
-            <h4 className="font-medium text-foreground mb-1">
+            <h4 className="font-medium text-forest-green dark:text-sage mb-1">
               {session.topic}
             </h4>
             {session.description && (
