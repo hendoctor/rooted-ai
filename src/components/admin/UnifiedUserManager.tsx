@@ -738,7 +738,7 @@ const UnifiedUserManager: React.FC<UnifiedUserManagerProps> = ({ companies }) =>
           <div>
             <CardTitle className="text-forest-green flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Unified User Management
+              Manage Users
             </CardTitle>
             <p className="text-slate-gray text-sm">
               Manage all users, invitations, and newsletter subscriptions in one place
