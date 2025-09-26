@@ -231,7 +231,7 @@ const ClientDemoPortal: React.FC = () => {
               <div className="lg:col-span-4 space-y-6">
 
                 {/* Call to Action Card */}
-                <Card className="bg-gradient-to-br from-primary/15 to-primary/5 border-primary/20 sticky top-4">
+                <Card className="bg-gradient-to-br from-primary/15 to-primary/5 border-primary/20">
                   <CardHeader>
                     <CardTitle className="text-primary">Ready to Activate Your Hub?</CardTitle>
                     <CardDescription>
