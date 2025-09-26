@@ -392,7 +392,7 @@ const ClientDemoPortal: React.FC = () => {
               <Button variant="outline" size="lg" asChild>
                 <a href="https://rootedai.tech/#contact">
                   <ExternalLink className="w-5 h-5 mr-2" />
-                  Book a Hub Tour
+                  Book a Discovery Call
                 </a>
               </Button>
             </div>

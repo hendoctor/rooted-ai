@@ -333,10 +333,10 @@ const Artifacts = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="#contact"
+                href="https://rootedai.tech/#contact"
                 className="inline-flex items-center px-8 py-4 bg-forest-green text-white rounded-lg font-semibold button-energy hover:bg-forest-green/90 transition-all duration-200"
               >
-                Start Your AI Journey
+                Start your AI Journey
               </a>
               <a
                 href="/client-demo"
