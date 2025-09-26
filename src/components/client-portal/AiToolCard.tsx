@@ -9,11 +9,11 @@ interface AiToolCardProps {
 
 const AiToolCard: React.FC<AiToolCardProps> = ({ title, url, comments }) => {
   const content = (
-    <div className="p-3 border border-sage/20 dark:border-sage/30 rounded-lg hover:bg-sage/5 dark:hover:bg-sage/10 transition-colors">
+    <div className="p-3 border border-sage/20 dark:border-sage/30 rounded-lg hover:bg-sage/5 dark:hover:bg-sage/10 transition-all duration-200 hover:-translate-y-0.5">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-forest-green dark:text-sage" />
-          <span className="text-sm font-medium text-forest-green dark:text-sage">{title}</span>
+          <span className="text-sm font-medium text-black dark:text-sage">{title}</span>
         </div>
         {url && <ExternalLink className="h-3 w-3 text-slate-gray dark:text-slate-300" />}
       </div>
