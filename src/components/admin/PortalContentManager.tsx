@@ -114,6 +114,15 @@ interface AiTool {
   companies: string[];
 }
 
+interface App {
+  id: string;
+  name: string;
+  url: string;
+  description?: string;
+  demo_preview: boolean;
+  companies: string[];
+}
+
 type SectionKey =
   | 'announcements'
   | 'resources'
@@ -121,7 +130,8 @@ type SectionKey =
   | 'coaching'
   | 'reports'
   | 'faqs'
-  | 'aiTools';
+  | 'aiTools'
+  | 'apps';
 
 const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?: string }> = ({ companies, currentAdmin }) => {
   // Table view configurations state
@@ -145,6 +155,7 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const [reports, setReports] = useState<Report[]>([]);
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [aiTools, setAiTools] = useState<AiTool[]>([]);
+  const [apps, setApps] = useState<App[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
     announcements: false,
@@ -153,7 +164,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     coaching: false,
     reports: false,
     faqs: false,
-    aiTools: false
+    aiTools: false,
+    apps: false
   });
 
   const toggleSection = (key: SectionKey) => {
@@ -178,7 +190,8 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
         fetchCoaching(),
         fetchReports(),
         fetchFaqs(),
-        fetchAiTools()
+        fetchAiTools(),
+        fetchApps()
       ]);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -353,6 +366,28 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     setAiTools(transformedData);
   };
 
+  const fetchApps = async () => {
+    const { data, error } = await supabase
+      .from('apps')
+      .select(`
+        *,
+        app_companies(company_id)
+      `);
+    
+    if (error) throw error;
+    
+    const transformedData = data?.map((item: any) => ({
+      id: item.id,
+      name: item.name || '',
+      url: item.url || '',
+      description: item.description || '',
+      demo_preview: item.demo_preview || false,
+      companies: item.app_companies?.map((ac: any) => ac.company_id) || []
+    })) || [];
+    
+    setApps(transformedData);
+  };
+
   // Announcement state
   const [announcementOpen, setAnnouncementOpen] = useState(false);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
@@ -407,6 +442,12 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
   const [editingAiTool, setEditingAiTool] = useState<AiTool | null>(null);
   const emptyAiTool: AiTool = { id: '', ai_tool: '', url: '', comments: '', companies: [] };
   const [aiToolForm, setAiToolForm] = useState<AiTool>(emptyAiTool);
+
+  // Apps state
+  const [appOpen, setAppOpen] = useState(false);
+  const [editingApp, setEditingApp] = useState<App | null>(null);
+  const emptyApp: App = { id: '', name: '', url: '', description: '', demo_preview: false, companies: [] };
+  const [appForm, setAppForm] = useState<App>(emptyApp);
 
   // Helpers
   const toggleSelection = (ids: string[], id: string) =>
@@ -1139,6 +1180,96 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     }
   };
 
+  const saveApp = async () => {
+    try {
+      setLoading(true);
+      
+      // Validate required fields
+      if (!appForm.name) {
+        throw new Error('App name is required');
+      }
+      if (!appForm.url) {
+        throw new Error('App URL is required');
+      }
+      
+      // Get authenticated user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Authentication required');
+      }
+      
+      if (editingApp) {
+        const { error } = await supabase.from('apps').update({
+          name: appForm.name,
+          url: appForm.url,
+          description: appForm.description,
+          demo_preview: appForm.demo_preview,
+          created_by: user.id
+        }).eq('id', editingApp.id);
+
+        if (error) {
+          throw new Error(`Failed to update app: ${error.message}`);
+        }
+
+        const { error: deleteError } = await supabase.from('app_companies').delete().eq('app_id', editingApp.id);
+        if (deleteError) {
+          throw new Error(`Failed to clear company assignments: ${deleteError.message}`);
+        }
+        
+        if (appForm.companies.length > 0) {
+          const { error: assignError } = await supabase.from('app_companies').insert(
+            appForm.companies.map(companyId => ({
+              app_id: editingApp.id,
+              company_id: companyId
+            }))
+          );
+          if (assignError) {
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
+          }
+        }
+      } else {
+        const { data, error } = await supabase.from('apps').insert({
+          name: appForm.name,
+          url: appForm.url,
+          description: appForm.description,
+          demo_preview: appForm.demo_preview,
+          created_by: user.id
+        }).select().single();
+
+        if (error) {
+          throw new Error(`Failed to create app: ${error.message}`);
+        }
+        if (!data) {
+          throw new Error('No data returned from app creation');
+        }
+
+        if (appForm.companies.length > 0) {
+          const { error: assignError } = await supabase.from('app_companies').insert(
+            appForm.companies.map(companyId => ({
+              app_id: data.id,
+              company_id: companyId
+            }))
+          );
+          if (assignError) {
+            throw new Error(`Failed to assign to companies: ${assignError.message}`);
+          }
+        }
+      }
+
+      await fetchApps();
+      toast.success(editingApp ? 'App updated successfully' : 'App created successfully');
+      setAppOpen(false);
+      setEditingApp(null);
+      setAppForm(emptyApp);
+    } catch (error) {
+      console.error('Error saving App:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to save App: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Table helpers and column definitions
   const handleEditAnnouncement = (item: Announcement) => {
     setEditingAnnouncement(item);
@@ -1477,6 +1608,33 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
     toast.success('AI Tool deleted');
   };
 
+  const handleEditApp = (item: App) => {
+    setEditingApp(item);
+    setAppForm(item);
+    setAppOpen(true);
+  };
+
+  const duplicateApp = (item: App) => {
+    const duplicatedItem = {
+      ...item,
+      id: '',
+      name: `${item.name} (Copy)`,
+      companies: []
+    };
+    setEditingApp(null);
+    setAppForm(duplicatedItem);
+    setAppOpen(true);
+    toast.success('App duplicated - ready for editing');
+  };
+
+  const deleteApp = async (id: string) => {
+    if (!confirm('Delete this App?')) return;
+    await supabase.from('app_companies').delete().eq('app_id', id);
+    await supabase.from('apps').delete().eq('id', id);
+    await fetchApps();
+    toast.success('App deleted');
+  };
+
   const faqColumns: Column<Faq>[] = [
     { key: 'question', label: 'Question', initialWidth: 200, render: (item) => <TruncatedText text={item.question} maxLength={40} /> },
     { key: 'answer', label: 'Answer', initialWidth: 200, render: (item) => <TruncatedText text={item.answer} maxLength={50} /> },
@@ -1524,6 +1682,33 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
             <Copy className="h-3 w-3" />
           </Button>
           <Button variant="destructive" size="sm" onClick={() => deleteAiTool(item.id)} title="Delete">
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      )
+    }
+  ];
+
+  const appColumns: Column<App>[] = [
+    { key: 'name', label: 'App Name', initialWidth: 200, render: (item) => <TruncatedText text={item.name} maxLength={30} /> },
+    { key: 'url', label: 'URL', initialWidth: 200, render: (item) => <TruncatedText text={item.url} maxLength={40} /> },
+    { key: 'description', label: 'Description', initialWidth: 200, render: (item) => <TruncatedText text={item.description || ''} maxLength={40} /> },
+    { key: 'demo_preview', label: 'Demo Preview', initialWidth: 100, render: (item) => item.demo_preview ? '✓' : '' },
+    { key: 'companies', label: 'Companies', initialWidth: 150, render: (item) => renderCompanies(item.companies) },
+    {
+      key: 'actions',
+      label: 'Actions',
+      sortable: false,
+      initialWidth: 80,
+      render: (item) => (
+        <div className="flex items-center space-x-1">
+          <Button variant="outline" size="sm" onClick={() => handleEditApp(item)} title="Edit">
+            <Pencil className="h-3 w-3" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => duplicateApp(item)} title="Duplicate">
+            <Copy className="h-3 w-3" />
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteApp(item.id)} title="Delete">
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>
@@ -2518,6 +2703,128 @@ const PortalContentManager: React.FC<{ companies: CompanyOption[]; currentAdmin?
                 </div>
                 <DialogFooter>
                   <Button onClick={saveAiTool} disabled={loading}>
+                    {loading ? 'Saving...' : 'Save'}
+                  </Button>
+                </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </section>
+
+          {/* Apps */}
+          <section className="space-y-4">
+            <button
+              type="button"
+              onClick={() => toggleSection('apps')}
+              className="flex w-full items-center justify-between rounded-md border border-forest-green/20 px-4 py-3 text-left transition-colors hover:bg-forest-green/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-green focus-visible:ring-offset-2"
+              aria-expanded={expandedSections.apps}
+              aria-controls="apps-content"
+            >
+              <span className="flex items-center gap-2 text-forest-green font-semibold">
+                <Bot className="h-5 w-5" />
+                Apps
+              </span>
+              <ChevronRight
+                className={`h-5 w-5 text-forest-green transition-transform ${
+                  expandedSections.apps ? 'rotate-90' : ''
+                }`}
+              />
+            </button>
+            <div id="apps-content" className={`space-y-4 ${expandedSections.apps ? 'block' : 'hidden'}`}>
+              <Dialog open={appOpen} onOpenChange={setAppOpen}>
+                <SortableTable
+                data={apps}
+                columns={appColumns}
+                externalConfig={tableConfigs.apps}
+                onConfigChange={(config) => updateTableConfig('apps', config)}
+                toolbar={(columnsButton) => (
+                  <div className="flex flex-col sm:flex-row gap-2 mt-2 mb-2 w-full sm:justify-between">
+                    <TableViewManager 
+                      contentType="apps"
+                      currentConfig={tableConfigs.apps || { visibleColumns: appColumns.map(c => c.key), columnWidths: {} }}
+                      onConfigChange={(config) => updateTableConfig('apps', config)}
+                    />
+                    <div className="flex gap-2">
+                      <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="bg-forest-green hover:bg-forest-green/90 transition-colors w-full sm:w-auto"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add App
+                      </Button>
+                      </DialogTrigger>
+                      {columnsButton}
+                    </div>
+                  </div>
+                )}
+              />
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingApp ? 'Edit App' : 'Add App'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="app-name">App Name</Label>
+                    <Input
+                      id="app-name"
+                      value={appForm.name}
+                      onChange={(e) => setAppForm({ ...appForm, name: e.target.value })}
+                      placeholder="Enter app name (e.g., PDF AI Splitter)"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="app-url">App URL</Label>
+                    <Input
+                      id="app-url"
+                      value={appForm.url}
+                      onChange={(e) => setAppForm({ ...appForm, url: e.target.value })}
+                      placeholder="Enter app URL (e.g., https://pdfapp.rootedai.tech)"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="app-description">Description</Label>
+                    <Textarea
+                      id="app-description"
+                      value={appForm.description}
+                      onChange={(e) => setAppForm({ ...appForm, description: e.target.value })}
+                      placeholder="Enter app description"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="demo-preview"
+                      checked={appForm.demo_preview}
+                      onCheckedChange={(checked) =>
+                        setAppForm({ ...appForm, demo_preview: checked === true })
+                      }
+                    />
+                    <Label htmlFor="demo-preview">Enable Demo Preview (shows on public demo dashboard)</Label>
+                  </div>
+                  <div>
+                    <Label>Assign to Companies</Label>
+                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded p-2">
+                      {companies.map((company) => (
+                        <div key={company.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`app-company-${company.id}`}
+                            checked={appForm.companies.includes(company.id)}
+                            onCheckedChange={() =>
+                              setAppForm({
+                                ...appForm,
+                                companies: toggleSelection(appForm.companies, company.id)
+                              })
+                            }
+                          />
+                          <Label htmlFor={`app-company-${company.id}`}>{company.name}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={saveApp} disabled={loading}>
                     {loading ? 'Saving...' : 'Save'}
                   </Button>
                 </DialogFooter>

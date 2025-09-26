@@ -1188,6 +1188,7 @@ export type Database = {
         Returns: {
           ai_tools: Json
           announcements: Json
+          apps: Json
           coaching: Json
           faqs: Json
           kpis: Json
@@ -1257,6 +1258,7 @@ export type Database = {
         Returns: {
           ai_tools: Json
           announcements: Json
+          apps: Json
           coaching: Json
           faqs: Json
           kpis: Json

@@ -26,6 +26,7 @@ const PerformanceMetricCard = React.lazy(
 );
 const EmptyState = React.lazy(() => import('@/components/client-portal/EmptyState'));
 const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCard'));
+const AppCard = React.lazy(() => import('@/components/client-portal/AppCard'));
 const FAQSection = React.lazy(() => import('@/components/client-portal/FAQSection'));
 
 // User Analytics component
@@ -244,7 +245,8 @@ const ClientPortal: React.FC = () => {
     content.coaching.length > 0 || 
     content.kpis.length > 0 || 
     content.faqs.length > 0 || 
-    content.ai_tools.length > 0;
+    content.ai_tools.length > 0 ||
+    content.apps.length > 0;
 
   return (
     <div className="min-h-screen bg-background pt-16 lg:pt-20">
@@ -374,6 +376,10 @@ const ClientPortal: React.FC = () => {
                       <div className="text-center p-3 bg-background/50 rounded-lg">
                         <div className="text-2xl font-bold text-forest-green">{content.ai_tools.length}</div>
                         <div className="text-sm text-muted-foreground">AI Tools</div>
+                      </div>
+                      <div className="text-center p-3 bg-background/50 rounded-lg">
+                        <div className="text-2xl font-bold text-forest-green">{content.apps.length}</div>
+                        <div className="text-sm text-muted-foreground">Apps</div>
                       </div>
                       <div className="text-center p-3 bg-background/50 rounded-lg">
                         <div className="text-2xl font-bold text-forest-green">{content.useful_links.length}</div>
@@ -532,6 +538,33 @@ const ClientPortal: React.FC = () => {
                           <CardContent className="p-3 text-center">
                             <p className="text-muted-foreground text-xs">
                               +{content.ai_tools.length - 3} more tools
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Apps Widget */}
+                {content.apps.length > 0 && (
+                  <div className="animate-slide-left-delayed">
+                    <h3 className="text-lg font-semibold text-forest-green mb-4">Available Apps</h3>
+                    <div className="space-y-3">
+                      {content.apps.slice(0, 3).map((app: any, index: number) => (
+                        <div key={app.id} className="animate-spring-up" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Suspense fallback={<Skeleton className="h-20 w-full" />}>
+                            <div className="interactive-scale">
+                              <AppCard app={app} />
+                            </div>
+                          </Suspense>
+                        </div>
+                      ))}
+                      {content.apps.length > 3 && (
+                        <Card className="bg-muted/30 border-dashed">
+                          <CardContent className="p-3 text-center">
+                            <p className="text-muted-foreground text-xs">
+                              +{content.apps.length - 3} more apps
                             </p>
                           </CardContent>
                         </Card>
