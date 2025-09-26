@@ -19,6 +19,9 @@ const PerformanceMetricCard = React.lazy(
 const AiToolCard = React.lazy(() => import('@/components/client-portal/AiToolCard'));
 const AppCard = React.lazy(() => import('@/components/client-portal/AppCard'));
 const FAQSection = React.lazy(() => import('@/components/client-portal/FAQSection'));
+const EnhancedCoachingCard = React.lazy(
+  () => import('@/components/client-portal/EnhancedCoachingCard')
+);
 
 const ClientDemoPortal: React.FC = () => {
   const { content, loading, error, refresh } = usePublicPortalContent();
@@ -49,26 +52,27 @@ const ClientDemoPortal: React.FC = () => {
     );
   }
 
-  const hasAnyContent = 
-    content.announcements.length > 0 || 
-    content.resources.length > 0 || 
-    content.useful_links.length > 0 || 
-    content.kpis.length > 0 || 
-    content.faqs.length > 0 || 
+  const hasAnyContent =
+    content.announcements.length > 0 ||
+    content.resources.length > 0 ||
+    content.useful_links.length > 0 ||
+    content.kpis.length > 0 ||
+    content.faqs.length > 0 ||
     content.ai_tools.length > 0 ||
-    content.apps.length > 0;
+    content.apps.length > 0 ||
+    content.coaching.length > 0;
 
   return (
     <div className="min-h-screen bg-background pt-16 lg:pt-20">
       <Header />
       
       {/* Hub Badge Banner */}
-      <div className="border-b border-primary/20 bg-primary/5">
+      <div className="border-b border-forest-green/20 bg-forest-green/5">
         <div className="container mx-auto py-4">
-          <Alert className="border-primary/30 bg-primary/10">
-            <Eye className="h-4 w-4 text-primary" />
+          <Alert className="border-forest-green/30 bg-forest-green/10">
+            <Eye className="h-4 w-4 text-forest-green" />
             <AlertDescription className="flex items-center flex-wrap gap-4">
-              <div className="text-primary">
+              <div className="text-forest-green">
                 <strong>🚀 Live Hub Experience:</strong> You're previewing the RootedAI client hub.
                 This showcases how prospects gain guided visibility into personalized growth dashboards.
               </div>
@@ -81,11 +85,11 @@ const ClientDemoPortal: React.FC = () => {
         {/* Portal Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+            <Badge variant="secondary" className="bg-forest-green/10 text-forest-green border-forest-green/20">
               Hub Portal Preview
             </Badge>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight">
+          <h1 className="text-4xl font-bold tracking-tight text-forest-green">
             Client Hub Experience
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -135,31 +139,31 @@ const ClientDemoPortal: React.FC = () => {
               <div className="lg:col-span-8 space-y-6">
                 
                 {/* At-a-Glance Summary */}
-                <Card className="bg-gradient-to-br from-primary/10 via-background to-primary/5 border-primary/20 animate-fade-in">
+                <Card className="bg-gradient-to-br from-forest-green/5 to-sage/10 border-forest-green/20 animate-fade-in">
                   <CardHeader>
-                    <CardTitle className="text-primary">Hub Dashboard Overview</CardTitle>
+                    <CardTitle className="text-forest-green">Dashboard Overview</CardTitle>
                     <CardDescription>Sample intelligence from the RootedAI client hub ecosystem</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-3 bg-background/50 rounded-lg">
-                        <div className="text-2xl font-bold text-primary">{content.announcements.length}</div>
+                        <div className="text-2xl font-bold text-forest-green">{content.announcements.length}</div>
                         <div className="text-sm text-muted-foreground">Announcements</div>
                       </div>
                       <div className="text-center p-3 bg-background/50 rounded-lg">
-                        <div className="text-2xl font-bold text-primary">{content.resources.length}</div>
+                        <div className="text-2xl font-bold text-forest-green">{content.resources.length}</div>
                         <div className="text-sm text-muted-foreground">Resources</div>
                       </div>
                       <div className="text-center p-3 bg-background/50 rounded-lg">
-                        <div className="text-2xl font-bold text-primary">{content.ai_tools.length}</div>
+                        <div className="text-2xl font-bold text-forest-green">{content.ai_tools.length}</div>
                         <div className="text-sm text-muted-foreground">AI Tools</div>
                       </div>
                       <div className="text-center p-3 bg-background/50 rounded-lg">
-                        <div className="text-2xl font-bold text-primary">{content.apps.length}</div>
+                        <div className="text-2xl font-bold text-forest-green">{content.apps.length}</div>
                         <div className="text-sm text-muted-foreground">Apps</div>
                       </div>
                       <div className="text-center p-3 bg-background/50 rounded-lg">
-                        <div className="text-2xl font-bold text-primary">{content.useful_links.length}</div>
+                        <div className="text-2xl font-bold text-forest-green">{content.useful_links.length}</div>
                         <div className="text-sm text-muted-foreground">Quick Links</div>
                       </div>
                     </div>
@@ -170,8 +174,8 @@ const ClientDemoPortal: React.FC = () => {
                 {content.kpis.length > 0 && (
                   <div className="animate-slide-up">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-semibold text-primary">Performance Metrics</h2>
-                      <Badge variant="outline" className="text-primary border-primary/20">Sample Hub Data</Badge>
+                      <h2 className="text-2xl font-semibold text-forest-green">Performance Metrics</h2>
+                      <Badge variant="outline" className="text-forest-green border-forest-green/30">Sample Hub Data</Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {content.kpis.map((report: any, index: number) => (
@@ -193,10 +197,10 @@ const ClientDemoPortal: React.FC = () => {
                 {content.announcements.length > 0 && (
                   <div className="animate-slide-up-delayed">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-semibold text-primary">Latest Updates</h2>
-                      <Badge variant="outline" className="text-primary border-primary/20">
-                        {content.announcements.length} hub updates
-                      </Badge>
+                      <h2 className="text-2xl font-semibold text-forest-green">Latest Updates</h2>
+                      <div className="text-sm bg-forest-green/10 text-forest-green px-2 py-1 rounded-full">
+                        {content.announcements.length} new
+                      </div>
                     </div>
                     <div className="space-y-3">
                       {content.announcements.slice(0, 3).map((announcement: any, index: number) => (
@@ -219,6 +223,42 @@ const ClientDemoPortal: React.FC = () => {
                   </div>
                 )}
 
+                {/* Resources Grid Widget */}
+                {content.resources.length > 0 && (
+                  <div className="animate-slide-up-delayed-2">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-semibold text-forest-green">Resource Library</h2>
+                      <div className="text-sm text-muted-foreground">{content.resources.length} available</div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {content.resources.slice(0, 4).map((resource: any, index: number) => (
+                        <div key={resource.id} className="animate-elastic-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                          <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+                            <div className="card-energy">
+                              <ResourceCard
+                                title={resource.title}
+                                type={resource.category || 'Guide'}
+                                href={resource.link}
+                              />
+                            </div>
+                          </Suspense>
+                        </div>
+                      ))}
+                    </div>
+                    {content.resources.length > 4 && (
+                      <div className="mt-4 text-center">
+                        <Card className="bg-muted/30 border-dashed">
+                          <CardContent className="p-4">
+                            <p className="text-muted-foreground text-sm">
+                              +{content.resources.length - 4} more resources in your library
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* FAQ Section */}
                 {content.faqs.length > 0 && (
                   <Suspense fallback={<Skeleton className="h-40 w-full" />}>
@@ -232,16 +272,16 @@ const ClientDemoPortal: React.FC = () => {
               <div className="lg:col-span-4 space-y-6">
 
                 {/* Call to Action Card */}
-                <Card className="bg-gradient-to-br from-primary/15 to-primary/5 border-primary/20">
+                <Card className="bg-gradient-to-br from-forest-green/15 to-forest-green/5 border-forest-green/20">
                   <CardHeader>
-                    <CardTitle className="text-primary">Ready to Activate Your Hub?</CardTitle>
+                    <CardTitle className="text-forest-green">Ready to Activate Your Hub?</CardTitle>
                     <CardDescription>
                       Experience the full RootedAI client hub with personalized insights engineered for
                       your team.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button variant="outline" asChild className="w-full">
+                    <Button variant="outline" asChild className="w-full border-forest-green text-forest-green hover:bg-forest-green/10">
                       <a href="https://rootedai.tech/#contact">
                         <ExternalLink className="w-4 h-4 mr-2" />
                         Contact Sales
@@ -250,44 +290,26 @@ const ClientDemoPortal: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Resources Widget */}
-                {content.resources.length > 0 && (
-                  <div className="animate-slide-up-delayed-2">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-primary">Sample Resources</h3>
-                      <Badge variant="outline" className="text-primary border-primary/20">Hub Preview</Badge>
-                    </div>
-                    <div className="space-y-3">
-                      {content.resources.slice(0, 3).map((resource: any, index: number) => (
-                        <div key={resource.id} className="animate-fade-in" style={{ animationDelay: `${(index + 4) * 0.1}s` }}>
-                          <Suspense fallback={<Skeleton className="h-20 w-full" />}>
-                            <div className="interactive-scale">
-                              <ResourceCard 
-                                title={resource.title}
-                                type={resource.category === 'Video' ? 'Video' : resource.category === 'Slide' ? 'Slide' : 'Guide'}
-                                href={resource.link}
-                              />
-                            </div>
-                          </Suspense>
-                        </div>
-                      ))}
-                    </div>
+                {/* Coaching Sessions Widget */}
+                {content.coaching.length > 0 && (
+                  <div className="animate-slide-left">
+                    <h3 className="text-lg font-semibold text-forest-green mb-4">Upcoming Sessions</h3>
+                    <Suspense fallback={<Skeleton className="h-32 w-full" />}>
+                      <EnhancedCoachingCard sessions={content.coaching} />
+                    </Suspense>
                   </div>
                 )}
 
                 {/* AI Tools Widget */}
                 {content.ai_tools.length > 0 && (
-                  <div className="animate-slide-up-delayed-3">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-primary">Hub AI Tools</h3>
-                      <Badge variant="outline" className="text-primary border-primary/20">Sample</Badge>
-                    </div>
+                  <div className="animate-slide-left-delayed">
+                    <h3 className="text-lg font-semibold text-forest-green mb-4">AI Toolkit</h3>
                     <div className="space-y-3">
                       {content.ai_tools.slice(0, 3).map((tool: any, index: number) => (
-                        <div key={tool.id} className="animate-fade-in" style={{ animationDelay: `${(index + 7) * 0.1}s` }}>
+                        <div key={tool.id} className="animate-spring-up" style={{ animationDelay: `${index * 0.1}s` }}>
                           <Suspense fallback={<Skeleton className="h-20 w-full" />}>
                             <div className="interactive-scale">
-                              <AiToolCard 
+                              <AiToolCard
                                 title={tool.ai_tool}
                                 comments={tool.comments}
                                 url={tool.url}
@@ -296,20 +318,26 @@ const ClientDemoPortal: React.FC = () => {
                           </Suspense>
                         </div>
                       ))}
+                      {content.ai_tools.length > 3 && (
+                        <Card className="bg-muted/30 border-dashed">
+                          <CardContent className="p-3 text-center">
+                            <p className="text-muted-foreground text-xs">
+                              +{content.ai_tools.length - 3} more tools
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </div>
                 )}
 
                 {/* Apps Widget */}
                 {content.apps.length > 0 && (
-                  <div className="animate-slide-up-delayed-3">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-primary">Demo Apps</h3>
-                      <Badge variant="outline" className="text-primary border-primary/20">Preview</Badge>
-                    </div>
+                  <div className="animate-slide-left-delayed">
+                    <h3 className="text-lg font-semibold text-forest-green mb-4">Available Apps</h3>
                     <div className="space-y-3">
                       {content.apps.slice(0, 3).map((app: any, index: number) => (
-                        <div key={app.id} className="animate-fade-in" style={{ animationDelay: `${(index + 8) * 0.1}s` }}>
+                        <div key={app.id} className="animate-spring-up" style={{ animationDelay: `${index * 0.1}s` }}>
                           <Suspense fallback={<Skeleton className="h-20 w-full" />}>
                             <div className="interactive-scale">
                               <AppCard app={app} isDemo={true} />
@@ -317,23 +345,29 @@ const ClientDemoPortal: React.FC = () => {
                           </Suspense>
                         </div>
                       ))}
+                      {content.apps.length > 3 && (
+                        <Card className="bg-muted/30 border-dashed">
+                          <CardContent className="p-3 text-center">
+                            <p className="text-muted-foreground text-xs">
+                              +{content.apps.length - 3} more apps
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </div>
                 )}
 
                 {/* Quick Links Widget */}
                 {content.useful_links.length > 0 && (
-                  <div className="animate-slide-up-delayed-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-primary">Hub Quick Links</h3>
-                      <Badge variant="outline" className="text-primary border-primary/20">Sample</Badge>
-                    </div>
-                    <div className="space-y-3">
-                      {content.useful_links.slice(0, 3).map((link: any, index: number) => (
-                        <div key={link.id} className="animate-fade-in" style={{ animationDelay: `${(index + 10) * 0.1}s` }}>
+                  <div className="animate-slide-left-delayed">
+                    <h3 className="text-lg font-semibold text-forest-green mb-4">Quick Access</h3>
+                    <div className="space-y-2">
+                      {content.useful_links.slice(0, 4).map((link: any, index: number) => (
+                        <div key={link.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
                           <Suspense fallback={<Skeleton className="h-16 w-full" />}>
                             <div className="interactive-scale">
-                              <UsefulLinkCard 
+                              <UsefulLinkCard
                                 title={link.title}
                                 url={link.url}
                               />
@@ -341,6 +375,15 @@ const ClientDemoPortal: React.FC = () => {
                           </Suspense>
                         </div>
                       ))}
+                      {content.useful_links.length > 4 && (
+                        <Card className="bg-muted/30 border-dashed">
+                          <CardContent className="p-2 text-center">
+                            <p className="text-muted-foreground text-xs">
+                              +{content.useful_links.length - 4} more links
+                            </p>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </div>
                 )}
@@ -378,9 +421,9 @@ const ClientDemoPortal: React.FC = () => {
         )}
 
         {/* Contact Footer */}
-        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+        <Card className="bg-gradient-to-r from-forest-green/5 to-sage/10 border-forest-green/20">
           <CardContent className="py-8 text-center">
-            <h3 className="text-xl font-semibold text-primary mb-2">
+            <h3 className="text-xl font-semibold text-forest-green mb-2">
               Ready to Transform Your Business?
             </h3>
             <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
@@ -389,7 +432,7 @@ const ClientDemoPortal: React.FC = () => {
               business needs.
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
-              <Button variant="outline" size="lg" asChild>
+              <Button variant="outline" size="lg" asChild className="border-forest-green text-forest-green hover:bg-forest-green/10">
                 <a href="https://rootedai.tech/#contact">
                   <ExternalLink className="w-5 h-5 mr-2" />
                   Book a Discovery Call
