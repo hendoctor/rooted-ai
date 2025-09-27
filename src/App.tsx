@@ -12,6 +12,7 @@ import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoadingIcon } from "@/components/LoadingSpinner";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 import AuthGuard from "@/components/AuthGuard";
 import PublicOnlyGuard from "@/components/PublicOnlyGuard";
@@ -258,6 +259,7 @@ const App = () => {
                   <main id="main-content">
                     <AppContent />
                   </main>
+                  <MobileBottomNav />
                 </AppLoadingWrapper>
               </BrowserRouter>
             </AuthProvider>
