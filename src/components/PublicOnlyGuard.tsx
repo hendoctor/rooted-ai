@@ -5,13 +5,15 @@ import { useAuth } from '@/hooks/useAuth';
 interface PublicOnlyGuardProps {
   children: React.ReactNode;
   redirectTo?: string;
+  allowedRoles?: string[];
 }
 
-const PublicOnlyGuard: React.FC<PublicOnlyGuardProps> = ({ 
-  children, 
-  redirectTo = '/' 
+const PublicOnlyGuard: React.FC<PublicOnlyGuardProps> = ({
+  children,
+  redirectTo = '/',
+  allowedRoles = []
 }) => {
-  const { user, authReady } = useAuth();
+  const { user, authReady, userRole } = useAuth();
 
   // Wait for auth to be ready before making decisions
   if (!authReady) {
@@ -20,6 +22,9 @@ const PublicOnlyGuard: React.FC<PublicOnlyGuardProps> = ({
 
   // If user is authenticated, redirect them away
   if (user) {
+    if (userRole && allowedRoles.includes(userRole)) {
+      return <>{children}</>;
+    }
     return <Navigate to={redirectTo} replace />;
   }
 

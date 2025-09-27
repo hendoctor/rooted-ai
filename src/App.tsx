@@ -117,18 +117,18 @@ const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Global admin redirect hook - only redirect from root and auth pages
+// Global admin redirect hook - keep admins out of public auth-only pages
 const useAdminRedirect = () => {
   const { user, authReady, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
   React.useEffect(() => {
-    // Only redirect admins from root (/) or auth (/auth) pages, allow access to client portals
-    const shouldRedirect = authReady && 
-      user && 
-      userRole === 'Admin' && 
-      (location.pathname === '/' || location.pathname === '/auth');
+    // Only redirect admins from auth (/auth) page, allow access to marketing/client pages
+    const shouldRedirect = authReady &&
+      user &&
+      userRole === 'Admin' &&
+      location.pathname === '/auth';
       
     if (shouldRedirect) {
       console.log('🔄 Admin redirect from', location.pathname, 'to /admin');
@@ -146,13 +146,13 @@ const AppContent = () => {
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/artifacts" element={<Artifacts />} />
-      <Route 
-        path="/client-demo" 
+      <Route
+        path="/client-demo"
         element={
-          <PublicOnlyGuard>
+          <PublicOnlyGuard allowedRoles={["Admin"]}>
             <ClientDemoPortal />
           </PublicOnlyGuard>
-        } 
+        }
       />
       
       {/* Protected routes with role requirements */}
