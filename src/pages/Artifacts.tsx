@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -191,6 +191,10 @@ const aiLevels: AILevel[] = [
 
 const Artifacts = () => {
   const [openLevels, setOpenLevels] = useState<Set<number>>(new Set([1]));
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, []);
 
   const toggleLevel = (level: number) => {
     const newOpenLevels = new Set(openLevels);
