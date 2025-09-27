@@ -361,7 +361,7 @@ const ClientPortal: React.FC = () => {
                 {/* At-a-Glance Summary */}
                 <Card className="bg-gradient-to-br from-forest-green/5 to-sage/10 border-forest-green/20 animate-fade-in">
                   <CardHeader>
-                    <CardTitle className="text-black">Dashboard Overview</CardTitle>
+                    <CardTitle className="text-slate-900 dark:text-white">Dashboard Overview</CardTitle>
                     <CardDescription>Your personalized content summary</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -394,7 +394,7 @@ const ClientPortal: React.FC = () => {
                 {content.kpis.length > 0 && (
                   <div className="animate-slide-up">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-semibold text-black">Performance Metrics</h2>
+                      <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Performance Metrics</h2>
                       <div className="w-2 h-2 bg-forest-green rounded-full animate-pulse"></div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -417,7 +417,7 @@ const ClientPortal: React.FC = () => {
                 {content.announcements.length > 0 && (
                   <div className="animate-slide-up-delayed">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-semibold text-black">Latest Updates</h2>
+                      <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Latest Updates</h2>
                       <div className="text-sm bg-forest-green/10 text-forest-green px-2 py-1 rounded-full">
                         {content.announcements.length} new
                       </div>
@@ -456,7 +456,7 @@ const ClientPortal: React.FC = () => {
                 {content.resources.length > 0 && (
                   <div className="animate-slide-up-delayed-2">
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-2xl font-semibold text-black">Resource Library</h2>
+                      <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">Resource Library</h2>
                       <div className="text-sm text-muted-foreground">{content.resources.length} available</div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -509,7 +509,7 @@ const ClientPortal: React.FC = () => {
                 {/* Coaching Sessions Widget */}
                 {content.coaching.length > 0 && (
                   <div className="animate-slide-left">
-                    <h3 className="text-lg font-semibold text-black mb-4">Upcoming Sessions</h3>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Upcoming Sessions</h3>
                     <Suspense fallback={<Skeleton className="h-32 w-full" />}>
                       <EnhancedCoachingCard sessions={content.coaching} />
                     </Suspense>
@@ -519,7 +519,7 @@ const ClientPortal: React.FC = () => {
                 {/* AI Tools Widget */}
                 {content.ai_tools.length > 0 && (
                   <div className="animate-slide-left-delayed">
-                    <h3 className="text-lg font-semibold text-black mb-4">AI Toolkit</h3>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">AI Toolkit</h3>
                     <div className="space-y-3">
                       {content.ai_tools.slice(0, 3).map((tool: any, index: number) => (
                         <div key={tool.id} className="animate-spring-up" style={{ animationDelay: `${index * 0.1}s` }}>
@@ -550,7 +550,7 @@ const ClientPortal: React.FC = () => {
                 {/* Apps Widget */}
                 {content.apps.length > 0 && (
                   <div className="animate-slide-left-delayed">
-                    <h3 className="text-lg font-semibold text-black mb-4">Available Apps</h3>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Available Apps</h3>
                     <div className="space-y-3">
                       {content.apps.slice(0, 3).map((app: any, index: number) => (
                         <div key={app.id} className="animate-spring-up" style={{ animationDelay: `${index * 0.1}s` }}>
@@ -577,7 +577,7 @@ const ClientPortal: React.FC = () => {
                 {/* Quick Links Widget */}
                 {content.useful_links.length > 0 && (
                   <div className="animate-slide-left-delayed">
-                    <h3 className="text-lg font-semibold text-black mb-4">Quick Access</h3>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Quick Access</h3>
                     <div className="space-y-2">
                       {content.useful_links.slice(0, 4).map((link: any, index: number) => (
                         <div key={link.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>

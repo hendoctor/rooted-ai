@@ -36,7 +36,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({ faqs, isDemo = false }) => {
   return (
     <div className="animate-slide-up-delayed-5" data-demo={isDemo ? 'true' : 'false'}>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-semibold text-black">
+        <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
           Frequently Asked Questions
         </h2>
         <Badge
@@ -57,7 +57,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({ faqs, isDemo = false }) => {
                   className="border rounded-lg shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-forest-green/40"
                 >
                   <AccordionTrigger className="px-4 hover:no-underline">
-                    <div className="flex items-center gap-2 text-black">
+                    <div className="flex items-center gap-2 text-slate-900 dark:text-white">
                       <HelpCircle className="h-5 w-5 text-forest-green" />
                       <span className="font-semibold text-lg">{category}</span>
                       <Badge
@@ -78,7 +78,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({ faqs, isDemo = false }) => {
                         >
                           <AccordionTrigger className="text-left hover:no-underline">
                             <div className="flex-1 pr-4">
-                              <div className="font-medium text-base text-black">{faq.question}</div>
+                              <div className="font-medium text-base text-slate-900 dark:text-white">{faq.question}</div>
                               {faq.goal && (
                                 <div className="text-sm text-forest-green mt-1">
                                   Goal: {faq.goal}
