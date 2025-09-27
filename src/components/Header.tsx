@@ -82,6 +82,21 @@ const Header = () => {
     return href;
   };
 
+  const handleLogoClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    setIsMobileMenuOpen(false);
+
+    if (location.pathname === '/') {
+      event.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Ensure we scroll to the top after navigating home
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 0);
+  };
+
   const handleNotificationNavigate = (notification: any) => {
     // Navigate based on notification type and content
     if (notification.content_url) {
@@ -119,7 +134,7 @@ const Header = () => {
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
             <div className="flex items-center space-x-2">
-              <Link to="/" className="flex items-center space-x-2">
+              <Link to="/" className="flex items-center space-x-2" onClick={handleLogoClick}>
                 <img
                   src="/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png"
                   alt="RootedAI Logo"
