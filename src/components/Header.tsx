@@ -228,6 +228,15 @@ const Header = () => {
               <nav className="flex flex-col space-y-4">
                 {menuItems.map((item) => {
                   const targetHref = handleNavClick(item.path);
+                  const isHubLink = item.label.trim() === 'HUB »';
+                  const content = isHubLink ? (
+                    <span className="inline-flex items-center gap-1">
+                      <span>HUB</span>
+                      <span className="text-forest-green animate-pulse">»</span>
+                    </span>
+                  ) : (
+                    item.label
+                  );
                   return item.path.startsWith('/') || targetHref.startsWith('/') ? (
                     <Link
                       key={item.label}
@@ -235,7 +244,7 @@ const Header = () => {
                       className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      {item.label}
+                      {content}
                     </Link>
                   ) : (
                     <a
@@ -244,7 +253,7 @@ const Header = () => {
                       className="text-slate-gray dark:text-white hover:text-forest-green dark:hover:text-white/80 transition-colors duration-200 font-medium px-4 py-2"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
-                      {item.label}
+                      {content}
                     </a>
                   );
                 })}
@@ -333,7 +342,7 @@ const Header = () => {
           isInstallable={isInstallable}
         />
       </header>
-  );
+    );
 };
 
 export default Header;
