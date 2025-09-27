@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -26,29 +26,6 @@ const EnhancedCoachingCard = React.lazy(
 
 const ClientDemoPortal: React.FC = () => {
   const { content, loading, error, refresh } = usePublicPortalContent();
-
-  const demoCoachingSessions = useMemo(() => {
-    if (!content.coaching || content.coaching.length === 0) {
-      return content.coaching;
-    }
-
-    const now = new Date();
-    const future = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const minutes = future.getMinutes();
-
-    if (minutes >= 30) {
-      future.setHours(future.getHours() + 1);
-    }
-
-    future.setMinutes(0, 0, 0);
-
-    const roundedFutureIso = future.toISOString();
-
-    return content.coaching.map((session: any) => ({
-      ...session,
-      session_date: roundedFutureIso
-    }));
-  }, [content.coaching]);
 
   // Handle content error
   if (error && !loading) {
@@ -315,11 +292,11 @@ const ClientDemoPortal: React.FC = () => {
                 </Card>
 
                 {/* Coaching Sessions Widget */}
-                {demoCoachingSessions && demoCoachingSessions.length > 0 && (
+                {content.coaching.length > 0 && (
                   <div className="animate-slide-left">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Upcoming Sessions</h3>
                     <Suspense fallback={<Skeleton className="h-32 w-full" />}>
-                      <EnhancedCoachingCard sessions={demoCoachingSessions} />
+                      <EnhancedCoachingCard sessions={content.coaching} />
                     </Suspense>
                   </div>
                 )}
