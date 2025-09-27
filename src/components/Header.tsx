@@ -142,6 +142,15 @@ const Header = () => {
                 />
                 <span className="text-xl lg:text-2xl font-bold text-forest-green">RootedAI</span>
               </Link>
+              {!user && (
+                <Link
+                  to="/client-demo"
+                  className="flex items-center space-x-1 text-slate-gray hover:text-forest-green transition-colors duration-200 font-medium"
+                >
+                  <span>HUB</span>
+                  <span className="text-forest-green animate-pulse">»</span>
+                </Link>
+              )}
               {companyName && (
                 <>
                   <span className="text-slate-gray">•</span>
@@ -164,6 +173,9 @@ const Header = () => {
               {menuItems.map((item) => {
                 const targetHref = handleNavClick(item.path);
                 const isHubLink = item.label.trim() === 'HUB »';
+                if (isHubLink) {
+                  return null;
+                }
                 const content = isHubLink ? (
                   <span className="inline-flex items-center gap-1">
                     <span>HUB</span>
@@ -244,6 +256,9 @@ const Header = () => {
                 {menuItems.map((item) => {
                   const targetHref = handleNavClick(item.path);
                   const isHubLink = item.label.trim() === 'HUB »';
+                  if (isHubLink) {
+                    return null;
+                  }
                   const content = isHubLink ? (
                     <span className="inline-flex items-center gap-1">
                       <span>HUB</span>
