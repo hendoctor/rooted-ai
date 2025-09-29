@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
@@ -24,38 +24,8 @@ const EnhancedCoachingCard = React.lazy(
   () => import('@/components/client-portal/EnhancedCoachingCard')
 );
 
-const TWENTY_FOUR_HOURS_IN_MS = 24 * 60 * 60 * 1000;
-
-const getRoundedFutureDate = (): Date => {
-  const futureDate = new Date(Date.now() + TWENTY_FOUR_HOURS_IN_MS);
-  const roundedDate = new Date(futureDate);
-
-  if (roundedDate.getMinutes() >= 30) {
-    roundedDate.setHours(roundedDate.getHours() + 1);
-  }
-
-  roundedDate.setMinutes(0, 0, 0);
-
-  return roundedDate;
-};
-
 const ClientDemoPortal: React.FC = () => {
   const { content, loading, error, refresh } = usePublicPortalContent();
-
-  const demoCoachingSessions = useMemo(() => {
-    const coachingSessions = Array.isArray(content.coaching) ? content.coaching : [];
-
-    if (coachingSessions.length === 0) {
-      return coachingSessions;
-    }
-
-    const roundedFutureIso = getRoundedFutureDate().toISOString();
-
-    return coachingSessions.map((session: any) => ({
-      ...session,
-      session_date: roundedFutureIso
-    }));
-  }, [content.coaching]);
 
   // Handle content error
   if (error && !loading) {
@@ -322,11 +292,11 @@ const ClientDemoPortal: React.FC = () => {
                 </Card>
 
                 {/* Coaching Sessions Widget */}
-                {demoCoachingSessions && demoCoachingSessions.length > 0 && (
+                {content.coaching.length > 0 && (
                   <div className="animate-slide-left">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Upcoming Sessions</h3>
                     <Suspense fallback={<Skeleton className="h-32 w-full" />}>
-                      <EnhancedCoachingCard sessions={demoCoachingSessions} />
+                      <EnhancedCoachingCard sessions={content.coaching} />
                     </Suspense>
                   </div>
                 )}

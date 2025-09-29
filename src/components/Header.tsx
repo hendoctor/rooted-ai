@@ -147,7 +147,7 @@ const Header = () => {
                   to="/client-demo"
                   className="flex items-center space-x-1 text-slate-gray hover:text-forest-green transition-colors duration-200 font-medium"
                 >
-                  <span className="text-forest-green animate-pulse">HUB</span>
+                  <span>HUB</span>
                   <span className="text-forest-green animate-pulse">»</span>
                 </Link>
               )}
@@ -178,7 +178,7 @@ const Header = () => {
                 }
                 const content = isHubLink ? (
                   <span className="inline-flex items-center gap-1">
-                    <span className="text-forest-green animate-pulse">HUB</span>
+                    <span>HUB</span>
                     <span className="text-forest-green animate-pulse">»</span>
                   </span>
                 ) : (
@@ -261,7 +261,7 @@ const Header = () => {
                   }
                   const content = isHubLink ? (
                     <span className="inline-flex items-center gap-1">
-                      <span className="text-forest-green animate-pulse">HUB</span>
+                      <span>HUB</span>
                       <span className="text-forest-green animate-pulse">»</span>
                     </span>
                   ) : (
