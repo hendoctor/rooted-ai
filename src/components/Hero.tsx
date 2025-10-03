@@ -52,7 +52,7 @@ const Hero = () => {
               asChild
               className="button-energy bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-8 py-3 text-lg rounded-lg glow-on-hover"
             >
-              <a href="#contact">Get Started</a>
+              <a href="/client-demo">Client Experience</a>
             </Button>
             <Button
               asChild
