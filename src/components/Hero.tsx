@@ -50,9 +50,18 @@ const Hero = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-elastic-in-delayed">
             <Button
               asChild
-              className="button-energy bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-8 py-3 text-lg rounded-lg glow-on-hover"
+              className="button-energy cta-glisten bg-forest-green dark:bg-[hsl(139_28%_25%)] hover:bg-forest-green/90 dark:hover:bg-[hsl(139_28%_20%)] text-white px-8 py-3 text-lg rounded-lg glow-on-hover"
             >
-              <a href="/client-demo">Client Experience</a>
+              <a
+                href="/client-demo"
+                className="relative z-10 flex items-center gap-3 font-semibold tracking-wide"
+              >
+                <span>Client Experience</span>
+                <span className="relative flex h-2 w-2 items-center justify-center" aria-hidden="true">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-white/70 opacity-70 shadow-[0_0_12px_rgba(255,255,255,0.6)] motion-safe:animate-ping" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)]" />
+                </span>
+              </a>
             </Button>
             <Button
               asChild
