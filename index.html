@@ -3,9 +3,130 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="theme-color" content="#000000" data-dynamic-theme />
+    <meta name="color-scheme" content="light dark" />
+
+    <script>
+      ;(() => {
+        const storageKey = 'theme'
+        try {
+          const storedTheme = localStorage.getItem(storageKey)
+          const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+          const shouldUseDark = storedTheme === 'dark' || (!storedTheme && systemPrefersDark.matches)
+          document.documentElement.classList.toggle('dark', !!shouldUseDark)
+          document.documentElement.dataset.theme = shouldUseDark ? 'dark' : 'light'
+          const syncWithSystemPreference = (matches) => {
+            if (!localStorage.getItem(storageKey)) {
+              document.documentElement.classList.toggle('dark', matches)
+              document.documentElement.dataset.theme = matches ? 'dark' : 'light'
+            }
+          }
+
+          const onPreferenceChange = (event) => syncWithSystemPreference(event.matches)
+
+          if (typeof systemPrefersDark.addEventListener === 'function') {
+            systemPrefersDark.addEventListener('change', onPreferenceChange)
+          } else if (typeof systemPrefersDark.addListener === 'function') {
+            systemPrefersDark.addListener(onPreferenceChange)
+          }
+        } catch (error) {
+          console.warn('Theme bootstrap failed', error)
+        }
+      })()
+    </script>
+
+    <style>
+      :root {
+        color-scheme: light dark;
+        --launch-background: #f8e5c5;
+        --launch-foreground: #44623b;
+        --launch-transition: 320ms;
+      }
+
+      :root.dark {
+        --launch-background: #0b1120;
+        --launch-foreground: #f5f3ea;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background-color: var(--launch-background);
+        color: var(--launch-foreground);
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        transition: background-color var(--launch-transition) ease, color var(--launch-transition) ease;
+        position: relative;
+      }
+
+      body.app-loaded {
+        color: inherit;
+      }
+
+      #splash-screen {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        background: var(--launch-background);
+        color: var(--launch-foreground);
+        z-index: 9999;
+        transition: opacity var(--launch-transition) ease, transform var(--launch-transition) ease;
+        will-change: opacity, transform;
+      }
+
+      #splash-screen[data-state='hidden'] {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      #splash-screen img {
+        width: clamp(96px, 20vw, 140px);
+        height: auto;
+      }
+
+      #splash-screen .launch-loader {
+        width: 64px;
+        height: 4px;
+        border-radius: 9999px;
+        background: rgba(68, 98, 59, 0.25);
+        background: color-mix(in srgb, var(--launch-foreground) 45%, transparent);
+        overflow: hidden;
+        position: relative;
+      }
+
+      #splash-screen .launch-loader::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--launch-foreground);
+        transform: translateX(-100%);
+        animation: launch-progress 1.6s ease-in-out infinite;
+      }
+
+      @keyframes launch-progress {
+        0%,
+        20% {
+          transform: translateX(-100%);
+        }
+        50% {
+          transform: translateX(-15%);
+        }
+        100% {
+          transform: translateX(105%);
+        }
+      }
+    </style>
     
     <!-- Basic Security Meta Tags (only those that work in meta) -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
@@ -30,13 +151,13 @@
     <!-- Keywords for SEO -->
     <meta name="keywords" content="Kansas City AI, small business AI, Microsoft AI solutions, AI consulting, business automation, AI training, Copilot, Power Platform" />
     
-    <!-- Favicon -->
-    <link rel="icon" href="/Assets/22badab3-8f25-475f-92d7-167cbc732868.png" type="image/png">
-    <link rel="apple-touch-icon" href="/Assets/ce6a66fb-80e8-4092-84eb-db436fcb1cad.png" />
-    <link rel="mask-icon" href="/Assets/ce6a66fb-80e8-4092-84eb-db436fcb1cad.png" color="#44623B" />
+    <!-- Favicon placeholders (hydrated via manifest to stay in sync with assets) -->
+    <link rel="icon" sizes="192x192" href="/Assets/22badab3-8f25-475f-92d7-167cbc732868.png" type="image/png" data-dynamic-icon>
+    <link rel="apple-touch-icon" sizes="180x180" href="/Assets/ce6a66fb-80e8-4092-84eb-db436fcb1cad.png" data-dynamic-apple-icon />
+    <link rel="mask-icon" href="/Assets/ce6a66fb-80e8-4092-84eb-db436fcb1cad.png" color="#44623B" data-dynamic-mask-icon />
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json" crossorigin="use-credentials">
     <script>
         !function(t,e){
             var o,n,p,r;
@@ -75,10 +196,145 @@
   </head>
 
   <body>
-    <div id="splash-screen">
-      <img src="/Assets/22badab3-8f25-475f-92d7-167cbc732868.png" alt="RootedAI logo" />
+    <div id="splash-screen" role="presentation" aria-hidden="true">
+      <img src="/Assets/22badab3-8f25-475f-92d7-167cbc732868.png" alt="" />
+      <div class="launch-loader" aria-hidden="true"></div>
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      ;(() => {
+        const toHex = (rgbString) => {
+          if (!rgbString) return null
+          if (rgbString.startsWith('#')) return rgbString
+          const parts = rgbString.match(/\d+\.\d+|\d+/g)
+          if (!parts || parts.length < 3) return null
+          const [r, g, b] = parts.map((value) => Math.min(255, Math.max(0, Number(value))))
+          return (
+            '#' +
+            [r, g, b]
+              .map((channel) => {
+                const hex = channel.toString(16)
+                return hex.length === 1 ? `0${hex}` : hex
+              })
+              .join('')
+          )
+        }
+
+        const readCssColor = (customProperty) => {
+          const probe = document.createElement('span')
+          probe.style.position = 'absolute'
+          probe.style.width = '0'
+          probe.style.height = '0'
+          probe.style.overflow = 'hidden'
+          probe.style.pointerEvents = 'none'
+          probe.style.background = `hsl(var(${customProperty}))`
+          document.body.appendChild(probe)
+          const computed = getComputedStyle(probe).backgroundColor
+          probe.remove()
+          return toHex(computed)
+        }
+
+        const applyColorTokens = () => {
+          try {
+            const backgroundColor = readCssColor('--background') || '#f8e5c5'
+            const accentColor = readCssColor('--forest-green') || '#44623b'
+            document.documentElement.style.setProperty('--launch-background', backgroundColor)
+            document.body.style.setProperty('--app-background', backgroundColor)
+            document.body.style.backgroundColor = backgroundColor
+            const themeMeta = document.querySelector('meta[name="theme-color"]')
+            if (themeMeta) {
+              themeMeta.setAttribute('content', accentColor)
+            }
+            const maskIcon = document.querySelector('link[data-dynamic-mask-icon]')
+            if (maskIcon) {
+              maskIcon.setAttribute('color', accentColor)
+            }
+          } catch (error) {
+            console.warn('Unable to apply theme colors from CSS variables', error)
+          }
+        }
+
+        const syncIconsFromManifest = (manifest) => {
+          if (!manifest?.icons?.length) return
+          const iconLinks = document.querySelectorAll('link[data-dynamic-icon]')
+          const appleIcon = document.querySelector('link[data-dynamic-apple-icon]')
+          manifest.icons.forEach((icon) => {
+            const href = icon.src
+            const sizes = icon.sizes
+            const purpose = icon.purpose || ''
+            const relValue = purpose.includes('maskable') ? 'mask-icon' : 'icon'
+
+            if (relValue === 'icon') {
+              let target = Array.from(iconLinks).find((link) => link.getAttribute('sizes') === sizes)
+              if (!target) {
+                target = document.createElement('link')
+                target.rel = 'icon'
+                target.type = icon.type || 'image/png'
+                target.setAttribute('sizes', sizes || '')
+                target.dataset.dynamicIcon = 'true'
+                document.head.appendChild(target)
+              }
+              target.rel = 'icon'
+              target.type = icon.type || 'image/png'
+              if (sizes) target.setAttribute('sizes', sizes)
+              target.href = href
+            }
+
+            if (purpose.includes('maskable')) {
+              const mask = document.querySelector('link[data-dynamic-mask-icon]')
+              if (mask) {
+                mask.href = href
+              }
+            }
+          })
+
+          if (appleIcon) {
+            const bestIcon = manifest.icons.find((icon) => icon.sizes?.includes('180x180')) || manifest.icons[0]
+            if (bestIcon) {
+              appleIcon.href = bestIcon.src
+              if (bestIcon.sizes) appleIcon.setAttribute('sizes', bestIcon.sizes)
+            }
+          }
+        }
+
+        const hydrateFromManifest = async () => {
+          try {
+            const response = await fetch('/manifest.json', { cache: 'reload' })
+            if (!response.ok) return
+            const manifest = await response.json()
+            if (manifest.background_color) {
+              document.documentElement.style.setProperty('--launch-background', manifest.background_color)
+              document.body.style.backgroundColor = manifest.background_color
+            }
+            if (manifest.theme_color) {
+              const themeMeta = document.querySelector('meta[name="theme-color"]')
+              if (themeMeta) {
+                themeMeta.setAttribute('content', manifest.theme_color)
+              }
+            }
+            syncIconsFromManifest(manifest)
+          } catch (error) {
+            console.warn('Unable to hydrate launch assets from manifest', error)
+          } finally {
+            applyColorTokens()
+          }
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', hydrateFromManifest, { once: true })
+        } else {
+          hydrateFromManifest()
+        }
+
+        const schemeMedia = window.matchMedia('(prefers-color-scheme: dark)')
+        const onSchemeUpdate = () => requestAnimationFrame(applyColorTokens)
+        if (typeof schemeMedia.addEventListener === 'function') {
+          schemeMedia.addEventListener('change', onSchemeUpdate)
+        } else if (typeof schemeMedia.addListener === 'function') {
+          schemeMedia.addListener(onSchemeUpdate)
+        }
+      })()
+    </script>
   </body>
 </html>
