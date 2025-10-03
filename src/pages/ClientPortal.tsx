@@ -1,5 +1,5 @@
 import React, { useEffect, useState, Suspense } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuthOptimized';
 import { usePortalContent } from '@/hooks/usePortalContent';
 import { supabase } from '@/integrations/supabase/client';
@@ -301,18 +301,18 @@ const ClientPortal: React.FC = () => {
           <div className="flex items-center gap-2">
             {!isAdminSimulating && isAdmin && (
               <Button asChild variant="outline">
-                <a href="/admin">
+                <Link to="/admin">
                   <Settings className="h-4 w-4 mr-2" />
                   Manage Content
-                </a>
+                </Link>
               </Button>
             )}
             {!isAdminSimulating && isAdminOfCompany(currentCompany?.id) && currentCompany?.slug && (
               <Button asChild variant="outline">
-                <a href={`/${currentCompany.slug}/settings`}>
+                <Link to={`/${currentCompany.slug}/settings`}>
                   <Users className="h-4 w-4 mr-2" />
                   Company Settings
-                </a>
+                </Link>
               </Button>
             )}
           </div>

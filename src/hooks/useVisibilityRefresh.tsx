@@ -1,18 +1,28 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from './useAuth';
 import { useMobileOptimizations } from './useMobileOptimizations';
+import { useLocation } from 'react-router-dom';
 
 /**
  * Enhanced hook to handle mobile app focus/refresh scenarios
  * Throttled to prevent rapid re-auth loops and UI flicker
+ * Now navigation-aware to prevent refreshes during active navigation
  */
 export const useVisibilityRefresh = () => {
   const { refreshAuth, user, loading } = useAuth();
   const { isPWA, isStandalone, isPullToRefresh, isOnline } = useMobileOptimizations();
+  const location = useLocation();
 
   const lastRefreshRef = useRef(0);
   const inFlightRef = useRef(false);
+  const lastNavigationRef = useRef(0);
   const MIN_INTERVAL = 30000; // 30s throttle between refreshes (increased from 15s)
+  const NAVIGATION_GRACE_PERIOD = 5000; // 5s after navigation before allowing refresh
+
+  // Track navigation to avoid refresh during active navigation
+  useEffect(() => {
+    lastNavigationRef.current = Date.now();
+  }, [location.pathname]);
 
   const tryRefresh = (reason: string) => {
     if (!user) return;
@@ -22,6 +32,12 @@ export const useVisibilityRefresh = () => {
     const now = Date.now();
     if (inFlightRef.current) return;
     if (now - lastRefreshRef.current < MIN_INTERVAL) return;
+    
+    // Skip refresh if navigation just occurred
+    if (now - lastNavigationRef.current < NAVIGATION_GRACE_PERIOD) {
+      console.debug(`⏭️ Skipping refresh - recent navigation (${reason})`);
+      return;
+    }
 
     inFlightRef.current = true;
     console.debug(`🔄 Auth refresh triggered (${reason})`);
@@ -67,7 +83,7 @@ export const useVisibilityRefresh = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [isPWA, isStandalone, isOnline, refreshAuth, user, loading]);
+  }, [isPWA, isStandalone, isOnline, refreshAuth, user, loading, location.pathname]);
 
   // Handle pull-to-refresh specifically (also throttled)
   useEffect(() => {

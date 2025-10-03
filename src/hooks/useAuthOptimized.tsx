@@ -190,18 +190,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [updateAuthState]);
 
-  const refreshAuth = useCallback(async () => {
+  const refreshAuth = useCallback(async (silent = false) => {
     if (!authState.user?.id) {
       updateAuthState({ authReady: true, loading: false });
       return;
     }
     
-    console.debug('🔄 Refreshing auth context (background)');
-    
-    // Clear cache and fetch fresh data in background mode
-    const cacheKey = `${CACHE_KEY}_${authState.user.id}`;
-    CacheManager.invalidate(cacheKey);
-    await fetchContext(authState.user.id, true);
+    if (silent) {
+      // Silent mode: update cache in background without triggering loading state
+      console.debug('🔄 Silent auth refresh (background)');
+      const cacheKey = `${CACHE_KEY}_${authState.user.id}`;
+      CacheManager.invalidate(cacheKey);
+      await fetchContext(authState.user.id, true);
+    } else {
+      // Normal mode: clear cache and fetch fresh data
+      console.debug('🔄 Refreshing auth context');
+      const cacheKey = `${CACHE_KEY}_${authState.user.id}`;
+      CacheManager.invalidate(cacheKey);
+      await fetchContext(authState.user.id, false);
+    }
   }, [authState.user, fetchContext]);
 
   const handleSession = useCallback((sess: Session | null) => {

@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 type LocationKey = string;
 
 const STORAGE_KEY = "rootedai:scroll-positions";
+const RESTORATION_DELAY = 100; // ms delay to allow DOM to stabilize
 
 const createLocationKey = (location: ReturnType<typeof useLocation>): LocationKey => {
   return `${location.pathname}${location.search}${location.hash}`;
@@ -93,11 +94,16 @@ export const ScrollRestoration: React.FC = () => {
 
     const storedPosition = positionsRef.current[locationKey] ?? 0;
 
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: storedPosition, behavior: "auto" });
-    });
+    // Add delay to allow React to finish rendering and auth state to settle
+    const timeoutId = setTimeout(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: storedPosition, behavior: "auto" });
+      });
+    }, RESTORATION_DELAY);
 
     previousKeyRef.current = locationKey;
+
+    return () => clearTimeout(timeoutId);
   }, [locationKey, savePosition]);
 
   return null;
