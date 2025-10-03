@@ -52,28 +52,27 @@ export const usePortalContent = ({
     const cacheKey = `portal_content_${companyId}`;
     
     try {
-      // Check cache first
+      // INSTANT cache-first approach - show cached data immediately
       const cached = CacheManager.get<PortalContent>(cacheKey);
       if (cached) {
         setContent(cached);
         setError(null);
+        setLoading(false); // Always set loading to false with cached data
         
-        // Background refresh if cache is getting stale
-        const cacheStats = CacheManager.getStats();
+        // Silent background revalidation without showing loading state
         if (showLoading) {
-          setLoading(false);
+          setTimeout(() => fetchContent(false), 100);
         }
-        
-        // Skip background refresh for now to prevent unnecessary API calls
         return;
       }
 
+      // Only show loading state if no cached data exists
       if (showLoading) {
         setLoading(true);
       }
       setError(null);
 
-      // Fetch enhanced session data along with other content
+      // Fetch enhanced session data along with other content in parallel
       const [contentResult, sessionsResult] = await Promise.all([
         supabase.rpc('get_company_portal_content', { company_id_param: companyId }),
         supabase.rpc('get_session_with_leader_info', { company_id_param: companyId })
@@ -103,7 +102,7 @@ export const usePortalContent = ({
         kpis: parsedContent?.kpis || []
       };
 
-      // Cache the results
+      // Cache the results with extended TTL for better performance
       CacheManager.set(cacheKey, normalizedContent, CACHE_TTL);
       
       setContent(normalizedContent);

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { CacheManager } from '@/lib/cacheManager';
+import { useAuthPrefetch } from './useAuthPrefetch';
 
 interface Company {
   id: string;
@@ -100,43 +101,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateAuthState({ loading: true, error: null });
       }
 
-      // Sequential approach during initial user setup to avoid race conditions
-      let membershipResult, contextResult, avatarResult;
-      
-      try {
-        // First ensure membership (may fail during account creation)
-        membershipResult = await supabase.rpc('ensure_membership_for_current_user');
-      } catch (membershipError: any) {
-        console.warn('Membership ensure failed (may be transient):', membershipError.message);
-        // Continue anyway - this is not critical for auth context
+      // Parallel data fetching for maximum performance
+      const [membershipResult, contextResult, avatarResult] = await Promise.allSettled([
+        supabase.rpc('ensure_membership_for_current_user'),
+        supabase.rpc('get_user_context_optimized', { p_user_id: userId }),
+        supabase.from('users').select('avatar_url').eq('auth_user_id', userId).maybeSingle()
+      ]);
+
+      // Handle membership result (non-critical)
+      if (membershipResult.status === 'rejected') {
+        console.warn('Membership ensure failed (may be transient):', membershipResult.reason);
       }
 
-      try {
-        // Get user context
-        contextResult = await supabase.rpc('get_user_context_optimized', { p_user_id: userId });
-      } catch (contextError: any) {
-        console.warn('Context fetch failed:', contextError.message);
+      // Handle context result (critical)
+      if (contextResult.status === 'rejected') {
+        console.warn('Context fetch failed:', contextResult.reason);
         
-        // If this fails during initial setup, retry once after a delay
-        if (retryCount === 0 && contextError.message?.includes('400')) {
-          console.log('Retrying context fetch after account setup delay...');
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        // Retry once for new accounts without delay
+        if (retryCount === 0) {
+          console.log('Retrying context fetch...');
           return fetchContextFromServer(userId, updateLoading, 1);
         }
-        throw contextError;
+        throw contextResult.reason;
       }
 
-      try {
-        // Get avatar (least critical)
-        avatarResult = await supabase.from('users').select('avatar_url').eq('auth_user_id', userId).maybeSingle();
-      } catch (avatarError: any) {
-        console.warn('Avatar fetch failed (non-critical):', avatarError.message);
-        avatarResult = { data: null, error: null }; // Provide fallback
+      // Handle avatar result (non-critical)
+      const avatarData = avatarResult.status === 'fulfilled' ? avatarResult.value.data : null;
+      if (avatarResult.status === 'rejected') {
+        console.warn('Avatar fetch failed (non-critical):', avatarResult.reason);
       }
 
-      if (contextResult.error) throw contextResult.error;
+      const contextData = contextResult.value;
+      if (contextData.error) throw contextData.error;
 
-      const ctx = contextResult.data?.[0];
+      const ctx = contextData.data?.[0];
       const rawCompanies = ctx?.companies;
       const companiesData: Company[] = Array.isArray(rawCompanies) 
         ? rawCompanies.map((company: any) => ({
@@ -166,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateAuthState({
         userRole: role,
         companies: companiesData,
-        avatarUrl: avatarResult.data?.avatar_url || null,
+        avatarUrl: avatarData?.avatar_url || null,
         authReady: true,
         loading: false,
         error: null,
@@ -223,14 +221,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Set user context for cache management
       CacheManager.setCurrentUser(sess.user.id);
       
-      // Defer context fetch to avoid blocking auth state change
-      // Add longer delay for newly created accounts to avoid database timing issues
-      const delay = Date.now() - (sess.user.created_at ? new Date(sess.user.created_at).getTime() : 0) < 30000 ? 2000 : 0;
-      setTimeout(() => {
-        fetchContext(sess.user.id).catch(err => {
-          console.error('Deferred context fetch failed (may be transient during account creation):', err);
-        });
-      }, delay);
+      // Immediate context fetch for instant load - no artificial delays
+      fetchContext(sess.user.id).catch(err => {
+        console.error('Context fetch failed (may be transient during account creation):', err);
+      });
     } else {
       // User signed out - clear everything in one update
       CacheManager.setCurrentUser(null);
@@ -299,6 +293,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       optimisticAvatarUrl: null // Clear optimistic when real URL is set
     });
   }, [updateAuthState]);
+
+  // Prefetch critical data after authentication for instant page loads
+  useAuthPrefetch({
+    enabled: authState.authReady && !!authState.user,
+    userId: authState.user?.id || null,
+    companyId: authState.companies[0]?.id || null,
+  });
 
   const contextValue: AuthContextType = {
     ...authState,
