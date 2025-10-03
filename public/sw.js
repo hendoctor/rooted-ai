@@ -1,4 +1,4 @@
-const CACHE_VERSION = '1.7.0';
+const CACHE_VERSION = '1.6.0';
 const CACHE_NAME = `rooted-ai-v${CACHE_VERSION}`;
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const API_CACHE = `${CACHE_NAME}-api`;
@@ -6,35 +6,17 @@ const OFFLINE_FALLBACK = '/';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    (async () => {
-      const cache = await caches.open(STATIC_CACHE);
-      const precacheAssets = new Set([
-        '/',
-        '/index.html',
-        '/manifest.json',
-      ]);
-
-      try {
-        const response = await fetch('/manifest.json', { cache: 'no-store' });
-        if (response.ok) {
-          const manifest = await response.clone().json();
-          const icons = Array.isArray(manifest.icons) ? manifest.icons : [];
-          icons
-            .map((icon) => icon?.src)
-            .filter(Boolean)
-            .forEach((src) => {
-              const url = new URL(src, self.location.origin);
-              precacheAssets.add(url.pathname + url.search);
-            });
-        }
-      } catch (error) {
-        console.warn('[sw] Unable to derive icons from manifest during install', error);
-        precacheAssets.add('/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png');
-      }
-
-      await cache.addAll(Array.from(precacheAssets));
-      await self.skipWaiting();
-    })()
+    caches
+      .open(STATIC_CACHE)
+      .then((cache) =>
+        cache.addAll([
+          '/',
+          '/index.html',
+          '/manifest.json',
+          '/Assets/18d38cb4-658a-43aa-8b10-fa6dbd50eae7.png',
+        ])
+      )
+      .then(() => self.skipWaiting())
   );
 });
 

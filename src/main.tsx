@@ -16,30 +16,15 @@ root.render(
   </ThemeProvider>
 );
 
-const finalizeLaunch = () => {
-  document.body.classList.add('app-loaded');
-
-  const splash = document.getElementById('splash-screen');
-  if (!splash) return;
-
-  const removeSplash = () => {
-    splash.removeEventListener('transitionend', removeSplash);
-    if (splash.parentElement) {
-      splash.parentElement.removeChild(splash);
-    }
-  };
-
-  requestAnimationFrame(() => {
-    splash.setAttribute('data-state', 'hidden');
-    splash.addEventListener('transitionend', removeSplash, { once: true });
-    window.setTimeout(removeSplash, 800);
-  });
-};
-
-if (document.readyState === 'complete') {
-  finalizeLaunch();
-} else {
-  window.addEventListener('load', finalizeLaunch, { once: true });
+const splash = document.getElementById('splash-screen');
+if (splash) {
+  const isMobile = window.matchMedia('(max-width: 767px)').matches;
+  if (isMobile) {
+    // Allow the splash animation to play before removing
+    setTimeout(() => splash.remove(), 1500);
+  } else {
+    splash.remove();
+  }
 }
 
 // Register service worker in production for PWA capabilities
