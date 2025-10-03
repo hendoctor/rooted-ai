@@ -12,6 +12,7 @@ import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { LoadingIcon } from "@/components/LoadingSpinner";
+import ScrollRestoration from "@/components/ScrollRestoration";
 
 import AuthGuard from "@/components/AuthGuard";
 import PublicOnlyGuard from "@/components/PublicOnlyGuard";
@@ -255,6 +256,7 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <AppLoadingWrapper>
+                  <ScrollRestoration />
                   <main id="main-content">
                     <AppContent />
                   </main>
