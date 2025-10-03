@@ -19,17 +19,21 @@ import PublicOnlyGuard from "@/components/PublicOnlyGuard";
 import PermissionGuard from "@/components/PermissionGuard";
 import RBACGuard from "@/components/RBACGuard";
 
+// Route-based code splitting for optimal bundle size
+// Critical routes loaded immediately
 import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import AdminDashboard from "./pages/AdminDashboard";
-import Profile from "./pages/Profile";
-import ClientPortal from "./pages/ClientPortal";
-import ClientDemoPortal from "./pages/ClientDemoPortal";
-import CompanyPage from "./pages/CompanyPage";
 import AccessDenied from "./pages/AccessDenied";
 import NotFound from "./pages/NotFound";
-import RBACDemo from "./pages/RBACDemo";
-import Artifacts from "./pages/Artifacts";
+
+// Heavy routes lazy-loaded for better initial load performance
+const Auth = React.lazy(() => import("./pages/Auth"));
+const AdminDashboard = React.lazy(() => import("./pages/AdminDashboard"));
+const Profile = React.lazy(() => import("./pages/Profile"));
+const ClientPortal = React.lazy(() => import("./pages/ClientPortal"));
+const ClientDemoPortal = React.lazy(() => import("./pages/ClientDemoPortal"));
+const CompanyPage = React.lazy(() => import("./pages/CompanyPage"));
+const RBACDemo = React.lazy(() => import("./pages/RBACDemo"));
+const Artifacts = React.lazy(() => import("./pages/Artifacts"));
 
 // Enhanced loading wrapper with mobile optimizations
 const AppLoadingWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -145,68 +149,88 @@ const AppContent = () => {
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Index />} />
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/artifacts" element={<Artifacts />} />
+      <Route path="/auth" element={
+        <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingIcon size="lg" /></div>}>
+          <Auth />
+        </React.Suspense>
+      } />
+      <Route path="/artifacts" element={
+        <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingIcon size="lg" /></div>}>
+          <Artifacts />
+        </React.Suspense>
+      } />
       <Route
         path="/client-demo"
         element={
-          <PublicOnlyGuard allowedRoles={["Admin"]}>
-            <ClientDemoPortal />
-          </PublicOnlyGuard>
+          <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingIcon size="lg" /></div>}>
+            <PublicOnlyGuard allowedRoles={["Admin"]}>
+              <ClientDemoPortal />
+            </PublicOnlyGuard>
+          </React.Suspense>
         }
       />
       
-      {/* Protected routes with role requirements */}
+      {/* Protected routes with role requirements - lazy loaded */}
       <Route
         path="/admin"
         element={
-          <AuthGuard>
-            <PermissionGuard requiredRoles={["Admin"]}>
-              <AdminDashboard />
-            </PermissionGuard>
-          </AuthGuard>
+          <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingIcon size="lg" /></div>}>
+            <AuthGuard>
+              <PermissionGuard requiredRoles={["Admin"]}>
+                <AdminDashboard />
+              </PermissionGuard>
+            </AuthGuard>
+          </React.Suspense>
         }
       />
       <Route
         path="/profile"
         element={
-          <AuthGuard>
-            <PermissionGuard requiredRoles={["Admin", "Client"]}>
-              <Profile />
-            </PermissionGuard>
-          </AuthGuard>
+          <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingIcon size="lg" /></div>}>
+            <AuthGuard>
+              <PermissionGuard requiredRoles={["Admin", "Client"]}>
+                <Profile />
+              </PermissionGuard>
+            </AuthGuard>
+          </React.Suspense>
         }
       />
       <Route
         path="/rbac-demo"
         element={
-          <AuthGuard>
-            <PermissionGuard requiredRoles={["Admin", "Client"]}>
-              <RBACGuard page="rbac-demo">
-                <RBACDemo />
-              </RBACGuard>
-            </PermissionGuard>
-          </AuthGuard>
+          <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingIcon size="lg" /></div>}>
+            <AuthGuard>
+              <PermissionGuard requiredRoles={["Admin", "Client"]}>
+                <RBACGuard page="rbac-demo">
+                  <RBACDemo />
+                </RBACGuard>
+              </PermissionGuard>
+            </AuthGuard>
+          </React.Suspense>
         }
       />
       <Route
         path="/:slug/settings"
         element={
-          <AuthGuard>
-            <PermissionGuard requiredRoles={["Admin", "Client"]}>
-              <CompanyPage />
-            </PermissionGuard>
-          </AuthGuard>
+          <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingIcon size="lg" /></div>}>
+            <AuthGuard>
+              <PermissionGuard requiredRoles={["Admin", "Client"]}>
+                <CompanyPage />
+              </PermissionGuard>
+            </AuthGuard>
+          </React.Suspense>
         }
       />
       <Route
         path="/:slug"
         element={
-          <AuthGuard>
-            <PermissionGuard requiredRoles={["Client", "Admin"]}>
-              <ClientPortal />
-            </PermissionGuard>
-          </AuthGuard>
+          <React.Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingIcon size="lg" /></div>}>
+            <AuthGuard>
+              <PermissionGuard requiredRoles={["Client", "Admin"]}>
+                <ClientPortal />
+              </PermissionGuard>
+            </AuthGuard>
+          </React.Suspense>
         }
       />
       

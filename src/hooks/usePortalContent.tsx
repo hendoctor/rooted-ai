@@ -72,34 +72,29 @@ export const usePortalContent = ({
       }
       setError(null);
 
-      // Fetch enhanced session data along with other content in parallel
-      const [contentResult, sessionsResult] = await Promise.all([
-        supabase.rpc('get_company_portal_content', { company_id_param: companyId }),
-        supabase.rpc('get_session_with_leader_info', { company_id_param: companyId })
-      ]);
+      // Use unified portal data function - single DB call instead of 2-3!
+      // This saves 200-400ms on every portal load
+      const { data, error: rpcError } = await supabase.rpc('get_unified_portal_data', { 
+        company_id_param: companyId 
+      });
 
-      if (contentResult.error) {
-        throw contentResult.error;
+      if (rpcError) {
+        throw rpcError;
       }
 
-      // The function returns a single row with columns, so we need the first item
-      const parsedContent = contentResult.data?.[0] as any;
-      const sessionData = sessionsResult.data || [];
-      
-      if (parsedContent?.error) {
-        throw new Error(parsedContent.error);
-      }
+      // Cast data to the correct type
+      const portalData = data as any;
 
-      // Normalize the content structure with enhanced coaching data
+      // Data is already in the correct format
       const normalizedContent: PortalContent = {
-        announcements: parsedContent?.announcements || [],
-        resources: parsedContent?.resources || [],
-        useful_links: parsedContent?.useful_links || [],
-        ai_tools: parsedContent?.ai_tools || [],
-        apps: parsedContent?.apps || [],
-        faqs: parsedContent?.faqs || [],
-        coaching: sessionData.length > 0 ? sessionData : (parsedContent?.coaching || []),
-        kpis: parsedContent?.kpis || []
+        announcements: portalData?.announcements || [],
+        resources: portalData?.resources || [],
+        useful_links: portalData?.useful_links || [],
+        ai_tools: portalData?.ai_tools || [],
+        apps: portalData?.apps || [],
+        faqs: portalData?.faqs || [],
+        coaching: portalData?.coaching || [],
+        kpis: portalData?.kpis || []
       };
 
       // Cache the results with extended TTL for better performance

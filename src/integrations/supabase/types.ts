@@ -1332,6 +1332,10 @@ export type Database = {
           topic: string
         }[]
       }
+      get_unified_portal_data: {
+        Args: { company_id_param: string }
+        Returns: Json
+      }
       get_unified_user_data: {
         Args: Record<PropertyKey, never>
         Returns: {
