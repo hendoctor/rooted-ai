@@ -162,8 +162,8 @@
 /* Skip Links */
 .skip-link {
   position: absolute;
-  top: -40px;
-  left: 6px;
+  top: 12px;
+  left: 12px;
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
   padding: 8px 16px;
@@ -171,11 +171,16 @@
   border-radius: 4px;
   z-index: 9999;
   font-weight: 600;
-  transition: top 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-100%);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .skip-link:focus {
-  top: 6px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 /* Onboarding Highlights */
