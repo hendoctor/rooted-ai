@@ -56,6 +56,10 @@ const Hero = () => {
                 href="/client-demo"
                 className="relative z-10 flex items-center gap-3 font-semibold tracking-wide"
               >
+                <span className="relative flex h-2 w-2 items-center justify-center" aria-hidden="true">
+                  <span className="absolute inline-flex h-full w-full rounded-full border border-white/70 opacity-70 shadow-[0_0_12px_rgba(255,255,255,0.6)] motion-safe:animate-ping" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full border border-white shadow-[0_0_8px_rgba(255,255,255,0.8)] bg-transparent" />
+                </span>
                 <span>Client Experience</span>
                 <span className="relative flex h-2 w-2 items-center justify-center" aria-hidden="true">
                   <span className="absolute inline-flex h-full w-full rounded-full border border-white/70 opacity-70 shadow-[0_0_12px_rgba(255,255,255,0.6)] motion-safe:animate-ping" />
